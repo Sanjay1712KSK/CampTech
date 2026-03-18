@@ -19,5 +19,18 @@
     "analytics": "تجزیات",
     "claims": "دعوے",
     "policy": "پالیسی",
-    "profile": "پروفائل"
+    "profile": "پروفائل",
+    "temperature": "درجہ حرارت",
+    "rainfall": "بارش",
+    "windSpeed": "ہوا کی رفتار",
+    "aqiValue": "AQI",
+    "good": "اچھا",
+    "moderate": "درمیانہ",
+    "poor": "بہت خراب",
+    "trafficLevel": "ٹریفک کی سطح",
+    "heavyCongestion": "بھاری بھیڑ",
+    "moderateTraffic": "معتدل ٹریفک",
+    "smoothTraffic": "ہموار ٹریفک",
+    "weekday": "ہفتے کا دن",
+    "weekend": "ہفتے کے آخر"
 }
