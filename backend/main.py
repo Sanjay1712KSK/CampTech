@@ -20,7 +20,7 @@ app.include_router(digilocker_router.router)
 @app.on_event('startup')
 def on_startup():
     logger.info('Starting service and creating database tables if needed')
-    db.Base.metadata.create_all(bind=db.engine)
+    db.ensure_schema()
 
 
 @app.get('/')
