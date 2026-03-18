@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from database.db import SessionLocal
 from models.gig_income import GigIncome
+from models.user_model import User
 
 logger = logging.getLogger('gig_insurance_backend.gig')
 
@@ -241,12 +242,21 @@ def _generate_day_record(user_id: int, day: date, expected_baseline: float = Non
     }
 
 
+def _ensure_user_exists(session: Session, user_id: int):
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError('USER_NOT_FOUND')
+
+
 def generate_data(user_id: int, days: int = 30):
     if days < 1:
         raise ValueError('days must be >= 1')
+    if days > 90:
+        raise ValueError('days must be <= 90')
 
     session: Session = SessionLocal()
     try:
+        _ensure_user_exists(session, user_id)
         start_date = date.today() - timedelta(days=days - 1)
 
         generated = []
@@ -275,6 +285,7 @@ def generate_data(user_id: int, days: int = 30):
 def income_history(user_id: int):
     session: Session = SessionLocal()
     try:
+        _ensure_user_exists(session, user_id)
         records = session.query(GigIncome).filter(GigIncome.user_id == user_id).order_by(GigIncome.date).all()
         return [
             {
@@ -320,6 +331,7 @@ def income_history(user_id: int):
 def baseline_income(user_id: int):
     session: Session = SessionLocal()
     try:
+        _ensure_user_exists(session, user_id)
         top_days = (
             session.query(GigIncome)
             .filter(GigIncome.user_id == user_id, GigIncome.disruption_type == 'none')
@@ -339,6 +351,7 @@ def baseline_income(user_id: int):
 def today_income(user_id: int):
     session: Session = SessionLocal()
     try:
+        _ensure_user_exists(session, user_id)
         today = date.today()
         rec = (
             session.query(GigIncome)
@@ -369,6 +382,7 @@ def today_income(user_id: int):
 def weekly_summary(user_id: int):
     session: Session = SessionLocal()
     try:
+        _ensure_user_exists(session, user_id)
         recent_week = (
             session.query(GigIncome)
             .filter(GigIncome.user_id == user_id)

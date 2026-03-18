@@ -29,6 +29,17 @@ def on_startup():
     db.ensure_schema()
 
 
+@app.get('/health')
+def health_check():
+    return {'status': 'ok'}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception('Unhandled exception: %s', exc)
+    return JSONResponse(status_code=500, content=error_response('INTERNAL_ERROR', 'Something went wrong'))
+
+
 @app.get('/')
 def home():
     return {'message': 'Backend is running!!!'}
