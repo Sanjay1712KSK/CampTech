@@ -21,7 +21,13 @@ MAX_RETRIES = int(os.getenv('NBF_MAX_RETRIES', 3))
 def send_to_blockchain(payload: dict) -> dict:
     if not isinstance(payload, dict) or 'function' not in payload or 'args' not in payload:
         logger.error('Invalid payload for blockchain: %s', payload)
-        raise ValueError('Invalid blockchain payload')
+        return {
+            'success': False,
+            'transaction_id': f'MOCK_TXN_{uuid.uuid4()}',
+            'raw': None,
+            'fallback': True,
+            'error': 'INVALID_PAYLOAD',
+        }
 
     logger.info('Sending payload to blockchain endpoint %s', NBF_BASE_URL)
     logger.debug('Blockchain payload: %s', payload)
@@ -35,7 +41,7 @@ def send_to_blockchain(payload: dict) -> dict:
                 logger.info('Blockchain API success on attempt %d: %s', attempt, body)
                 return {
                     'success': True,
-                    'transaction_id': body.get('transaction_id'),
+                    'transaction_id': body.get('transaction_id', f'MOCK_TXN_{uuid.uuid4()}'),
                     'raw': body,
                     'fallback': False,
                 }
@@ -53,7 +59,7 @@ def send_to_blockchain(payload: dict) -> dict:
         logger.info('Retrying blockchain API in %s seconds', sleep_seconds)
         time.sleep(sleep_seconds)
 
-    fallback_txn = f"MOCK_TXN_{uuid.uuid4()}"
+    fallback_txn = f'MOCK_TXN_{uuid.uuid4()}'
     logger.warning('Blockchain API all retries failed, returning fallback txn_id %s', fallback_txn)
     return {
         'success': False,
@@ -64,9 +70,19 @@ def send_to_blockchain(payload: dict) -> dict:
 
 
 def log_event(event_type: str, entity_id: str, data: dict, metadata: dict = None) -> dict:
-    payload = build_payload(event_type, entity_id, data, metadata)
-    logger.info('Prepared blockchain event payload: %s', payload)
-    return send_to_blockchain(payload)
+    try:
+        payload = build_payload(event_type, entity_id, data, metadata)
+        logger.info('Prepared blockchain event payload: %s', payload)
+        return send_to_blockchain(payload)
+    except ValueError as ex:
+        logger.error('Blockchain payload validation failed: %s', str(ex))
+        return {
+            'success': False,
+            'transaction_id': f'MOCK_TXN_{uuid.uuid4()}',
+            'raw': None,
+            'fallback': True,
+            'error': str(ex),
+        }
 
 
 def log_verification(user_id: int) -> dict:
@@ -103,63 +119,3 @@ def record_payout(claim_id: str, amount: float) -> dict:
         data={'amount': amount, 'status': 'PAID'},
         metadata={'source': 'gig_insurance_backend'}
     )
-
-
-def log_verification(user_id: int) -> dict:
-    payload = build_payload(
-        event_type='verification',
-        entity_id=str(user_id),
-        data={
-            'user_id': user_id,
-            'status': 'VERIFIED',
-        },
-        metadata={'source': 'gig_insurance_backend'}
-    )
-
-    logger.info('Sending blockchain payload: %s', payload)
-    resp = _post('nbf/log-verification', payload)
-    txn_id = resp.get('txn_id') or f"txn_mock_{uuid.uuid4()}"
-    return {'status': 'simulated', 'txn_id': txn_id, 'provider': 'mock-blockchain'}
-
-
-def create_policy(user_id: int, premium: float, baseline_income: float) -> dict:
-    payload = build_payload(
-        event_type='policy_creation',
-        entity_id=str(user_id),
-        data={
-            'premium': premium,
-            'baseline_income': baseline_income,
-        },
-        metadata={'source': 'gig_insurance_backend'}
-    )
-    logger.info('Creating policy on blockchain: %s', payload)
-    return _post('nbf/create-policy', payload)
-
-
-def log_event(event_type: str, conditions: dict, risk_score: float) -> dict:
-    payload = build_payload(
-        event_type='risk_update',
-        entity_id='system',
-        data={
-            'event_type': event_type,
-            'conditions': conditions,
-            'risk_score': risk_score,
-        },
-        metadata={'source': 'gig_insurance_backend'}
-    )
-    logger.info('Logging event to blockchain: %s', payload)
-    return _post('nbf/log-event', payload)
-
-
-def record_payout(user_id: int, amount: float) -> dict:
-    payload = build_payload(
-        event_type='payment',
-        entity_id=str(user_id),
-        data={
-            'amount': amount,
-            'status': 'PAID',
-        },
-        metadata={'source': 'gig_insurance_backend'}
-    )
-    logger.info('Recording payout on blockchain: %s', payload)
-    return _post('nbf/record-payout', payload)
