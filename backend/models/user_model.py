@@ -12,4 +12,5 @@ class User(Base):
     phone = Column(String(50), nullable=False)
     password = Column(String(255), nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
