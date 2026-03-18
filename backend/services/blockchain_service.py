@@ -57,33 +57,43 @@ def log_verification(user_id: int) -> dict:
 
 
 def create_policy(user_id: int, premium: float, baseline_income: float) -> dict:
-    payload = {
-        'user_id': user_id,
-        'premium': premium,
-        'baseline_income': baseline_income,
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
-    }
+    payload = build_payload(
+        event_type='policy_creation',
+        entity_id=str(user_id),
+        data={
+            'premium': premium,
+            'baseline_income': baseline_income,
+        },
+        metadata={'source': 'gig_insurance_backend'}
+    )
     logger.info('Creating policy on blockchain: %s', payload)
     return _post('nbf/create-policy', payload)
 
 
 def log_event(event_type: str, conditions: dict, risk_score: float) -> dict:
-    payload = {
-        'event': event_type,
-        'conditions': conditions,
-        'risk_score': risk_score,
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
-    }
+    payload = build_payload(
+        event_type='risk_update',
+        entity_id='system',
+        data={
+            'event_type': event_type,
+            'conditions': conditions,
+            'risk_score': risk_score,
+        },
+        metadata={'source': 'gig_insurance_backend'}
+    )
     logger.info('Logging event to blockchain: %s', payload)
     return _post('nbf/log-event', payload)
 
 
 def record_payout(user_id: int, amount: float) -> dict:
-    payload = {
-        'user_id': user_id,
-        'amount': amount,
-        'status': 'PAID',
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
-    }
+    payload = build_payload(
+        event_type='payment',
+        entity_id=str(user_id),
+        data={
+            'amount': amount,
+            'status': 'PAID',
+        },
+        metadata={'source': 'gig_insurance_backend'}
+    )
     logger.info('Recording payout on blockchain: %s', payload)
     return _post('nbf/record-payout', payload)
