@@ -47,26 +47,22 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final userId = await ApiService.login(email: email, password: password);
+      final result = await ApiService.login(email: email, password: password);
 
       if (!mounted) return;
 
-      if (userId != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DashboardScreen(userId: userId),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardScreen(
+            userId: result.userId,
+            isVerified: result.isVerified,
           ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid credentials')),
-        );
-      }
+        ),
+      );
     } catch (error) {
-      final message = error.toString().contains('SocketException')
-          ? 'Server not reachable'
-          : 'Login service unavailable';
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {

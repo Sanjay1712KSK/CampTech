@@ -9,7 +9,8 @@ import 'package:guidewire_gig_ins/features/dashboard/widgets/verification_status
 
 class DashboardScreen extends StatelessWidget {
   final int userId;
-  const DashboardScreen({Key? key, required this.userId}) : super(key: key);
+  final bool isVerified;
+  const DashboardScreen({Key? key, required this.userId, this.isVerified = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +52,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 32),
               
               // Verification Status
-              VerificationStatusCard(isVerified: false, userId: userId), // Demo with true/false
+              VerificationStatusCard(isVerified: isVerified, userId: userId), // Real state from backend
               const SizedBox(height: 24),
               
               // Risk Profile

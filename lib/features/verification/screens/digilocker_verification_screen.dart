@@ -3,7 +3,7 @@ import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
-enum VerificationStatus { notVerified, verifying, verified }
+enum VerificationStatus { notVerified, requesting, inputRequired, verifying, verified }
 
 class DigilockerVerificationScreen extends StatefulWidget {
   final int userId;
@@ -18,7 +18,22 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
   String? _selectedDocument;
   VerificationStatus _status = VerificationStatus.notVerified;
 
-  void _verifyNow() async {
+  // Stored from Step 1 API response
+  String? _requestId;
+
+  // Input controllers for Step 2
+  final _documentNumberController = TextEditingController();
+  final _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _documentNumberController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  // ─── STEP 1: Create DigiLocker Request ───────────────────────────────────────
+  Future<void> _requestVerification() async {
     if (_selectedDocument == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a document type first')),
@@ -26,41 +41,80 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
       return;
     }
 
-    setState(() {
-      _status = VerificationStatus.verifying;
-    });
+    setState(() => _status = VerificationStatus.requesting);
 
     try {
-      final success = await ApiService.verifyIdentity(
-        userId: widget.userId,
-        documentType: _selectedDocument!,
+      final result = await ApiService.createDigiLockerRequest(userId: widget.userId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _requestId = result.requestId;
+        _status = VerificationStatus.inputRequired;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = VerificationStatus.notVerified);
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  // ─── STEP 2: Submit Consent ───────────────────────────────────────────────────
+  Future<void> _submitConsent() async {
+    final docNumber = _documentNumberController.text.trim();
+    final name = _nameController.text.trim();
+
+    // Validate name
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Name cannot be empty')),
+      );
+      return;
+    }
+
+    // Validate document number based on type
+    final isAadhaar = _selectedDocument == 'Aadhaar Card';
+    final aadhaarRegex = RegExp(r'^\d{12}$');
+    final licenseRegex = RegExp(r'^[A-Za-z0-9]{8,15}$');
+
+    if (isAadhaar && !aadhaarRegex.hasMatch(docNumber)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aadhaar must be exactly 12 digits')),
+      );
+      return;
+    }
+
+    if (!isAadhaar && !licenseRegex.hasMatch(docNumber)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('License must be 8–15 alphanumeric characters')),
+      );
+      return;
+    }
+
+    setState(() => _status = VerificationStatus.verifying);
+
+    try {
+      final result = await ApiService.submitDigiLockerConsent(
+        requestId: _requestId!,
+        documentType: isAadhaar ? 'aadhaar' : 'license',
+        documentNumber: docNumber,
+        name: name,
       );
 
       if (!mounted) return;
 
-      if (success) {
-        setState(() {
-          _status = VerificationStatus.verified;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verified ✔')),
-        );
+      if (result.verified) {
+        setState(() => _status = VerificationStatus.verified);
       } else {
-        setState(() {
-          _status = VerificationStatus.notVerified;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification failed. Try again.')),
-        );
+        setState(() => _status = VerificationStatus.inputRequired);
+        final reason = result.reason ?? 'Verification failed. Check your details.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason)));
       }
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _status = VerificationStatus.notVerified;
-      });
-      final message = error.toString().contains('SocketException')
-          ? 'Server not reachable'
-          : 'Verification service unavailable';
+      setState(() => _status = VerificationStatus.inputRequired);
+      final message = error.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
@@ -97,15 +151,36 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
               ] else ...[
                 _buildDocumentSelection(),
                 const SizedBox(height: 24),
-                _buildMockUploadButton(),
-                const SizedBox(height: 24),
+
+                // Step 2: Show input fields only after request is created
+                if (_status == VerificationStatus.inputRequired ||
+                    _status == VerificationStatus.verifying) ...[
+                  _buildConsentInputs(),
+                  const SizedBox(height: 24),
+                ] else ...[
+                  _buildMockUploadButton(),
+                  const SizedBox(height: 24),
+                ],
+
                 _buildStatusIndicator(),
                 const SizedBox(height: 40),
-                PrimaryButton(
-                  text: _status == VerificationStatus.verifying ? 'Verifying...' : 'Verify Now',
-                  isLoading: _status == VerificationStatus.verifying,
-                  onPressed: _verifyNow,
-                ),
+
+                // Button logic depends on flow step
+                if (_status == VerificationStatus.inputRequired ||
+                    _status == VerificationStatus.verifying)
+                  PrimaryButton(
+                    text: _status == VerificationStatus.verifying ? 'Verifying...' : 'Verify Now',
+                    isLoading: _status == VerificationStatus.verifying,
+                    onPressed: _submitConsent,
+                  )
+                else
+                  PrimaryButton(
+                    text: _status == VerificationStatus.requesting
+                        ? 'Requesting...'
+                        : 'Verify Now',
+                    isLoading: _status == VerificationStatus.requesting,
+                    onPressed: _requestVerification,
+                  ),
               ],
             ],
           ),
@@ -131,9 +206,9 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
                 icon: Icons.credit_card,
                 isSelected: _selectedDocument == 'Aadhaar Card',
                 onTap: () {
-                  setState(() {
-                    _selectedDocument = 'Aadhaar Card';
-                  });
+                  if (_status == VerificationStatus.notVerified) {
+                    setState(() => _selectedDocument = 'Aadhaar Card');
+                  }
                 },
               ),
             ),
@@ -144,13 +219,46 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
                 icon: Icons.drive_eta,
                 isSelected: _selectedDocument == 'Driving License',
                 onTap: () {
-                  setState(() {
-                    _selectedDocument = 'Driving License';
-                  });
+                  if (_status == VerificationStatus.notVerified) {
+                    setState(() => _selectedDocument = 'Driving License');
+                  }
                 },
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConsentInputs() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Enter Document Details',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _documentNumberController,
+          style: const TextStyle(color: AppTheme.textPrimary),
+          keyboardType: _selectedDocument == 'Aadhaar Card'
+              ? TextInputType.number
+              : TextInputType.text,
+          decoration: InputDecoration(
+            hintText: _selectedDocument == 'Aadhaar Card'
+                ? 'Aadhaar Number (12 digits)'
+                : 'License Number (8–15 chars)',
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _nameController,
+          style: const TextStyle(color: AppTheme.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'Full Name (as on document)',
+          ),
         ),
       ],
     );
@@ -163,20 +271,22 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.textSecondary.withOpacity(0.2), style: BorderStyle.solid),
+        border: Border.all(color: AppTheme.textSecondary.withOpacity(0.2)),
       ),
       child: Column(
         children: [
           Icon(Icons.cloud_upload_outlined, size: 48, color: AppTheme.primaryColor),
           const SizedBox(height: 16),
           Text(
-            'Tap to upload document',
+            'Select document type and tap Verify Now',
             style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
-            'Supported formats: JPG, PNG, PDF',
+            'You\'ll enter document details in the next step',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -193,6 +303,16 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
         statusColor = AppTheme.errorColor;
         statusText = 'Not Verified';
         statusIcon = Icons.cancel_outlined;
+        break;
+      case VerificationStatus.requesting:
+        statusColor = AppTheme.warningColor;
+        statusText = 'Initiating...';
+        statusIcon = Icons.hourglass_empty;
+        break;
+      case VerificationStatus.inputRequired:
+        statusColor = AppTheme.warningColor;
+        statusText = 'Input Required';
+        statusIcon = Icons.edit_outlined;
         break;
       case VerificationStatus.verifying:
         statusColor = AppTheme.warningColor;
@@ -277,9 +397,7 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
           const SizedBox(height: 40),
           PrimaryButton(
             text: 'Continue to Dashboard',
-            onPressed: () {
-              Navigator.pop(context); // Demo go back
-            },
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
@@ -289,7 +407,6 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
 
 class _SuccessListItem extends StatelessWidget {
   final String text;
-
   const _SuccessListItem({Key? key, required this.text}) : super(key: key);
 
   @override

@@ -51,7 +51,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final success = await ApiService.signup(
+      final result = await ApiService.signup(
         name: name,
         email: email,
         phone: phone,
@@ -60,26 +60,19 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
-      if (success) {
-        // MOCK: Store user_id from response after signup as requested
-        final int userId = 1;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signup successful. Welcome!')),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => DashboardScreen(userId: userId)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to sign up. Check your details.')),
-        );
-      }
+      // Navigate directly to Dashboard — no Login screen after Signup
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardScreen(
+            userId: result.userId,
+            isVerified: result.isVerified,
+          ),
+        ),
+      );
     } catch (error) {
-      final message = error.toString().contains('SocketException')
-          ? 'Server not reachable'
-          : 'Unable to reach server';
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
