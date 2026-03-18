@@ -8,7 +8,8 @@ import 'package:guidewire_gig_ins/features/dashboard/widgets/risk_profile_card.d
 import 'package:guidewire_gig_ins/features/dashboard/widgets/verification_status_card.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  final int userId;
+  const DashboardScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +51,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 32),
               
               // Verification Status
-              const VerificationStatusCard(isVerified: false), // Demo with true/false
+              VerificationStatusCard(isVerified: false, userId: userId), // Demo with true/false
               const SizedBox(height: 24),
               
               // Risk Profile

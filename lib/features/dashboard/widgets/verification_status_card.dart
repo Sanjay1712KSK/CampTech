@@ -5,8 +5,9 @@ import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verif
 
 class VerificationStatusCard extends StatelessWidget {
   final bool isVerified;
+  final int userId;
 
-  const VerificationStatusCard({Key? key, this.isVerified = false}) : super(key: key);
+  const VerificationStatusCard({Key? key, this.isVerified = false, required this.userId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,7 @@ class VerificationStatusCard extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen(userId: 'usr_mock123')),
+                  MaterialPageRoute(builder: (_) => DigilockerVerificationScreen(userId: userId)),
                 );
               },
               style: ElevatedButton.styleFrom(
