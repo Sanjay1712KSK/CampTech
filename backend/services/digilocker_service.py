@@ -185,7 +185,8 @@ def process_consent(db: Session, request_id: str, document_type: str, document_n
     req.issued_date = document['issued_date']
     req.verified_at = datetime.utcnow()
 
-    req.blockchain_txn_id = log_verification(req.user_id).get('txn_id', f"txn_mock_{uuid.uuid4()}")
+    chain_resp = log_verification(req.user_id)
+    req.blockchain_txn_id = chain_resp.get('transaction_id', f"MOCK_TXN_{uuid.uuid4()}")
 
     user = db.query(User).filter(User.id == req.user_id).first()
     if user:

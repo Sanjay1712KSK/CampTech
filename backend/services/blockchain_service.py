@@ -87,7 +87,7 @@ def log_event(event_type: str, entity_id: str, data: dict, metadata: dict = None
 
 def log_verification(user_id: int) -> dict:
     return log_event(
-        event_type='verification',
+        event_type='identity_verification',
         entity_id=f'user_{user_id}',
         data={'user_id': user_id, 'status': 'VERIFIED'},
         metadata={'source': 'gig_insurance_backend'}
