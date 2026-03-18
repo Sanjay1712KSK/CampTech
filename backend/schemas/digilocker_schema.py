@@ -1,5 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from typing import Literal
+from pydantic import BaseModel, Field, constr
+
+
+document_number_aadhaar = constr(regex='^\d{12}$')
+document_number_license = constr(regex='^[A-Za-z0-9]{8,15}$')
 
 
 class DigiLockerRequestSchema(BaseModel):
@@ -7,10 +12,22 @@ class DigiLockerRequestSchema(BaseModel):
 
 
 class DigiLockerConsentSchema(BaseModel):
-    request_id: str
-    document_type: str = Field(..., pattern='^(aadhaar|license)$')
+    request_id: constr(regex='^[0-9a-fA-F\-]{36}$')
+    document_type: Literal['aadhaar', 'license']
     document_number: str
-    name: str
+    name: str = Field(..., min_length=2)
+
+    @classmethod
+    def validate_document(cls, values):
+        dt = values.get('document_type')
+        dn = values.get('document_number')
+        if dt == 'aadhaar':
+            if not document_number_aadhaar.validate(dn):
+                raise ValueError('Invalid Aadhaar format')
+        if dt == 'license':
+            if not document_number_license.validate(dn):
+                raise ValueError('Invalid license format')
+        return values
 
 
 class DigiLockerRequestResponseSchema(BaseModel):

@@ -2,9 +2,9 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
+    name: str = Field(..., min_length=2, max_length=255)
     email: EmailStr
-    phone: str = Field(..., min_length=7, max_length=20)
+    phone: str = Field(..., regex='^[0-9]{10}$')
     password: str = Field(..., min_length=8)
 
 
