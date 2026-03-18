@@ -4,7 +4,7 @@ import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
-import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
+import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => DigilockerVerificationScreen(userId: userId),
+            builder: (_) => DashboardScreen(userId: userId),
           ),
         );
       } else {
