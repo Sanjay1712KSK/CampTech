@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -15,11 +16,28 @@ class DigiLockerConsentSchema(BaseModel):
 class DigiLockerRequestResponseSchema(BaseModel):
     request_id: str
     status: str
+    provider_name: str
 
 
-class DigiLockerResponseSchema(BaseModel):
+class DigiLockerConsentResponseSchema(BaseModel):
     status: str
-    name: str | None = None
+    provider_name: str
+    verification_score: float | None = None
     document_type: str | None = None
-    verified_data: dict | None = None
-    reason: str | None = None
+    document_number_masked: str | None = None
+    verified_profile: dict | None = None
+    failure_reason: str | None = None
+    blockchain_txn_id: str | None = None
+
+
+class DigiLockerStatusResponseSchema(BaseModel):
+    is_verified: bool
+    provider_name: str
+    status: str
+    verified_name: str | None = None
+    document_type: str | None = None
+    document_number_masked: str | None = None
+    verified_at: datetime | None = None
+    verification_score: float | None = None
+    blockchain_txn_id: str | None = None
+

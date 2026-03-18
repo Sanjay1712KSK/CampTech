@@ -1,5 +1,6 @@
 import os
 import logging
+import uuid
 from datetime import datetime
 
 import requests
@@ -44,7 +45,9 @@ def log_verification(user_id: int) -> dict:
         'timestamp': datetime.utcnow().isoformat() + 'Z'
     }
     logger.info('Logging verification to blockchain: %s', payload)
-    return _post('nbf/log-verification', payload)
+    resp = _post('nbf/log-verification', payload)
+    txn_id = resp.get('txn_id') or f"txn_mock_{uuid.uuid4()}"
+    return {'status': 'simulated', 'txn_id': txn_id, 'provider': 'mock-blockchain'}
 
 
 def create_policy(user_id: int, premium: float, baseline_income: float) -> dict:
