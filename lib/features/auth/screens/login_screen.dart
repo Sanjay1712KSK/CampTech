@@ -4,7 +4,7 @@ import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
-import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_screen.dart';
+import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -54,9 +54,11 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => DashboardScreen(
+          builder: (_) => MainShell(
             userId: result.userId,
             isVerified: result.isVerified,
+            // Use email prefix as fallback name until API returns name
+            userName: email.split('@').first,
           ),
         ),
       );
