@@ -13,7 +13,7 @@ class DigiLockerRequestResponse(BaseModel):
 
 class ConsentRequest(BaseModel):
     request_id: str
-    document_type: str = Field(..., regex='^(aadhaar|license)$')
+    document_type: str = Field(..., pattern='^(aadhaar|license)$')
     document_number: str
     name: str
 
