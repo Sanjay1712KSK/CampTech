@@ -320,7 +320,29 @@ class TrafficData {
   final double trafficScore;
   final String trafficLevel;
 
-  TrafficData({required this.trafficScore, required this.trafficLevel}
+  TrafficData({required this.trafficScore, required this.trafficLevel});
+
+  factory TrafficData.fromJson(Map<String, dynamic> json) {
+    return TrafficData(
+      trafficScore: (json['traffic_score'] as num).toDouble(),
+      trafficLevel: json['traffic_level'] as String,
+    );
+  }
+}
+
+class ContextData {
+  final int hour;
+  final String dayType;
+
+  ContextData({required this.hour, required this.dayType});
+
+  factory ContextData.fromJson(Map<String, dynamic> json) {
+    return ContextData(
+      hour: json['hour'] as int,
+      dayType: json['day_type'] as String,
+    );
+  }
+}
 
 // ── 📊 Gig Income Models ───────────────────────────────────────────────────
 
