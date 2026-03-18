@@ -60,7 +60,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get pending => 'ಬಾಕಿ ಉಳಿದಿದೆ';
 
   @override
-  String get analytics => 'ವಿಶ್ಲೇಷಣೆ';
+  String get insights => 'ಒಳನೋಟಗಳು';
 
   @override
   String get claims => 'ಕ್ಲೈಮ್‌ಗಳು';
@@ -109,4 +109,61 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get weekend => 'ವಾರಾಂತ್ಯ';
+
+  @override
+  String get connectGigAccount => 'ಗಿಗ್ ಖಾತೆಯನ್ನು ಸಂಪರ್ಕಿಸಿ';
+
+  @override
+  String get selectPlatform => 'ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಆಯ್ಕೆಮಾಡಿ';
+
+  @override
+  String get enterIdOrPhone => 'ಐಡಿ ಅಥವಾ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ';
+
+  @override
+  String get connect => 'ಸಂಪರ್ಕಿಸಿ';
+
+  @override
+  String get incomeIntelligence => 'ಆದಾಯ ಇಂಟೆಲಿಜೆನ್ಸ್';
+
+  @override
+  String get baselineIncome => 'ಬೇಸ್‌ಲೈನ್ ಆದಾಯ';
+
+  @override
+  String get todayIncome => 'ಇಂದಿನ ಆದಾಯ';
+
+  @override
+  String get lossIndicator => 'ನಷ್ಟ ಸೂಚಕ';
+
+  @override
+  String get weeklyTrend => 'ಸಾಪ್ತಾಹಿಕ ಪ್ರವೃತ್ತಿ';
+
+  @override
+  String get extremeDays => 'ತೀವ್ರ ದಿನಗಳು';
+
+  @override
+  String get bestDay => 'ಉತ್ತಮ ದಿನ';
+
+  @override
+  String get worstDay => 'ಕೆಟ್ಟ ದಿನ';
+
+  @override
+  String get earnings => 'ಗಳಿಕೆ';
+
+  @override
+  String get orders => 'ಆದೇಶಗಳು';
+
+  @override
+  String get breakdown => 'ಸ್ಥಗಿತ';
+
+  @override
+  String get totalOrders => 'ಒಟ್ಟು ಆದೇಶಗಳು';
+
+  @override
+  String get totalHours => 'ಒಟ್ಟು ಗಂಟೆಗಳು';
+
+  @override
+  String get avgEarnings => 'ಸರಾಸರಿ ಗಳಿಕೆ / ಆದೇಶ';
+
+  @override
+  String get riskCoverage => 'ಅಪಾಯದ ವ್ಯಾಪ್ತಿ';
 }

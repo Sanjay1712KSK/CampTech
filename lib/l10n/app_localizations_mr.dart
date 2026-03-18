@@ -60,7 +60,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pending => 'प्रलंबित';
 
   @override
-  String get analytics => 'अॅनालिटिक्स';
+  String get insights => 'इन्साईट्स';
 
   @override
   String get claims => 'दावे';
@@ -109,4 +109,61 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get weekend => 'सुट्टीचा दिवस';
+
+  @override
+  String get connectGigAccount => 'गिग खाते जोडा';
+
+  @override
+  String get selectPlatform => 'प्लॅटफॉर्म निवडा';
+
+  @override
+  String get enterIdOrPhone => 'आयडी किंवा फोन नंबर प्रविष्ट करा';
+
+  @override
+  String get connect => 'जोडा';
+
+  @override
+  String get incomeIntelligence => 'उत्पन्न बुद्धिमत्ता';
+
+  @override
+  String get baselineIncome => 'बेसलाइन उत्पन्न';
+
+  @override
+  String get todayIncome => 'आजचे उत्पन्न';
+
+  @override
+  String get lossIndicator => 'तोटा निर्देशक';
+
+  @override
+  String get weeklyTrend => 'साप्ताहिक ट्रेंड';
+
+  @override
+  String get extremeDays => 'आत्यंतिक दिवस';
+
+  @override
+  String get bestDay => 'सर्वात चांगला दिवस';
+
+  @override
+  String get worstDay => 'सर्वात वाईट दिवस';
+
+  @override
+  String get earnings => 'कमाई';
+
+  @override
+  String get orders => 'ऑर्डर्स';
+
+  @override
+  String get breakdown => 'ब्रेकडाउन';
+
+  @override
+  String get totalOrders => 'एकूण ऑर्डर्स';
+
+  @override
+  String get totalHours => 'एकूण तास';
+
+  @override
+  String get avgEarnings => 'सरासरी कमाई / ऑर्डर';
+
+  @override
+  String get riskCoverage => 'जोखीम कव्हरेज';
 }

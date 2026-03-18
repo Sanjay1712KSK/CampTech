@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/home_tab.dart';
-import 'package:guidewire_gig_ins/features/main/tabs/analytics_tab.dart';
+import 'package:guidewire_gig_ins/features/main/tabs/insights_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/claims_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/policy_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/profile_tab.dart';
+import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 
 class MainShell extends StatefulWidget {
   final int userId;
@@ -44,7 +45,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      const AnalyticsTab(),
+      const InsightsTab(),
       const ClaimsTab(),
       HomeTab(userId: widget.userId, isVerified: widget.isVerified, userName: widget.userName),
       const PolicyTab(),
@@ -87,11 +88,11 @@ class _MainShellState extends State<MainShell> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _NavItem(icon: Icons.bar_chart_rounded, label: 'Analytics', index: 0, current: _currentIndex, onTap: _onNavTap),
-                _NavItem(icon: Icons.receipt_long_rounded, label: 'Claims', index: 1, current: _currentIndex, onTap: _onNavTap),
+                _NavItem(icon: Icons.lightbulb_rounded, label: AppLocalizations.of(context)?.insights ?? 'Insights', index: 0, current: _currentIndex, onTap: _onNavTap),
+                _NavItem(icon: Icons.receipt_long_rounded, label: AppLocalizations.of(context)?.claims ?? 'Claims', index: 1, current: _currentIndex, onTap: _onNavTap),
                 const SizedBox(width: 48), // FAB space
-                _NavItem(icon: Icons.policy_rounded, label: 'Policy', index: 3, current: _currentIndex, onTap: _onNavTap),
-                _NavItem(icon: Icons.person_rounded, label: 'Profile', index: 4, current: _currentIndex, onTap: _onNavTap),
+                _NavItem(icon: Icons.policy_rounded, label: AppLocalizations.of(context)?.policy ?? 'Policy', index: 3, current: _currentIndex, onTap: _onNavTap),
+                _NavItem(icon: Icons.person_rounded, label: AppLocalizations.of(context)?.profile ?? 'Profile', index: 4, current: _currentIndex, onTap: _onNavTap),
               ],
             ),
           ),

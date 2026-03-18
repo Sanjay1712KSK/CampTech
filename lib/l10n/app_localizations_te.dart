@@ -60,7 +60,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get pending => 'పెండింగ్';
 
   @override
-  String get analytics => 'విశ్లేషణలు';
+  String get insights => 'అంతర్దృష్టులు';
 
   @override
   String get claims => 'క్లెయిమ్‌లు';
@@ -109,4 +109,61 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get weekend => 'వారాంతం';
+
+  @override
+  String get connectGigAccount => 'గిగ్ ఖాతాను కనెక్ట్ చేయండి';
+
+  @override
+  String get selectPlatform => 'ప్లాట్‌ఫారమ్‌ను ఎంచుకోండి';
+
+  @override
+  String get enterIdOrPhone => 'ID లేదా ఫోన్ నంబర్‌ను నమోదు చేయండి';
+
+  @override
+  String get connect => 'కనెక్ట్ చేయండి';
+
+  @override
+  String get incomeIntelligence => 'ఆదాయ ఇంటెలిజెన్స్';
+
+  @override
+  String get baselineIncome => 'బేస్‌లైన్ ఆదాయం';
+
+  @override
+  String get todayIncome => 'నేటి ఆదాయం';
+
+  @override
+  String get lossIndicator => 'నష్ట సూచిక';
+
+  @override
+  String get weeklyTrend => 'వారపు ట్రెండ్';
+
+  @override
+  String get extremeDays => 'తీవ్రమైన రోజులు';
+
+  @override
+  String get bestDay => 'ఉత్తమ రోజు';
+
+  @override
+  String get worstDay => 'చెత్త రోజు';
+
+  @override
+  String get earnings => 'సంపాదన';
+
+  @override
+  String get orders => 'ఆర్డర్లు';
+
+  @override
+  String get breakdown => 'విభజన';
+
+  @override
+  String get totalOrders => 'మొత్తం ఆర్డర్లు';
+
+  @override
+  String get totalHours => 'మొత్తం గంటలు';
+
+  @override
+  String get avgEarnings => 'సగటు సంపాదన / ఆర్డర్';
+
+  @override
+  String get riskCoverage => 'ప్రమాద కవరేజ్';
 }

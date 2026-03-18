@@ -60,7 +60,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pending => 'Pending';
 
   @override
-  String get analytics => 'Analytics';
+  String get insights => 'Insights';
 
   @override
   String get claims => 'Claims';
@@ -109,4 +109,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weekend => 'Weekend';
+
+  @override
+  String get connectGigAccount => 'Connect Gig Account';
+
+  @override
+  String get selectPlatform => 'Select Platform';
+
+  @override
+  String get enterIdOrPhone => 'Enter ID or Phone Number';
+
+  @override
+  String get connect => 'Connect';
+
+  @override
+  String get incomeIntelligence => 'Income Intelligence';
+
+  @override
+  String get baselineIncome => 'Baseline Income';
+
+  @override
+  String get todayIncome => 'Today\'s Income';
+
+  @override
+  String get lossIndicator => 'Loss Indicator';
+
+  @override
+  String get weeklyTrend => 'Weekly Trend';
+
+  @override
+  String get extremeDays => 'Extreme Days';
+
+  @override
+  String get bestDay => 'Best Day';
+
+  @override
+  String get worstDay => 'Worst Day';
+
+  @override
+  String get earnings => 'Earnings';
+
+  @override
+  String get orders => 'Orders';
+
+  @override
+  String get breakdown => 'Breakdown';
+
+  @override
+  String get totalOrders => 'Total Orders';
+
+  @override
+  String get totalHours => 'Total Hours';
+
+  @override
+  String get avgEarnings => 'Avg Earnings / Order';
+
+  @override
+  String get riskCoverage => 'Risk Coverage';
 }

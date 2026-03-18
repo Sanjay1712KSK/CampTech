@@ -60,7 +60,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get pending => 'زیر التواء';
 
   @override
-  String get analytics => 'تجزیات';
+  String get insights => 'بصیرتیں';
 
   @override
   String get claims => 'دعوے';
@@ -109,4 +109,61 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get weekend => 'ہفتے کے آخر';
+
+  @override
+  String get connectGigAccount => 'گگ اکاؤنٹ مربوط کریں';
+
+  @override
+  String get selectPlatform => 'پلیٹ فارم منتخب کریں';
+
+  @override
+  String get enterIdOrPhone => 'آئی ڈی یا فون نمبر درج کریں';
+
+  @override
+  String get connect => 'مربوط کریں';
+
+  @override
+  String get incomeIntelligence => 'آمدنی کی ذہانت';
+
+  @override
+  String get baselineIncome => 'بیس لائن آمدنی';
+
+  @override
+  String get todayIncome => 'آج کی آمدنی';
+
+  @override
+  String get lossIndicator => 'نقصان کا اشارہ';
+
+  @override
+  String get weeklyTrend => 'ہفتہ وار رجحان';
+
+  @override
+  String get extremeDays => 'انتہائی دن';
+
+  @override
+  String get bestDay => 'بہترین دن';
+
+  @override
+  String get worstDay => 'بدترین دن';
+
+  @override
+  String get earnings => 'کمائی';
+
+  @override
+  String get orders => 'آرڈرز';
+
+  @override
+  String get breakdown => 'تفصیل';
+
+  @override
+  String get totalOrders => 'کل آرڈرز';
+
+  @override
+  String get totalHours => 'کل گھنٹے';
+
+  @override
+  String get avgEarnings => 'اوسط کمائی / آرڈر';
+
+  @override
+  String get riskCoverage => 'رسک کوریج';
 }

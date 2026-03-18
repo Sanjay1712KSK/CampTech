@@ -210,11 +210,11 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get pending;
 
-  /// No description provided for @analytics.
+  /// No description provided for @insights.
   ///
   /// In en, this message translates to:
-  /// **'Analytics'**
-  String get analytics;
+  /// **'Insights'**
+  String get insights;
 
   /// No description provided for @claims.
   ///
@@ -311,6 +311,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weekend'**
   String get weekend;
+
+  /// No description provided for @connectGigAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Gig Account'**
+  String get connectGigAccount;
+
+  /// No description provided for @selectPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Platform'**
+  String get selectPlatform;
+
+  /// No description provided for @enterIdOrPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter ID or Phone Number'**
+  String get enterIdOrPhone;
+
+  /// No description provided for @connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get connect;
+
+  /// No description provided for @incomeIntelligence.
+  ///
+  /// In en, this message translates to:
+  /// **'Income Intelligence'**
+  String get incomeIntelligence;
+
+  /// No description provided for @baselineIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline Income'**
+  String get baselineIncome;
+
+  /// No description provided for @todayIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Income'**
+  String get todayIncome;
+
+  /// No description provided for @lossIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Loss Indicator'**
+  String get lossIndicator;
+
+  /// No description provided for @weeklyTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Trend'**
+  String get weeklyTrend;
+
+  /// No description provided for @extremeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Extreme Days'**
+  String get extremeDays;
+
+  /// No description provided for @bestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Day'**
+  String get bestDay;
+
+  /// No description provided for @worstDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Worst Day'**
+  String get worstDay;
+
+  /// No description provided for @earnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings'**
+  String get earnings;
+
+  /// No description provided for @orders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get orders;
+
+  /// No description provided for @breakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakdown'**
+  String get breakdown;
+
+  /// No description provided for @totalOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Orders'**
+  String get totalOrders;
+
+  /// No description provided for @totalHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Hours'**
+  String get totalHours;
+
+  /// No description provided for @avgEarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Earnings / Order'**
+  String get avgEarnings;
+
+  /// No description provided for @riskCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk Coverage'**
+  String get riskCoverage;
 }
 
 class _AppLocalizationsDelegate
