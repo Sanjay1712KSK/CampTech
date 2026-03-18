@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guidewire_gig_ins/core/locale_provider.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
@@ -7,7 +8,8 @@ import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  final LocaleProvider localeProvider;
+  const SignupScreen({Key? key, required this.localeProvider}) : super(key: key);
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -60,7 +62,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
-      // Navigate directly to MainShell — no Login screen after Signup
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -68,6 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
             userId: result.userId,
             isVerified: result.isVerified,
             userName: name,
+            localeProvider: widget.localeProvider,
           ),
         ),
       );
