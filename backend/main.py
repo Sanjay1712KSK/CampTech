@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from database import db
 from routes import auth as auth_router
@@ -8,6 +9,7 @@ from routes import verification as verification_router
 from routes import digilocker as digilocker_router
 from routes import environment as environment_router
 from routes import gig as gig_router
+from utils.response import error_response
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('gig_insurance_backend')

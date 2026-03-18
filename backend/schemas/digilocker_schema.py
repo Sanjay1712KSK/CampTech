@@ -11,13 +11,16 @@ class DigiLockerRequestSchema(BaseModel):
     user_id: int = Field(..., gt=0)
 
 
+from pydantic import root_validator
+
+
 class DigiLockerConsentSchema(BaseModel):
     request_id: constr(regex='^[0-9a-fA-F\-]{36}$')
     document_type: Literal['aadhaar', 'license']
     document_number: str
     name: str = Field(..., min_length=2)
 
-    @classmethod
+    @root_validator
     def validate_document(cls, values):
         dt = values.get('document_type')
         dn = values.get('document_number')

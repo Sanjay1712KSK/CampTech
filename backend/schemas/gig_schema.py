@@ -38,8 +38,16 @@ class GigIncomeRecord(BaseModel):
 
 
 class GenerateGigDataRequest(BaseModel):
-    user_id: int
-    days: int
+    user_id: int = Field(..., gt=0)
+    days: int = Field(..., ge=1, le=90)
+
+    class Config:
+        schema_extra = {
+            'example': {
+                'user_id': 1,
+                'days': 30,
+            }
+        }
 
 
 class GenerateGigDataResponse(BaseModel):
