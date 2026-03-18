@@ -70,4 +70,43 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get profile => 'சுயவிவரம்';
+
+  @override
+  String get temperature => 'வெப்பநிலை';
+
+  @override
+  String get rainfall => 'மழைப்பொழிவு';
+
+  @override
+  String get windSpeed => 'காற்றின் வேகம்';
+
+  @override
+  String get aqiValue => 'AQI';
+
+  @override
+  String get good => 'நல்லது';
+
+  @override
+  String get moderate => 'மிதமானது';
+
+  @override
+  String get poor => 'மோசமானது';
+
+  @override
+  String get trafficLevel => 'போக்குவரத்து நிலை';
+
+  @override
+  String get heavyCongestion => 'கடும் நெரிசல்';
+
+  @override
+  String get moderateTraffic => 'மிதமான போக்குவரத்து';
+
+  @override
+  String get smoothTraffic => 'சுமூகமான போக்குவரத்து';
+
+  @override
+  String get weekday => 'பணிநாள்';
+
+  @override
+  String get weekend => 'வாரಾಂತ್ಯ';
 }

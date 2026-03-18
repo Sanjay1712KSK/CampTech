@@ -70,4 +70,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile => 'Profile';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get rainfall => 'Rainfall';
+
+  @override
+  String get windSpeed => 'Wind speed';
+
+  @override
+  String get aqiValue => 'AQI';
+
+  @override
+  String get good => 'Good';
+
+  @override
+  String get moderate => 'Moderate';
+
+  @override
+  String get poor => 'Poor';
+
+  @override
+  String get trafficLevel => 'Traffic Level';
+
+  @override
+  String get heavyCongestion => 'Heavy congestion';
+
+  @override
+  String get moderateTraffic => 'Moderate traffic';
+
+  @override
+  String get smoothTraffic => 'Smooth traffic';
+
+  @override
+  String get weekday => 'Weekday';
+
+  @override
+  String get weekend => 'Weekend';
 }

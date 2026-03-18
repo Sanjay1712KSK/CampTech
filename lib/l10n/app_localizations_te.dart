@@ -70,4 +70,43 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get profile => 'ప్రొఫైల్';
+
+  @override
+  String get temperature => 'ఉష్ణోగ్రత';
+
+  @override
+  String get rainfall => 'వర్షపాతం';
+
+  @override
+  String get windSpeed => 'గాలి వేగం';
+
+  @override
+  String get aqiValue => 'AQI';
+
+  @override
+  String get good => 'మంచిది';
+
+  @override
+  String get moderate => 'మితమైనది';
+
+  @override
+  String get poor => 'పేద';
+
+  @override
+  String get trafficLevel => 'ట్రాఫిక్ స్థాయి';
+
+  @override
+  String get heavyCongestion => 'భారీ రద్దీ';
+
+  @override
+  String get moderateTraffic => 'మితమైన ట్రాఫిక్';
+
+  @override
+  String get smoothTraffic => 'సున్నితమైన ట్రాఫిక్';
+
+  @override
+  String get weekday => 'వారపు రోజు';
+
+  @override
+  String get weekend => 'వారాంతం';
 }

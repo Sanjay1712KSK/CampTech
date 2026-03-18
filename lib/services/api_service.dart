@@ -33,11 +33,31 @@ class ApiService {
   static const String _loginPath = '/auth/login';
   static const String _digilockerRequestPath = '/digilocker/request';
   static const String _digilockerConsentPath = '/digilocker/consent';
+  static const String _environmentPath = '/environment';
 
   static const Duration _timeout = Duration(seconds: 15);
 
   static Map<String, String> get _headers =>
       {'Content-Type': 'application/json'};
+
+  // ── 🌍 Environment Data ───────────────────────────────────────────────────
+
+  static Future<EnvironmentModel> getEnvironment(double lat, double lon) async {
+    try {
+      final response = await http
+          .get(Uri.parse('${Config.baseUrl}$_environmentPath?lat=$lat&lon=$lon'))
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return EnvironmentModel.fromJson(data);
+      } else {
+        throw Exception('Failed to load environment data');
+      }
+    } catch (e) {
+      throw Exception('Network or server error: $e');
+    }
+  }
 
   // ─── SIGNUP ─────────────────────────────────────────────────────────────────
   /// Returns [AuthResult] with the userId on success, throws on failure.
@@ -189,5 +209,87 @@ class ApiService {
     } catch (_) {
       return null;
     }
+  }
+}
+
+// ── 🌍 Environment Models ──────────────────────────────────────────────────
+
+class EnvironmentModel {
+  final WeatherData weather;
+  final AqiData aqi;
+  final TrafficData traffic;
+  final ContextData context;
+
+  EnvironmentModel({required this.weather, required this.aqi, required this.traffic, required this.context});
+
+  factory EnvironmentModel.fromJson(Map<String, dynamic> json) {
+    return EnvironmentModel(
+      weather: WeatherData.fromJson(json['weather']),
+      aqi: AqiData.fromJson(json['aqi']),
+      traffic: TrafficData.fromJson(json['traffic']),
+      context: ContextData.fromJson(json['context']),
+    );
+  }
+}
+
+class WeatherData {
+  final double temperature;
+  final double humidity;
+  final double windSpeed;
+  final double rainfall;
+
+  WeatherData({required this.temperature, required this.humidity, required this.windSpeed, required this.rainfall});
+
+  factory WeatherData.fromJson(Map<String, dynamic> json) {
+    return WeatherData(
+      temperature: (json['temperature'] as num).toDouble(),
+      humidity: (json['humidity'] as num).toDouble(),
+      windSpeed: (json['wind_speed'] as num).toDouble(),
+      rainfall: (json['rainfall'] as num).toDouble(),
+    );
+  }
+}
+
+class AqiData {
+  final int aqi;
+  final double pm25;
+  final double pm10;
+
+  AqiData({required this.aqi, required this.pm25, required this.pm10});
+
+  factory AqiData.fromJson(Map<String, dynamic> json) {
+    return AqiData(
+      aqi: json['aqi'] as int,
+      pm25: (json['pm2_5'] as num).toDouble(),
+      pm10: (json['pm10'] as num).toDouble(),
+    );
+  }
+}
+
+class TrafficData {
+  final double trafficScore;
+  final String trafficLevel;
+
+  TrafficData({required this.trafficScore, required this.trafficLevel});
+
+  factory TrafficData.fromJson(Map<String, dynamic> json) {
+    return TrafficData(
+      trafficScore: (json['traffic_score'] as num).toDouble(),
+      trafficLevel: json['traffic_level'] as String,
+    );
+  }
+}
+
+class ContextData {
+  final int hour;
+  final String dayType;
+
+  ContextData({required this.hour, required this.dayType});
+
+  factory ContextData.fromJson(Map<String, dynamic> json) {
+    return ContextData(
+      hour: json['hour'] as int,
+      dayType: json['day_type'] as String,
+    );
   }
 }

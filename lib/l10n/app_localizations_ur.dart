@@ -70,4 +70,43 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profile => 'پروفائل';
+
+  @override
+  String get temperature => 'درجہ حرارت';
+
+  @override
+  String get rainfall => 'بارش';
+
+  @override
+  String get windSpeed => 'ہوا کی رفتار';
+
+  @override
+  String get aqiValue => 'AQI';
+
+  @override
+  String get good => 'اچھا';
+
+  @override
+  String get moderate => 'درمیانہ';
+
+  @override
+  String get poor => 'بہت خراب';
+
+  @override
+  String get trafficLevel => 'ٹریفک کی سطح';
+
+  @override
+  String get heavyCongestion => 'بھاری بھیڑ';
+
+  @override
+  String get moderateTraffic => 'معتدل ٹریفک';
+
+  @override
+  String get smoothTraffic => 'ہموار ٹریفک';
+
+  @override
+  String get weekday => 'ہفتے کا دن';
+
+  @override
+  String get weekend => 'ہفتے کے آخر';
 }
