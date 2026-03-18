@@ -3,6 +3,7 @@ import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -13,6 +14,79 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onContinue() async {
+    FocusScope.of(context).unfocus();
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete all fields.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await ApiService.signup(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signup successful. Please login.')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to sign up. Check your details.')),
+        );
+      }
+    } catch (error) {
+      final message = error.toString().contains('SocketException')
+          ? 'Server not reachable'
+          : 'Unable to reach server';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,24 +103,28 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 40),
-              const CustomTextField(
+              CustomTextField(
+                controller: _nameController,
                 hintText: 'Full Name',
-                prefixIcon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              const CustomTextField(
-                hintText: 'Email Address',
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              const CustomTextField(
-                hintText: 'Phone Number',
-                keyboardType: TextInputType.phone,
-                prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.textSecondary),
+                prefixIcon: const Icon(Icons.person_outline, color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 20),
               CustomTextField(
+                controller: _emailController,
+                hintText: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              CustomTextField(
+                controller: _phoneController,
+                hintText: 'Phone Number',
+                keyboardType: TextInputType.phone,
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              CustomTextField(
+                controller: _passwordController,
                 hintText: 'Password',
                 obscureText: _obscurePassword,
                 prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
@@ -64,10 +142,9 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 40),
               PrimaryButton(
-                text: 'Continue',
-                onPressed: () {
-                  // Navigate to Login or next step
-                },
+                text: _isLoading ? 'Creating account...' : 'Continue',
+                isLoading: _isLoading,
+                onPressed: _onContinue,
               ),
               const SizedBox(height: 24),
               Center(

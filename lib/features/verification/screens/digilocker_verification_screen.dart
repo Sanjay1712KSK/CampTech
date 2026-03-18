@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 
 enum VerificationStatus { notVerified, verifying, verified }
 
@@ -27,13 +28,35 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
       _status = VerificationStatus.verifying;
     });
 
-    // Mock API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final success = await ApiService.verifyIdentity();
 
-    if (mounted) {
+      if (!mounted) return;
+
+      if (success) {
+        setState(() {
+          _status = VerificationStatus.verified;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verified ✔')),
+        );
+      } else {
+        setState(() {
+          _status = VerificationStatus.notVerified;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification failed. Try again.')),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
       setState(() {
-        _status = VerificationStatus.verified;
+        _status = VerificationStatus.notVerified;
       });
+      final message = error.toString().contains('SocketException')
+          ? 'Server not reachable'
+          : 'Verification service unavailable';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

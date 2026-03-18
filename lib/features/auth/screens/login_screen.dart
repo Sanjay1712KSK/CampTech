@@ -5,6 +5,7 @@ import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -16,6 +17,63 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _isLoading = false;
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    FocusScope.of(context).unfocus();
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await ApiService.login(email: email, password: password);
+
+      if (!mounted) return;
+
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid credentials')),
+        );
+      }
+    } catch (error) {
+      final message = error.toString().contains('SocketException')
+          ? 'Server not reachable'
+          : 'Login service unavailable';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +90,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 40),
-              const CustomTextField(
+              CustomTextField(
+                controller: _emailController,
                 hintText: 'Email Address',
                 keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary),
+                prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 20),
               CustomTextField(
+                controller: _passwordController,
                 hintText: 'Password',
                 obscureText: _obscurePassword,
                 prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
@@ -95,14 +155,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 40),
               PrimaryButton(
-                text: 'Log in',
-                onPressed: () {
-                  // Mock Dashboard and move to Verification for demo
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()),
-                  );
-                },
+                text: _isLoading ? 'Logging in...' : 'Log in',
+                isLoading: _isLoading,
+                onPressed: _login,
               ),
               const SizedBox(height: 24),
               Center(
