@@ -19,5 +19,18 @@
     "analytics": "एनालिटिक्स",
     "claims": "दावे",
     "policy": "पॉलिसी",
-    "profile": "प्रोफ़ाइल"
+    "profile": "प्रोफ़ाइल",
+    "temperature": "तापमान",
+    "rainfall": "वर्षा",
+    "windSpeed": "हवा की गति",
+    "aqiValue": "AQI",
+    "good": "अच्छा",
+    "moderate": "मध्यम",
+    "poor": "खराब",
+    "trafficLevel": "यातायात स्तर",
+    "heavyCongestion": "भारी भीड़",
+    "moderateTraffic": "मध्यम यातायात",
+    "smoothTraffic": "सुचारू यातायात",
+    "weekday": "सप्ताह के दिन",
+    "weekend": "सप्ताहांत"
 }

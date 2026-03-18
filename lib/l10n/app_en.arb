@@ -19,5 +19,18 @@
     "analytics": "Analytics",
     "claims": "Claims",
     "policy": "Policy",
-    "profile": "Profile"
+    "profile": "Profile",
+    "temperature": "Temperature",
+    "rainfall": "Rainfall",
+    "windSpeed": "Wind speed",
+    "aqiValue": "AQI",
+    "good": "Good",
+    "moderate": "Moderate",
+    "poor": "Poor",
+    "trafficLevel": "Traffic Level",
+    "heavyCongestion": "Heavy congestion",
+    "moderateTraffic": "Moderate traffic",
+    "smoothTraffic": "Smooth traffic",
+    "weekday": "Weekday",
+    "weekend": "Weekend"
 }

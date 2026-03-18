@@ -19,5 +19,18 @@
     "analytics": "பகுப்பாய்வு",
     "claims": "உரிமைகோரல்கள்",
     "policy": "கொள்கை",
-    "profile": "சுயவிவரம்"
+    "profile": "சுயவிவரம்",
+    "temperature": "வெப்பநிலை",
+    "rainfall": "மழைப்பொழிவு",
+    "windSpeed": "காற்றின் வேகம்",
+    "aqiValue": "AQI",
+    "good": "நல்லது",
+    "moderate": "மிதமானது",
+    "poor": "மோசமானது",
+    "trafficLevel": "போக்குவரத்து நிலை",
+    "heavyCongestion": "கடும் நெரிசல்",
+    "moderateTraffic": "மிதமான போக்குவரத்து",
+    "smoothTraffic": "சுமூகமான போக்குவரத்து",
+    "weekday": "பணிநாள்",
+    "weekend": "வாரಾಂತ್ಯ"
 }

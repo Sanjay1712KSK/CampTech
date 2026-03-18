@@ -19,5 +19,18 @@
     "analytics": "अॅनालिटिक्स",
     "claims": "दावे",
     "policy": "पॉलिसी",
-    "profile": "प्रोफाइल"
+    "profile": "प्रोफाइल",
+    "temperature": "तापमान",
+    "rainfall": "पाऊस",
+    "windSpeed": "वाऱ्याचा वेग",
+    "aqiValue": "AQI",
+    "good": "चांगले",
+    "moderate": "मध्यम",
+    "poor": "खराब",
+    "trafficLevel": "वाहतूक पातळी",
+    "heavyCongestion": "प्रचंड कोंडी",
+    "moderateTraffic": "मध्यम वाहतूक",
+    "smoothTraffic": "सुरळीत वाहतूक",
+    "weekday": "आठवड्याचा दिवस",
+    "weekend": "सुट्टीचा दिवस"
 }

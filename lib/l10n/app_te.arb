@@ -19,5 +19,18 @@
     "analytics": "విశ్లేషణలు",
     "claims": "క్లెయిమ్‌లు",
     "policy": "పాలసీ",
-    "profile": "ప్రొఫైల్"
+    "profile": "ప్రొఫైల్",
+    "temperature": "ఉష్ణోగ్రత",
+    "rainfall": "వర్షపాతం",
+    "windSpeed": "గాలి వేగం",
+    "aqiValue": "AQI",
+    "good": "మంచిది",
+    "moderate": "మితమైనది",
+    "poor": "పేద",
+    "trafficLevel": "ట్రాఫిక్ స్థాయి",
+    "heavyCongestion": "భారీ రద్దీ",
+    "moderateTraffic": "మితమైన ట్రాఫిక్",
+    "smoothTraffic": "సున్నితమైన ట్రాఫిక్",
+    "weekday": "వారపు రోజు",
+    "weekend": "వారాంతం"
 }

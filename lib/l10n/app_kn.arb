@@ -19,5 +19,18 @@
     "analytics": "ವಿಶ್ಲೇಷಣೆ",
     "claims": "ಕ್ಲೈಮ್‌ಗಳು",
     "policy": "ಪಾಲಿಸಿ",
-    "profile": "ಪ್ರೊಫೈಲ್"
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "temperature": "ತಾಪಮಾನ",
+    "rainfall": "ಮಳೆ",
+    "windSpeed": "ಗಾಳಿಯ ವೇಗ",
+    "aqiValue": "AQI",
+    "good": "ಉತ್ತಮ",
+    "moderate": "ಮಧ್ಯಮ",
+    "poor": "ಕಳಪೆ",
+    "trafficLevel": "ಸಂಚಾರ ಮಟ್ಟ",
+    "heavyCongestion": "ಭಾರಿ ದಟ್ಟಣೆ",
+    "moderateTraffic": "ಸಾಧಾರಣ ಸಂಚಾರ",
+    "smoothTraffic": "ಸುಗಮ ಸಂಚಾರ",
+    "weekday": "ವಾರದ ದಿನ",
+    "weekend": "ವಾರಾಂತ್ಯ"
 }
