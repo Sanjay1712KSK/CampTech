@@ -3,6 +3,7 @@ import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
+import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
