@@ -34,11 +34,61 @@ class ApiService {
   static const String _digilockerRequestPath = '/digilocker/request';
   static const String _digilockerConsentPath = '/digilocker/consent';
   static const String _environmentPath = '/environment';
+  static const String _gigGenerateDataPath = '/gig/generate-data';
+  static const String _gigBaselinePath = '/gig/baseline-income';
+  static const String _gigTodayPath = '/gig/today-income';
+  static const String _gigHistoryPath = '/gig/income-history';
 
   static const Duration _timeout = Duration(seconds: 15);
 
   static Map<String, String> get _headers =>
       {'Content-Type': 'application/json'};
+
+  // ── 📊 Gig Income Data ────────────────────────────────────────────────────
+
+  static Future<bool> generateGigData(String platform, String identifier) async {
+    try {
+      final response = await http
+          .post(Uri.parse('${Config.baseUrl}$_gigGenerateDataPath'),
+              headers: _headers,
+              body: jsonEncode({'platform': platform, 'identifier': identifier}))
+          .timeout(_timeout);
+      
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      throw Exception('Network or server error: $e');
+    }
+  }
+
+  static Future<BaselineIncomeModel> getBaselineIncome() async {
+    try {
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigBaselinePath')).timeout(_timeout);
+      if (response.statusCode == 200) return BaselineIncomeModel.fromJson(jsonDecode(response.body));
+      throw Exception('Failed to load baseline income');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<TodayIncomeModel> getTodayIncome() async {
+    try {
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigTodayPath')).timeout(_timeout);
+      if (response.statusCode == 200) return TodayIncomeModel.fromJson(jsonDecode(response.body));
+      throw Exception('Failed to load today income');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  static Future<IncomeHistoryModel> getIncomeHistory() async {
+    try {
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath')).timeout(_timeout);
+      if (response.statusCode == 200) return IncomeHistoryModel.fromJson(jsonDecode(response.body));
+      throw Exception('Failed to load income history');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 
   // ── 🌍 Environment Data ───────────────────────────────────────────────────
 
@@ -270,7 +320,90 @@ class TrafficData {
   final double trafficScore;
   final String trafficLevel;
 
-  TrafficData({required this.trafficScore, required this.trafficLevel});
+  TrafficData({required this.trafficScore, required this.trafficLevel}
+
+// ── 📊 Gig Income Models ───────────────────────────────────────────────────
+
+class BaselineIncomeModel {
+  final double expectedEarnings;
+  final int expectedOrders;
+  final String date;
+
+  BaselineIncomeModel({required this.expectedEarnings, required this.expectedOrders, required this.date});
+
+  factory BaselineIncomeModel.fromJson(Map<String, dynamic> json) {
+    return BaselineIncomeModel(
+      expectedEarnings: (json['expected_earnings'] as num?)?.toDouble() ?? 0.0,
+      expectedOrders: json['expected_orders'] as int? ?? 0,
+      date: json['date'] as String? ?? '',
+    );
+  }
+}
+
+class TodayIncomeModel {
+  final double actualEarnings;
+  final int actualOrders;
+  final double activeHours;
+  final double lossAmount;
+
+  TodayIncomeModel({required this.actualEarnings, required this.actualOrders, required this.activeHours, required this.lossAmount});
+
+  factory TodayIncomeModel.fromJson(Map<String, dynamic> json) {
+    return TodayIncomeModel(
+      actualEarnings: (json['actual_earnings'] as num?)?.toDouble() ?? 0.0,
+      actualOrders: json['actual_orders'] as int? ?? 0,
+      activeHours: (json['active_hours'] as num?)?.toDouble() ?? 0.0,
+      lossAmount: (json['loss_amount'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class IncomeHistoryModel {
+  final List<DailyRecord> records;
+  final DailyRecord? bestDay;
+  final DailyRecord? worstDay;
+
+  IncomeHistoryModel({required this.records, this.bestDay, this.worstDay});
+
+  factory IncomeHistoryModel.fromJson(Map<String, dynamic> json) {
+    var rawRecords = json['records'] as List? ?? [];
+    List<DailyRecord> parsed = rawRecords.map((e) => DailyRecord.fromJson(e)).toList();
+    return IncomeHistoryModel(
+      records: parsed,
+      bestDay: json['best_day'] != null ? DailyRecord.fromJson(json['best_day']) : null,
+      worstDay: json['worst_day'] != null ? DailyRecord.fromJson(json['worst_day']) : null,
+    );
+  }
+}
+
+class DailyRecord {
+  final String date;
+  final double earnings;
+  final int orders;
+  final WeatherData? weather;
+  final AqiData? aqi;
+  final TrafficData? traffic;
+
+  DailyRecord({
+    required this.date,
+    required this.earnings,
+    required this.orders,
+    this.weather,
+    this.aqi,
+    this.traffic,
+  });
+
+  factory DailyRecord.fromJson(Map<String, dynamic> json) {
+    return DailyRecord(
+      date: json['date'] as String? ?? '',
+      earnings: (json['earnings'] as num?)?.toDouble() ?? 0.0,
+      orders: json['orders'] as int? ?? 0,
+      weather: json['weather'] != null ? WeatherData.fromJson(json['weather']) : null,
+      aqi: json['aqi'] != null ? AqiData.fromJson(json['aqi']) : null,
+      traffic: json['traffic'] != null ? TrafficData.fromJson(json['traffic']) : null,
+    );
+  }
+});
 
   factory TrafficData.fromJson(Map<String, dynamic> json) {
     return TrafficData(
