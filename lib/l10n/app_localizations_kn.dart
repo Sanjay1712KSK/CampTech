@@ -9,10 +9,7 @@ class AppLocalizationsKn extends AppLocalizations {
   AppLocalizationsKn([String locale = 'kn']) : super(locale);
 
   @override
-  String get appTitle => 'ಗಿಗ್ ವಿಮೆ';
-
-  @override
-  String get goodMorning => 'ಶುಭ ಬೆಳಗು';
+  String get goodMorning => 'ಶುಭೋದಯ';
 
   @override
   String get goodAfternoon => 'ಶುಭ ಮಧ್ಯಾಹ್ನ';
@@ -21,10 +18,10 @@ class AppLocalizationsKn extends AppLocalizations {
   String get goodEvening => 'ಶುಭ ಸಂಜೆ';
 
   @override
-  String get riskLevel => 'ಅಪಾಯ ಮಟ್ಟ';
+  String get riskLevel => 'ಅಪಾಯದ ಮಟ್ಟ';
 
   @override
-  String get weeklyPremium => 'ವಾರದ ಪ್ರೀಮಿಯಂ';
+  String get weeklyPremium => 'ಸಾಪ್ತಾಹಿಕ ಪ್ರೀಮಿಯಂ';
 
   @override
   String get policyStatus => 'ಪಾಲಿಸಿ ಸ್ಥಿತಿ';
@@ -36,56 +33,41 @@ class AppLocalizationsKn extends AppLocalizations {
   String get verifyNow => 'ಈಗ ಪರಿಶೀಲಿಸಿ';
 
   @override
-  String get notVerified => 'ಪರಿಶೀಲಿಸಲಾಗಿಲ್ಲ';
+  String get notVerified => 'ಪರಿಶೀಲಿಸಿಲ್ಲ';
 
   @override
-  String get verified => 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ';
+  String get verified => 'ಪರಿಶೀಲಿಸಲಾಗಿದೆ ✔';
+
+  @override
+  String get activePolicy => 'ಸಕ್ರಿಯ';
+
+  @override
+  String get liveStatus => 'ಲೈವ್';
+
+  @override
+  String get rain => 'ಮಳೆ';
+
+  @override
+  String get trafficHeavy => 'ಭಾರಿ ಸಂಚಾರ';
+
+  @override
+  String get riskMed => 'ಅಪಾಯ: ಮಧ್ಯಮ';
+
+  @override
+  String get claimTriggered => 'ಕ್ಲೈಮ್ ಪ್ರಾರಂಭಿಸಲಾಗಿದೆ';
+
+  @override
+  String get pending => 'ಬಾಕಿ ಉಳಿದಿದೆ';
 
   @override
   String get analytics => 'ವಿಶ್ಲೇಷಣೆ';
 
   @override
-  String get claims => 'ಕ್ಲೇಮ್‌ಗಳು';
-
-  @override
-  String get home => 'ಮುಖಪುಟ';
+  String get claims => 'ಕ್ಲೈಮ್‌ಗಳು';
 
   @override
   String get policy => 'ಪಾಲಿಸಿ';
 
   @override
   String get profile => 'ಪ್ರೊಫೈಲ್';
-
-  @override
-  String get liveStatus => 'ಲೈವ್';
-
-  @override
-  String get claimTriggered => 'ಕ್ಲೇಮ್ ಪ್ರಚೋದಿಸಲಾಗಿದೆ';
-
-  @override
-  String get pending => 'ಬಾಕಿ';
-
-  @override
-  String get paid => 'ಪಾವತಿಸಲಾಗಿದೆ';
-
-  @override
-  String get active => 'ಸಕ್ರಿಯ';
-
-  @override
-  String get logout => 'ಲಾಗ್ ಔಟ್';
-
-  @override
-  String get language => 'ಭಾಷೆ';
-
-  @override
-  String get earningsProtected => 'ಆದಾಯ ಸುರಕ್ಷಿತ';
-
-  @override
-  String get riskDays => 'ಅಪಾಯ ದಿನಗಳು';
-
-  @override
-  String get incomeCovered => 'ಆದಾಯ ಒಳಗೊಂಡಿದೆ';
-
-  @override
-  String get weeklyTrend => 'ವಾರದ ಟ್ರೆಂಡ್';
 }

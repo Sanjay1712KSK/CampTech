@@ -1,0 +1,23 @@
+{
+    "goodMorning": "ಶುಭೋದಯ",
+    "goodAfternoon": "ಶುಭ ಮಧ್ಯಾಹ್ನ",
+    "goodEvening": "ಶುಭ ಸಂಜೆ",
+    "riskLevel": "ಅಪಾಯದ ಮಟ್ಟ",
+    "weeklyPremium": "ಸಾಪ್ತಾಹಿಕ ಪ್ರೀಮಿಯಂ",
+    "policyStatus": "ಪಾಲಿಸಿ ಸ್ಥಿತಿ",
+    "verification": "ಪರಿಶೀಲನೆ",
+    "verifyNow": "ಈಗ ಪರಿಶೀಲಿಸಿ",
+    "notVerified": "ಪರಿಶೀಲಿಸಿಲ್ಲ",
+    "verified": "ಪರಿಶೀಲಿಸಲಾಗಿದೆ ✔",
+    "activePolicy": "ಸಕ್ರಿಯ",
+    "liveStatus": "ಲೈವ್",
+    "rain": "ಮಳೆ",
+    "trafficHeavy": "ಭಾರಿ ಸಂಚಾರ",
+    "riskMed": "ಅಪಾಯ: ಮಧ್ಯಮ",
+    "claimTriggered": "ಕ್ಲೈಮ್ ಪ್ರಾರಂಭಿಸಲಾಗಿದೆ",
+    "pending": "ಬಾಕಿ ಉಳಿದಿದೆ",
+    "analytics": "ವಿಶ್ಲೇಷಣೆ",
+    "claims": "ಕ್ಲೈಮ್‌ಗಳು",
+    "policy": "ಪಾಲಿಸಿ",
+    "profile": "ಪ್ರೊಫೈಲ್"
+}

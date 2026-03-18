@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
+import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 
 class HomeTab extends StatefulWidget {
   final int userId;
@@ -19,9 +20,11 @@ class HomeTab extends StatefulWidget {
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   late DateTime _now;
   late Timer _timer;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -30,19 +33,29 @@ class _HomeTabState extends State<HomeTab> {
     _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _timer.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
-  String get _greeting {
+  String _getGreeting(AppLocalizations l10n) {
     final h = _now.hour;
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (h < 12) return l10n.goodMorning;
+    if (h < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   String get _formattedDate {
@@ -58,10 +71,33 @@ class _HomeTabState extends State<HomeTab> {
     return '$h:$m $period';
   }
 
+  Widget _buildAnimatedSection({required Widget child, required int index}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Wait until localizations map is available
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Center(child: CircularProgressIndicator());
+
     return SafeArea(
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +111,7 @@ class _HomeTabState extends State<HomeTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$_greeting,',
+                      '${_getGreeting(l10n)},',
                       style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 4),
@@ -91,7 +127,7 @@ class _HomeTabState extends State<HomeTab> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        _WeatherChip(icon: Icons.water_drop_outlined, label: 'Rain', color: Colors.blueAccent),
+                        _WeatherChip(icon: Icons.water_drop_outlined, label: l10n.rain, color: Colors.blueAccent),
                         const SizedBox(width: 8),
                         _WeatherChip(icon: Icons.air, label: 'AQI: Mod', color: AppTheme.warningColor),
                       ],
@@ -120,37 +156,56 @@ class _HomeTabState extends State<HomeTab> {
               mainAxisSpacing: 14,
               childAspectRatio: 1.35,
               children: [
-                _DashCard(
-                  icon: Icons.speed_rounded,
-                  title: 'Risk Level',
-                  value: 'MEDIUM',
-                  valueColor: AppTheme.warningColor,
-                  highlighted: false,
+                _buildAnimatedSection(
+                  index: 0,
+                  child: AnimatedBuilder(
+                    animation: _pulseAnimation,
+                    builder: (context, child) => Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: child,
+                    ),
+                    child: _DashCard(
+                      icon: Icons.speed_rounded,
+                      title: l10n.riskLevel,
+                      value: 'HIGH',
+                      valueColor: AppTheme.errorColor,
+                      highlighted: false,
+                    ),
+                  ),
                 ),
-                _DashCard(
-                  icon: Icons.wallet_rounded,
-                  title: 'Weekly Premium',
-                  value: '₹120',
-                  highlighted: true,
+                _buildAnimatedSection(
+                  index: 1,
+                  child: _DashCard(
+                    icon: Icons.wallet_rounded,
+                    title: l10n.weeklyPremium,
+                    value: '₹120',
+                    highlighted: true,
+                  ),
                 ),
-                _DashCard(
-                  icon: Icons.policy_rounded,
-                  title: 'Policy Status',
-                  value: 'Active',
-                  valueColor: AppTheme.successColor,
-                  sub: 'POL-391X',
+                _buildAnimatedSection(
+                  index: 2,
+                  child: _DashCard(
+                    icon: Icons.policy_rounded,
+                    title: l10n.policyStatus,
+                    value: l10n.activePolicy,
+                    valueColor: AppTheme.successColor,
+                    sub: 'POL-391X',
+                  ),
                 ),
-                _DashCard(
-                  icon: Icons.verified_user_rounded,
-                  title: 'Verification',
-                  value: widget.isVerified ? 'Verified ✔' : 'Not Verified',
-                  valueColor: widget.isVerified ? AppTheme.successColor : AppTheme.errorColor,
-                  actionLabel: widget.isVerified ? null : 'Verify →',
-                  onAction: widget.isVerified ? null : () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => DigilockerVerificationScreen(userId: widget.userId),
-                    ));
-                  },
+                _buildAnimatedSection(
+                  index: 3,
+                  child: _DashCard(
+                    icon: Icons.verified_user_rounded,
+                    title: l10n.verification,
+                    value: widget.isVerified ? l10n.verified : l10n.notVerified,
+                    valueColor: widget.isVerified ? AppTheme.successColor : AppTheme.errorColor,
+                    actionLabel: widget.isVerified ? null : '${l10n.verifyNow} →',
+                    onAction: widget.isVerified ? null : () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => DigilockerVerificationScreen(userId: widget.userId),
+                      ));
+                    },
+                  ),
                 ),
               ],
             ),
@@ -158,63 +213,70 @@ class _HomeTabState extends State<HomeTab> {
             const SizedBox(height: 24),
 
             // ── Live Status Strip ────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  _StatusChip(icon: Icons.cloudy_snowing, label: 'Rain', color: Colors.blueAccent),
-                  const SizedBox(width: 12),
-                  _StatusChip(icon: Icons.traffic_rounded, label: 'Heavy', color: AppTheme.errorColor),
-                  const SizedBox(width: 12),
-                  _StatusChip(icon: Icons.shield_moon_rounded, label: 'Risk: Med', color: AppTheme.warningColor),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
+            _buildAnimatedSection(
+              index: 4,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    _StatusChip(icon: Icons.cloudy_snowing, label: l10n.rain, color: Colors.blueAccent),
+                    const SizedBox(width: 12),
+                    _StatusChip(icon: Icons.traffic_rounded, label: l10n.trafficHeavy, color: AppTheme.errorColor),
+                    const SizedBox(width: 12),
+                    _StatusChip(icon: Icons.shield_moon_rounded, label: l10n.riskMed, color: AppTheme.warningColor),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(l10n.liveStatus, style: const TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
                     ),
-                    child: const Text('Live', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
             const SizedBox(height: 24),
 
             // ── Claim Alert ──────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.warningColor.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor, size: 28),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Claim Triggered', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 2),
-                      Text('Heavy Traffic Disruption', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                    ],
-                  ),
-                  const Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: const [
-                      Text('₹400', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text('Pending', style: TextStyle(fontSize: 11, color: AppTheme.warningColor)),
-                    ],
-                  ),
-                ],
+            _buildAnimatedSection(
+              index: 5,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.warningColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.claimTriggered, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          const SizedBox(height: 2),
+                          Text(l10n.trafficHeavy, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('₹400', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(l10n.pending, style: const TextStyle(fontSize: 11, color: AppTheme.warningColor)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -269,7 +331,7 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _DashCard extends StatelessWidget {
+class _DashCard extends StatefulWidget {
   final IconData icon;
   final String title;
   final String value;
@@ -292,48 +354,73 @@ class _DashCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final bg = highlighted ? AppTheme.primaryColor : AppTheme.surfaceColor;
-    final fg = highlighted ? Colors.black : AppTheme.textPrimary;
-    final fgSub = highlighted ? Colors.black54 : AppTheme.textSecondary;
+  State<_DashCard> createState() => _DashCardState();
+}
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: (highlighted ? AppTheme.primaryColor : Colors.black).withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, size: 18, color: highlighted ? Colors.black : AppTheme.primaryColor),
-              if (actionLabel != null)
-                GestureDetector(
-                  onTap: onAction,
-                  child: Text(actionLabel!, style: const TextStyle(fontSize: 10, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+class _DashCardState extends State<_DashCard> {
+  bool _isPressed = false;
+
+  void _handleTapDown(_) => setState(() => _isPressed = true);
+  void _handleTapUp(_) => setState(() => _isPressed = false);
+  void _handleTapCancel() => setState(() => _isPressed = false);
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = widget.highlighted ? AppTheme.primaryColor : AppTheme.surfaceColor;
+    final fg = widget.highlighted ? Colors.black : AppTheme.textPrimary;
+    final fgSub = widget.highlighted ? Colors.black54 : AppTheme.textSecondary;
+
+    return GestureDetector(
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      onTap: widget.onAction,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeInOut,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: (widget.highlighted ? AppTheme.primaryColor : Colors.black).withOpacity(0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+              if (widget.value == 'HIGH')
+                BoxShadow(
+                  color: AppTheme.errorColor.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 2,
                 ),
             ],
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: valueColor ?? fg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(widget.icon, size: 18, color: widget.highlighted ? Colors.black : AppTheme.primaryColor),
+                  if (widget.actionLabel != null)
+                    Text(widget.actionLabel!, style: const TextStyle(fontSize: 10, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                widget.value,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: widget.valueColor ?? fg),
+              ),
+              const SizedBox(height: 2),
+              if (widget.sub != null)
+                Text(widget.sub!, style: TextStyle(fontSize: 10, color: fgSub)),
+              Text(widget.title, style: TextStyle(fontSize: 11, color: fgSub)),
+            ],
           ),
-          const SizedBox(height: 2),
-          if (sub != null)
-            Text(sub!, style: TextStyle(fontSize: 10, color: fgSub)),
-          Text(title, style: TextStyle(fontSize: 11, color: fgSub)),
-        ],
+        ),
       ),
     );
   }

@@ -9,9 +9,6 @@ class AppLocalizationsUr extends AppLocalizations {
   AppLocalizationsUr([String locale = 'ur']) : super(locale);
 
   @override
-  String get appTitle => 'گگ انشورنس';
-
-  @override
   String get goodMorning => 'صبح بخیر';
 
   @override
@@ -27,7 +24,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get weeklyPremium => 'ہفتہ وار پریمیم';
 
   @override
-  String get policyStatus => 'پالیسی کی حالت';
+  String get policyStatus => 'پالیسی کی حیثیت';
 
   @override
   String get verification => 'تصدیق';
@@ -36,56 +33,41 @@ class AppLocalizationsUr extends AppLocalizations {
   String get verifyNow => 'ابھی تصدیق کریں';
 
   @override
-  String get notVerified => 'غیر تصدیق شدہ';
+  String get notVerified => 'تصدیق نہیں ہوئی';
 
   @override
-  String get verified => 'تصدیق شدہ';
+  String get verified => 'تصدیق شدہ ✔';
 
   @override
-  String get analytics => 'تجزیہ';
+  String get activePolicy => 'فعال';
+
+  @override
+  String get liveStatus => 'براہ راست';
+
+  @override
+  String get rain => 'بارش';
+
+  @override
+  String get trafficHeavy => 'بھاری ٹریفک';
+
+  @override
+  String get riskMed => 'خطرہ: درمیانہ';
+
+  @override
+  String get claimTriggered => 'دعویٰ شروع کیا گیا';
+
+  @override
+  String get pending => 'زیر التواء';
+
+  @override
+  String get analytics => 'تجزیات';
 
   @override
   String get claims => 'دعوے';
-
-  @override
-  String get home => 'ہوم';
 
   @override
   String get policy => 'پالیسی';
 
   @override
   String get profile => 'پروفائل';
-
-  @override
-  String get liveStatus => 'براہ راست';
-
-  @override
-  String get claimTriggered => 'دعوہ شروع ہوا';
-
-  @override
-  String get pending => 'زیر التواء';
-
-  @override
-  String get paid => 'ادا کیا';
-
-  @override
-  String get active => 'فعال';
-
-  @override
-  String get logout => 'لاگ آؤٹ';
-
-  @override
-  String get language => 'زبان';
-
-  @override
-  String get earningsProtected => 'کمائی محفوظ';
-
-  @override
-  String get riskDays => 'خطرے کے دن';
-
-  @override
-  String get incomeCovered => 'آمدنی احاطہ';
-
-  @override
-  String get weeklyTrend => 'ہفتہ وار رجحان';
 }

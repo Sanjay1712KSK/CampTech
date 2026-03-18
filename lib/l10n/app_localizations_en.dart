@@ -9,9 +9,6 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Gig Insurance';
-
-  @override
   String get goodMorning => 'Good Morning';
 
   @override
@@ -39,25 +36,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notVerified => 'Not Verified';
 
   @override
-  String get verified => 'Verified';
+  String get verified => 'Verified ✔';
 
   @override
-  String get analytics => 'Analytics';
-
-  @override
-  String get claims => 'Claims';
-
-  @override
-  String get home => 'Home';
-
-  @override
-  String get policy => 'Policy';
-
-  @override
-  String get profile => 'Profile';
+  String get activePolicy => 'Active';
 
   @override
   String get liveStatus => 'Live';
+
+  @override
+  String get rain => 'Rain';
+
+  @override
+  String get trafficHeavy => 'Heavy Traffic';
+
+  @override
+  String get riskMed => 'Risk: Med';
 
   @override
   String get claimTriggered => 'Claim Triggered';
@@ -66,26 +60,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pending => 'Pending';
 
   @override
-  String get paid => 'Paid';
+  String get analytics => 'Analytics';
 
   @override
-  String get active => 'Active';
+  String get claims => 'Claims';
 
   @override
-  String get logout => 'Log Out';
+  String get policy => 'Policy';
 
   @override
-  String get language => 'Language';
-
-  @override
-  String get earningsProtected => 'Earnings Protected';
-
-  @override
-  String get riskDays => 'Risk Days';
-
-  @override
-  String get incomeCovered => 'Income Covered';
-
-  @override
-  String get weeklyTrend => 'Weekly Trend';
+  String get profile => 'Profile';
 }

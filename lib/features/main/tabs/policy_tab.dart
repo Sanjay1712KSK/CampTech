@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 
 class PolicyTab extends StatelessWidget {
   const PolicyTab({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const SizedBox.shrink();
+
     return SafeArea(
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Policy', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(l10n.policy, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             const Text('Your active insurance coverage', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
             const SizedBox(height: 28),

@@ -9,19 +9,16 @@ class AppLocalizationsTe extends AppLocalizations {
   AppLocalizationsTe([String locale = 'te']) : super(locale);
 
   @override
-  String get appTitle => 'గిగ్ బీమా';
-
-  @override
   String get goodMorning => 'శుభోదయం';
 
   @override
   String get goodAfternoon => 'శుభ మధ్యాహ్నం';
 
   @override
-  String get goodEvening => 'శుభ సాయంత్రం';
+  String get goodEvening => 'శుభా సాయంత్రం';
 
   @override
-  String get riskLevel => 'రిస్క్ స్థాయి';
+  String get riskLevel => 'ప్రమాద స్థాయి';
 
   @override
   String get weeklyPremium => 'వారపు ప్రీమియం';
@@ -39,7 +36,28 @@ class AppLocalizationsTe extends AppLocalizations {
   String get notVerified => 'ధృవీకరించబడలేదు';
 
   @override
-  String get verified => 'ధృవీకరించబడింది';
+  String get verified => 'ధృవీకరించబడింది ✔';
+
+  @override
+  String get activePolicy => 'చురుకైనది';
+
+  @override
+  String get liveStatus => 'ప్రత్యక్ష ప్రసారం';
+
+  @override
+  String get rain => 'వర్షం';
+
+  @override
+  String get trafficHeavy => 'భారీ ట్రాఫిక్';
+
+  @override
+  String get riskMed => 'ప్రమాదం: మధ్యస్థం';
+
+  @override
+  String get claimTriggered => 'క్లెయిమ్ ట్రిగ్గర్ చేయబడింది';
+
+  @override
+  String get pending => 'పెండింగ్';
 
   @override
   String get analytics => 'విశ్లేషణలు';
@@ -48,44 +66,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get claims => 'క్లెయిమ్‌లు';
 
   @override
-  String get home => 'హోమ్';
-
-  @override
   String get policy => 'పాలసీ';
 
   @override
   String get profile => 'ప్రొఫైల్';
-
-  @override
-  String get liveStatus => 'లైవ్';
-
-  @override
-  String get claimTriggered => 'క్లెయిమ్ ప్రేరేపించబడింది';
-
-  @override
-  String get pending => 'పెండింగ్';
-
-  @override
-  String get paid => 'చెల్లించబడింది';
-
-  @override
-  String get active => 'యాక్టివ్';
-
-  @override
-  String get logout => 'లాగ్ అవుట్';
-
-  @override
-  String get language => 'భాష';
-
-  @override
-  String get earningsProtected => 'ఆదాయం రక్షించబడింది';
-
-  @override
-  String get riskDays => 'రిస్క్ రోజులు';
-
-  @override
-  String get incomeCovered => 'ఆదాయం కవర్ చేయబడింది';
-
-  @override
-  String get weeklyTrend => 'వారపు ట్రెండ్';
 }

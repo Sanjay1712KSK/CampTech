@@ -9,9 +9,6 @@ class AppLocalizationsTa extends AppLocalizations {
   AppLocalizationsTa([String locale = 'ta']) : super(locale);
 
   @override
-  String get appTitle => 'கிக் காப்பீடு';
-
-  @override
   String get goodMorning => 'காலை வணக்கம்';
 
   @override
@@ -39,53 +36,38 @@ class AppLocalizationsTa extends AppLocalizations {
   String get notVerified => 'சரிபார்க்கப்படவில்லை';
 
   @override
-  String get verified => 'சரிபார்க்கப்பட்டது';
+  String get verified => 'சரிபார்க்கப்பட்டது ✔';
 
   @override
-  String get analytics => 'பகுப்பாய்வு';
-
-  @override
-  String get claims => 'கோரிக்கைகள்';
-
-  @override
-  String get home => 'முகப்பு';
-
-  @override
-  String get policy => 'பாலிசி';
-
-  @override
-  String get profile => 'சுயவிவரம்';
+  String get activePolicy => 'செயற்கையான';
 
   @override
   String get liveStatus => 'நேரடி';
 
   @override
-  String get claimTriggered => 'கோரிக்கை தூண்டப்பட்டது';
+  String get rain => 'மழை';
 
   @override
-  String get pending => 'நிலுவையில்';
+  String get trafficHeavy => 'கடும் போக்குவரத்து';
 
   @override
-  String get paid => 'செலுத்தப்பட்டது';
+  String get riskMed => 'ஆபத்து: நடுத்தரம்';
 
   @override
-  String get active => 'செயலில்';
+  String get claimTriggered => 'உரிமைகோரல் தூண்டப்பட்டது';
 
   @override
-  String get logout => 'வெளியேறு';
+  String get pending => 'நிலுவையில் உள்ளது';
 
   @override
-  String get language => 'மொழி';
+  String get analytics => 'பகுப்பாய்வு';
 
   @override
-  String get earningsProtected => 'வருவாய் பாதுகாக்கப்பட்டது';
+  String get claims => 'உரிமைகோரல்கள்';
 
   @override
-  String get riskDays => 'ஆபத்து நாட்கள்';
+  String get policy => 'கொள்கை';
 
   @override
-  String get incomeCovered => 'வருமானம் உள்ளடக்கப்பட்டது';
-
-  @override
-  String get weeklyTrend => 'வாராந்திர போக்கு';
+  String get profile => 'சுயவிவரம்';
 }

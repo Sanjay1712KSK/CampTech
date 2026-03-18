@@ -9,10 +9,7 @@ class AppLocalizationsMr extends AppLocalizations {
   AppLocalizationsMr([String locale = 'mr']) : super(locale);
 
   @override
-  String get appTitle => 'गिग विमा';
-
-  @override
-  String get goodMorning => 'शुभ सकाळ';
+  String get goodMorning => 'शुभ प्रभात';
 
   @override
   String get goodAfternoon => 'शुभ दुपार';
@@ -21,7 +18,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get goodEvening => 'शुभ संध्याकाळ';
 
   @override
-  String get riskLevel => 'जोखीम पातळी';
+  String get riskLevel => 'धोक्याची पातळी';
 
   @override
   String get weeklyPremium => 'साप्ताहिक प्रीमियम';
@@ -30,62 +27,47 @@ class AppLocalizationsMr extends AppLocalizations {
   String get policyStatus => 'पॉलिसी स्थिती';
 
   @override
-  String get verification => 'प्रमाणीकरण';
+  String get verification => 'पडताळणी';
 
   @override
-  String get verifyNow => 'आता प्रमाणित करा';
+  String get verifyNow => 'आता पडताळणी करा';
 
   @override
-  String get notVerified => 'अप्रमाणित';
+  String get notVerified => 'पडताळणी झालेली नाही';
 
   @override
-  String get verified => 'प्रमाणित';
+  String get verified => 'पडताळणी झाली ✔';
 
   @override
-  String get analytics => 'विश्लेषण';
+  String get activePolicy => 'सक्रिय';
+
+  @override
+  String get liveStatus => 'थेट';
+
+  @override
+  String get rain => 'पाऊस';
+
+  @override
+  String get trafficHeavy => 'प्रचंड वाहतूक';
+
+  @override
+  String get riskMed => 'धोका: मध्यम';
+
+  @override
+  String get claimTriggered => 'दावा ट्रिगर झाला';
+
+  @override
+  String get pending => 'प्रलंबित';
+
+  @override
+  String get analytics => 'अॅनालिटिक्स';
 
   @override
   String get claims => 'दावे';
-
-  @override
-  String get home => 'मुखपृष्ठ';
 
   @override
   String get policy => 'पॉलिसी';
 
   @override
   String get profile => 'प्रोफाइल';
-
-  @override
-  String get liveStatus => 'थेट';
-
-  @override
-  String get claimTriggered => 'दावा सुरू झाला';
-
-  @override
-  String get pending => 'प्रलंबित';
-
-  @override
-  String get paid => 'दिले';
-
-  @override
-  String get active => 'सक्रिय';
-
-  @override
-  String get logout => 'बाहेर पडा';
-
-  @override
-  String get language => 'भाषा';
-
-  @override
-  String get earningsProtected => 'कमाई संरक्षित';
-
-  @override
-  String get riskDays => 'जोखीम दिवस';
-
-  @override
-  String get incomeCovered => 'उत्पन्न समाविष्ट';
-
-  @override
-  String get weeklyTrend => 'साप्ताहिक ट्रेंड';
 }

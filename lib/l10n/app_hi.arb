@@ -1,0 +1,23 @@
+{
+    "goodMorning": "सुप्रभात",
+    "goodAfternoon": "शुभ दोपहर",
+    "goodEvening": "शुभ संध्या",
+    "riskLevel": "जोखिम स्तर",
+    "weeklyPremium": "साप्ताहिक प्रीमियम",
+    "policyStatus": "पॉलिसी स्थिति",
+    "verification": "सत्यापन",
+    "verifyNow": "अब सत्यापित करें",
+    "notVerified": "सत्यापित नहीं",
+    "verified": "सत्यापित ✔",
+    "activePolicy": "सक्रिय",
+    "liveStatus": "लाइव",
+    "rain": "बारिश",
+    "trafficHeavy": "भारी ट्रैफ़िक",
+    "riskMed": "जोखिम: मध्यम",
+    "claimTriggered": "दावा ट्रिगर हुआ",
+    "pending": "लंबित",
+    "analytics": "एनालिटिक्स",
+    "claims": "दावे",
+    "policy": "पॉलिसी",
+    "profile": "प्रोफ़ाइल"
+}

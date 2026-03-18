@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
+import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:guidewire_gig_ins/main.dart'; // import appLocale
 
 class ProfileTab extends StatelessWidget {
   final int userId;
@@ -16,13 +19,16 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SafeArea(
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(l10n.profile, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 28),
 
             // ── Avatar + Name ───────────────────────────────────────
@@ -69,7 +75,7 @@ class ProfileTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVerified ? 'Identity Verified' : 'Not Verified',
+                        isVerified ? l10n.verified.replaceAll(' ✔','') : l10n.notVerified,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -96,9 +102,45 @@ class ProfileTab extends StatelessWidget {
             const SizedBox(height: 10),
             _InfoRow(icon: Icons.tag_rounded, label: 'User ID', value: '#$userId'),
             const SizedBox(height: 10),
-            _InfoRow(icon: Icons.policy_rounded, label: 'Active Policy', value: 'POL-391X'),
-            const SizedBox(height: 10),
-            _InfoRow(icon: Icons.shield_rounded, label: 'Plan', value: 'Income Protection'),
+            _InfoRow(icon: Icons.policy_rounded, label: l10n.activePolicy, value: 'POL-391X'),
+
+            const SizedBox(height: 24),
+
+            // ── Language Switcher ───────────────────────────────────
+            const Text('Language', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: Localizations.localeOf(context).languageCode,
+                  isExpanded: true,
+                  dropdownColor: AppTheme.surfaceColor,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                  icon: const Icon(Icons.language_rounded, color: AppTheme.textSecondary),
+                  items: const [
+                    DropdownMenuItem(value: 'en', child: Text('English (en)')),
+                    DropdownMenuItem(value: 'hi', child: Text('Hindi (hi)')),
+                    DropdownMenuItem(value: 'ta', child: Text('Tamil (ta)')),
+                    DropdownMenuItem(value: 'te', child: Text('Telugu (te)')),
+                    DropdownMenuItem(value: 'kn', child: Text('Kannada (kn)')),
+                    DropdownMenuItem(value: 'mr', child: Text('Marathi (mr)')),
+                    DropdownMenuItem(value: 'ur', child: Text('Urdu (ur)')),
+                  ],
+                  onChanged: (String? newLang) async {
+                    if (newLang != null) {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('app_language', newLang);
+                      appLocale.value = Locale(newLang);
+                    }
+                  },
+                ),
+              ),
+            ),
 
             const SizedBox(height: 32),
 

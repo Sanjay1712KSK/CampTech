@@ -108,12 +108,6 @@ abstract class AppLocalizations {
     Locale('ur'),
   ];
 
-  /// No description provided for @appTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Gig Insurance'**
-  String get appTitle;
-
   /// No description provided for @goodMorning.
   ///
   /// In en, this message translates to:
@@ -171,44 +165,38 @@ abstract class AppLocalizations {
   /// No description provided for @verified.
   ///
   /// In en, this message translates to:
-  /// **'Verified'**
+  /// **'Verified ✔'**
   String get verified;
 
-  /// No description provided for @analytics.
+  /// No description provided for @activePolicy.
   ///
   /// In en, this message translates to:
-  /// **'Analytics'**
-  String get analytics;
-
-  /// No description provided for @claims.
-  ///
-  /// In en, this message translates to:
-  /// **'Claims'**
-  String get claims;
-
-  /// No description provided for @home.
-  ///
-  /// In en, this message translates to:
-  /// **'Home'**
-  String get home;
-
-  /// No description provided for @policy.
-  ///
-  /// In en, this message translates to:
-  /// **'Policy'**
-  String get policy;
-
-  /// No description provided for @profile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get profile;
+  /// **'Active'**
+  String get activePolicy;
 
   /// No description provided for @liveStatus.
   ///
   /// In en, this message translates to:
   /// **'Live'**
   String get liveStatus;
+
+  /// No description provided for @rain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get rain;
+
+  /// No description provided for @trafficHeavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy Traffic'**
+  String get trafficHeavy;
+
+  /// No description provided for @riskMed.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk: Med'**
+  String get riskMed;
 
   /// No description provided for @claimTriggered.
   ///
@@ -222,53 +210,29 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get pending;
 
-  /// No description provided for @paid.
+  /// No description provided for @analytics.
   ///
   /// In en, this message translates to:
-  /// **'Paid'**
-  String get paid;
+  /// **'Analytics'**
+  String get analytics;
 
-  /// No description provided for @active.
+  /// No description provided for @claims.
   ///
   /// In en, this message translates to:
-  /// **'Active'**
-  String get active;
+  /// **'Claims'**
+  String get claims;
 
-  /// No description provided for @logout.
+  /// No description provided for @policy.
   ///
   /// In en, this message translates to:
-  /// **'Log Out'**
-  String get logout;
+  /// **'Policy'**
+  String get policy;
 
-  /// No description provided for @language.
+  /// No description provided for @profile.
   ///
   /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
-
-  /// No description provided for @earningsProtected.
-  ///
-  /// In en, this message translates to:
-  /// **'Earnings Protected'**
-  String get earningsProtected;
-
-  /// No description provided for @riskDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Risk Days'**
-  String get riskDays;
-
-  /// No description provided for @incomeCovered.
-  ///
-  /// In en, this message translates to:
-  /// **'Income Covered'**
-  String get incomeCovered;
-
-  /// No description provided for @weeklyTrend.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly Trend'**
-  String get weeklyTrend;
+  /// **'Profile'**
+  String get profile;
 }
 
 class _AppLocalizationsDelegate

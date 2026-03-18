@@ -1,0 +1,23 @@
+{
+    "goodMorning": "శుభోదయం",
+    "goodAfternoon": "శుభ మధ్యాహ్నం",
+    "goodEvening": "శుభా సాయంత్రం",
+    "riskLevel": "ప్రమాద స్థాయి",
+    "weeklyPremium": "వారపు ప్రీమియం",
+    "policyStatus": "పాలసీ స్థితి",
+    "verification": "ధృవీకరణ",
+    "verifyNow": "ఇప్పుడు ధృవీకరించండి",
+    "notVerified": "ధృవీకరించబడలేదు",
+    "verified": "ధృవీకరించబడింది ✔",
+    "activePolicy": "చురుకైనది",
+    "liveStatus": "ప్రత్యక్ష ప్రసారం",
+    "rain": "వర్షం",
+    "trafficHeavy": "భారీ ట్రాఫిక్",
+    "riskMed": "ప్రమాదం: మధ్యస్థం",
+    "claimTriggered": "క్లెయిమ్ ట్రిగ్గర్ చేయబడింది",
+    "pending": "పెండింగ్",
+    "analytics": "విశ్లేషణలు",
+    "claims": "క్లెయిమ్‌లు",
+    "policy": "పాలసీ",
+    "profile": "ప్రొఫైల్"
+}

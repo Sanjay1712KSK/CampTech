@@ -1,0 +1,23 @@
+{
+    "goodMorning": "صبح بخیر",
+    "goodAfternoon": "دوپہر بخیر",
+    "goodEvening": "شام بخیر",
+    "riskLevel": "خطرے کی سطح",
+    "weeklyPremium": "ہفتہ وار پریمیم",
+    "policyStatus": "پالیسی کی حیثیت",
+    "verification": "تصدیق",
+    "verifyNow": "ابھی تصدیق کریں",
+    "notVerified": "تصدیق نہیں ہوئی",
+    "verified": "تصدیق شدہ ✔",
+    "activePolicy": "فعال",
+    "liveStatus": "براہ راست",
+    "rain": "بارش",
+    "trafficHeavy": "بھاری ٹریفک",
+    "riskMed": "خطرہ: درمیانہ",
+    "claimTriggered": "دعویٰ شروع کیا گیا",
+    "pending": "زیر التواء",
+    "analytics": "تجزیات",
+    "claims": "دعوے",
+    "policy": "پالیسی",
+    "profile": "پروفائل"
+}
