@@ -38,8 +38,8 @@ dependencies:
   http: 1.6.0
   flutter_localizations:
     sdk: flutter
-  intl: ^0.20.2
-  shared_preferences: ^2.3.3
+  intl: ^0.19.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -62,10 +62,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  generate: true
 
-  assets:
-    - lib/l10n/
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:
