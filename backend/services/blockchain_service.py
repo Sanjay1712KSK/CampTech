@@ -40,12 +40,17 @@ def _post(endpoint: str, payload: dict) -> dict:
 
 
 def log_verification(user_id: int) -> dict:
-    payload = {
-        'user_id': user_id,
-        'status': 'VERIFIED',
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
-    }
-    logger.info('Logging verification to blockchain: %s', payload)
+    payload = build_payload(
+        event_type='verification',
+        entity_id=str(user_id),
+        data={
+            'user_id': user_id,
+            'status': 'VERIFIED',
+        },
+        metadata={'source': 'gig_insurance_backend'}
+    )
+
+    logger.info('Sending blockchain payload: %s', payload)
     resp = _post('nbf/log-verification', payload)
     txn_id = resp.get('txn_id') or f"txn_mock_{uuid.uuid4()}"
     return {'status': 'simulated', 'txn_id': txn_id, 'provider': 'mock-blockchain'}
