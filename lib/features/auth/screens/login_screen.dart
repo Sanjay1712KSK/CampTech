@@ -47,14 +47,16 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final success = await ApiService.login(email: email, password: password);
+      final userId = await ApiService.login(email: email, password: password);
 
       if (!mounted) return;
 
-      if (success) {
+      if (userId != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()),
+          MaterialPageRoute(
+            builder: (_) => DigilockerVerificationScreen(userId: userId),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

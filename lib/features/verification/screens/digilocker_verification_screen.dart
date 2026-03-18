@@ -6,7 +6,9 @@ import 'package:guidewire_gig_ins/services/api_service.dart';
 enum VerificationStatus { notVerified, verifying, verified }
 
 class DigilockerVerificationScreen extends StatefulWidget {
-  const DigilockerVerificationScreen({Key? key}) : super(key: key);
+  final int userId;
+
+  const DigilockerVerificationScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<DigilockerVerificationScreen> createState() => _DigilockerVerificationScreenState();
@@ -29,7 +31,10 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
     });
 
     try {
-      final success = await ApiService.verifyIdentity();
+      final success = await ApiService.verifyIdentity(
+        userId: widget.userId,
+        documentType: _selectedDocument!,
+      );
 
       if (!mounted) return;
 

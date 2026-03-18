@@ -37,7 +37,7 @@ class ApiService {
     }
   }
 
-  static Future<bool> login({
+  static Future<int?> login({
     required String email,
     required String password,
   }) async {
@@ -53,16 +53,23 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return true;
+        final body = jsonDecode(response.body);
+        if (body is Map<String, dynamic> && body['id'] != null) {
+          return body['id'] as int;
+        }
+        return null;
       }
 
-      return false;
+      return null;
     } catch (e) {
       rethrow;
     }
   }
 
-  static Future<bool> verifyIdentity() async {
+  static Future<bool> verifyIdentity({
+    required int userId,
+    required String documentType,
+  }) async {
     final uri = Uri.parse('${Config.baseUrl}$verifyPath');
     try {
       final response = await http.post(
