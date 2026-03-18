@@ -5,6 +5,7 @@ from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
+from services.blockchain_payload_builder import build_payload
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
