@@ -5,8 +5,11 @@ logger = logging.getLogger('gig_insurance_backend.blockchain_payload_builder')
 
 ALLOWED_EVENT_TYPES = {
     'verification',
+    'identity_verification',
     'policy_creation',
     'claim_submission',
+    'claim_trigger',
+    'payout',
     'payment',
     'risk_update',
     'user_update',
