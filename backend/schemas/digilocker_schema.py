@@ -1,26 +1,23 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, model_validator
 
 
-document_number_aadhaar = constr(regex='^\d{12}$')
-document_number_license = constr(regex='^[A-Za-z0-9]{8,15}$')
+document_number_aadhaar = constr(pattern=r'^\d{12}$')
+document_number_license = constr(pattern=r'^[A-Za-z0-9]{8,15}$')
 
 
 class DigiLockerRequestSchema(BaseModel):
     user_id: int = Field(..., gt=0)
 
 
-from pydantic import root_validator
-
-
 class DigiLockerConsentSchema(BaseModel):
-    request_id: constr(regex='^[0-9a-fA-F\-]{36}$')
+    request_id: constr(pattern=r'^[0-9a-fA-F\-]{36}$')
     document_type: Literal['aadhaar', 'license']
     document_number: str
     name: str = Field(..., min_length=2)
 
-    @root_validator
+    @model_validator(mode='after')
     def validate_document(cls, values):
         dt = values.get('document_type')
         dn = values.get('document_number')

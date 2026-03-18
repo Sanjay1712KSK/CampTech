@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, Field
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=255)
     email: EmailStr
-    phone: str = Field(..., regex='^[0-9]{10}$')
+    phone: str = Field(..., pattern='^[0-9]{10}$')
     password: str = Field(..., min_length=8)
 
 
@@ -26,4 +26,4 @@ class UserResponse(BaseModel):
     is_verified: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
