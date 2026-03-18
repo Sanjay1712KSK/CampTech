@@ -61,12 +61,15 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
 
       if (success) {
+        // MOCK: Store user_id from response after signup as requested
+        final int userId = 1;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signup successful. Please login.')),
+          const SnackBar(content: Text('Signup successful. Welcome!')),
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => DashboardScreen(userId: userId)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
