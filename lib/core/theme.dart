@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFFD4FF00); // Neon green
-  static const Color backgroundColor = Color(0xFF0A0A0A); // Deep black/gray
-  static const Color surfaceColor = Color(0xFF1A1A1A); // Slightly lighter for cards/inputs
+  static const Color primaryColor = Color(0xFFE1FF01); // Neon accent
+  static const Color backgroundColor = Color(0xFF1E1E1E); // Dark background
+  static const Color surfaceColor = Color(0xFF2A2A2A); // Slightly lighter for cards/inputs
   static const Color successColor = Color(0xFF00C853);
   static const Color errorColor = Color(0xFFD32F2F);
   static const Color warningColor = Color(0xFFFFB300);
@@ -13,7 +13,7 @@ class AppTheme {
   static const Color textSecondary = Color(0xFFAAAAAA);
 
   static ThemeData get darkTheme {
-    final baseTextTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
+    final baseTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme);
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: backgroundColor,
