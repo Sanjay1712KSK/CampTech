@@ -37,14 +37,14 @@ class PremiumPolicyRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Active Policy', style: TextStyle(color: AppTheme.textSecondary)),
+                    const Text('Active Policy', style: TextStyle(color: AppTheme.textSecondary)),
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: AppTheme.successColor),
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppTheme.successColor),
                     ),
                   ],
                 ),

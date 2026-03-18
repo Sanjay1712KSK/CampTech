@@ -71,7 +71,7 @@ class VerificationStatusCard extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()),
+                  MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen(userId: 'usr_mock123')),
                 );
               },
               style: ElevatedButton.styleFrom(
