@@ -3,6 +3,7 @@ import logging
 import uuid
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 import requests
 from dotenv import load_dotenv
@@ -13,21 +14,46 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 logger = logging.getLogger('blockchain_service')
 logger.setLevel(logging.INFO)
 
-NBF_BASE_URL = os.getenv('NBF_BASE_URL', 'http://localhost:9000/api/invoke')
-TIMEOUT = int(os.getenv('NBF_TIMEOUT', 5))
-MAX_RETRIES = int(os.getenv('NBF_MAX_RETRIES', 3))
+NBF_BASE_URL = os.getenv('NBF_BASE_URL') or os.getenv('NBF_API_BASE_URL') or 'http://localhost:9000/api/invoke'
+TIMEOUT = int(os.getenv('NBF_TIMEOUT') or os.getenv('NBF_REQUEST_TIMEOUT') or 2)
+MAX_RETRIES = int(os.getenv('NBF_MAX_RETRIES') or os.getenv('NBF_RETRY_COUNT') or 1)
+
+
+def _mock_blockchain_response(error: str | None = None) -> dict:
+    return {
+        'success': False,
+        'transaction_id': f'MOCK_TXN_{uuid.uuid4()}',
+        'raw': None,
+        'fallback': True,
+        'error': error,
+    }
+
+
+def _should_skip_live_blockchain() -> bool:
+    parsed = urlparse(NBF_BASE_URL)
+    hostname = (parsed.hostname or '').lower()
+
+    if not hostname:
+        return True
+
+    # Demo/local development should not block API health on an external system.
+    if hostname in {'localhost', '127.0.0.1'}:
+        return True
+
+    if hostname.endswith('example.com'):
+        return True
+
+    return False
 
 
 def send_to_blockchain(payload: dict) -> dict:
     if not isinstance(payload, dict) or 'function' not in payload or 'args' not in payload:
         logger.error('Invalid payload for blockchain: %s', payload)
-        return {
-            'success': False,
-            'transaction_id': f'MOCK_TXN_{uuid.uuid4()}',
-            'raw': None,
-            'fallback': True,
-            'error': 'INVALID_PAYLOAD',
-        }
+        return _mock_blockchain_response('INVALID_PAYLOAD')
+
+    if _should_skip_live_blockchain():
+        logger.info('Skipping live blockchain call for demo/local environment: %s', NBF_BASE_URL)
+        return _mock_blockchain_response('BLOCKCHAIN_SKIPPED')
 
     logger.info('Sending payload to blockchain endpoint %s', NBF_BASE_URL)
     logger.debug('Blockchain payload: %s', payload)
@@ -76,13 +102,7 @@ def log_event(event_type: str, entity_id: str, data: dict, metadata: dict = None
         return send_to_blockchain(payload)
     except ValueError as ex:
         logger.error('Blockchain payload validation failed: %s', str(ex))
-        return {
-            'success': False,
-            'transaction_id': f'MOCK_TXN_{uuid.uuid4()}',
-            'raw': None,
-            'fallback': True,
-            'error': str(ex),
-        }
+        return _mock_blockchain_response(str(ex))
 
 
 def log_verification(user_id: int) -> dict:

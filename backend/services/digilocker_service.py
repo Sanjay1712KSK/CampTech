@@ -143,6 +143,7 @@ def create_request(db: Session, user_id: int) -> dict:
 
 
 def process_consent(db: Session, request_id: str, document_type: str, document_number: str, name: str) -> dict:
+    refresh_mock_documents()
     req = db.query(DigiLockerRequest).filter(DigiLockerRequest.request_id == request_id).first()
     if not req:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Digilocker request not found')

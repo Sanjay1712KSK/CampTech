@@ -68,8 +68,48 @@ def ensure_schema():
         Base.metadata.create_all(bind=engine)
         return
 
-    # simple column existence check for expected new column
-    if not _sqlite_has_column('users', 'verified_at') or not _sqlite_has_column('users', 'is_verified'):
+    required_columns = {
+        'users': ['verified_at', 'is_verified'],
+        'gig_income': [
+            'weather_condition',
+            'temperature',
+            'humidity',
+            'rainfall',
+            'wind_speed',
+            'aqi_level',
+            'pm2_5',
+            'pm10',
+            'traffic_level',
+            'traffic_score',
+            'peak_hours_active',
+            'off_peak_hours',
+            'expected_orders',
+            'order_acceptance_rate',
+            'order_completion_rate',
+            'distance_travelled_km',
+            'avg_delivery_time_mins',
+            'earnings_per_hour',
+            'efficiency_score',
+            'loss_amount',
+            'earnings_variance',
+            'risk_score',
+            'is_weekend',
+            'is_holiday',
+            'city',
+        ],
+        'digilocker_requests': ['verified_name', 'verified_dob', 'blockchain_txn_id'],
+    }
+
+    schema_ok = True
+    for table_name, columns in required_columns.items():
+        for column_name in columns:
+            if not _sqlite_has_column(table_name, column_name):
+                schema_ok = False
+                break
+        if not schema_ok:
+            break
+
+    if not schema_ok:
         print('Schema mismatch detected: resetting database schema (dev mode)')
         reset_database()
     else:
