@@ -302,7 +302,7 @@ class ApiService {
   }
 
   // ─── DIGILOCKER STATUS ───────────────────────────────────────────────────────
-  /// Step 3: Check DigiLocker verification status.
+  @Deprecated('Use getDigiLockerStatusByUserId instead.')
   static Future<String> getDigiLockerStatus(String requestId) async {
     throw UnimplementedError('Use getDigiLockerStatusByUserId instead.');
   }
