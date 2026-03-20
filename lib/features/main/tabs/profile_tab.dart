@@ -6,6 +6,7 @@ import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/main.dart';
+import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,11 +23,13 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
 
   bool _biometricEnabled = false;
   bool _isLoadingBiometric = true;
+  Future<BankSummary>? _bankFuture;
 
   @override
   void initState() {
     super.initState();
     _loadBiometricPreference();
+    _bankFuture = BankService.getSummary();
   }
 
   Future<void> _loadBiometricPreference() async {
@@ -143,8 +146,46 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                       ),
                     ),
                   ),
-                ),
               ),
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(title: 'Financial Tracking'),
+            FutureBuilder<BankSummary>(
+              future: _bankFuture,
+              builder: (context, snapshot) {
+                final bank = snapshot.data;
+                return _SettingsCard(
+                  children: [
+                    _InfoTile(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Total Paid',
+                      value:
+                          'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}',
+                    ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.payments_outlined,
+                      label: 'Total Claimed',
+                      value:
+                          'Rs ${(bank?.totalClaimed ?? 0).toStringAsFixed(0)}',
+                    ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.show_chart_rounded,
+                      label: 'Net Gain',
+                      value: 'Rs ${(bank?.netGain ?? 0).toStringAsFixed(0)}',
+                    ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.calendar_view_week_rounded,
+                      label: 'Last Week',
+                      value: bank?.lastWeekSummary ?? 'No activity yet',
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
             _SectionTitle(title: 'Security'),
             _SettingsCard(
               children: [
