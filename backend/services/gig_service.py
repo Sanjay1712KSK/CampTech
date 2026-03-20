@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from database.db import SessionLocal
+from database.db import SessionLocal, engine
 from models.gig_income import GigIncome
 from models.user_model import User
 
@@ -254,12 +254,15 @@ def generate_data(user_id: int, days: int = 30):
     if days > 90:
         raise ValueError('days must be <= 90')
 
+    user_id = int(user_id)
     session: Session = SessionLocal()
     try:
+        print(engine.url)
         _ensure_user_exists(session, user_id)
         start_date = date.today() - timedelta(days=days - 1)
 
         generated = []
+        new_records = []
         for i in range(days):
             day = start_date + timedelta(days=i)
             record_data = _generate_day_record(user_id=user_id, day=day)
@@ -271,11 +274,14 @@ def generate_data(user_id: int, days: int = 30):
                         setattr(existing, k, v)
             else:
                 existing = GigIncome(**record_data)
-                session.add(existing)
+                new_records.append(existing)
 
             generated.append(record_data)
 
+        if new_records:
+            session.add_all(new_records)
         session.commit()
+        print(f"Inserted {len(generated)} records for user_id={user_id}")
         return generated
 
     finally:
@@ -283,10 +289,21 @@ def generate_data(user_id: int, days: int = 30):
 
 
 def income_history(user_id: int):
+    user_id = int(user_id)
     session: Session = SessionLocal()
     try:
+        print(engine.url)
+        print(f"Fetching records for user_id={user_id}")
         _ensure_user_exists(session, user_id)
-        records = session.query(GigIncome).filter(GigIncome.user_id == user_id).order_by(GigIncome.date).all()
+        records = (
+            session.query(GigIncome)
+            .filter(GigIncome.user_id == user_id)
+            .order_by(GigIncome.date.desc())
+            .all()
+        )
+        print(f"Found records: {len(records)}")
+        if not records:
+            return []
         return [
             {
                 'date': rec.date.isoformat(),
@@ -320,6 +337,29 @@ def income_history(user_id: int):
                 'risk_score': rec.risk_score,
                 'is_weekend': rec.is_weekend,
                 'is_holiday': rec.is_holiday,
+                'city': rec.city,
+            }
+            for rec in records
+        ]
+    finally:
+        session.close()
+
+
+def debug_all_records():
+    session: Session = SessionLocal()
+    try:
+        print(engine.url)
+        records = session.query(GigIncome).order_by(GigIncome.user_id, GigIncome.date.desc()).all()
+        return [
+            {
+                'id': rec.id,
+                'user_id': rec.user_id,
+                'date': rec.date.isoformat(),
+                'orders_completed': rec.orders_completed,
+                'hours_worked': rec.hours_worked,
+                'earnings': rec.earnings,
+                'platform': rec.platform,
+                'disruption_type': rec.disruption_type,
                 'city': rec.city,
             }
             for rec in records
