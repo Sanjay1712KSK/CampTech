@@ -118,6 +118,14 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 color: AppTheme.textPrimary,
               ),
             ),
+            const SizedBox(height: 6),
+            const Text(
+              'GigShield by CampTech',
+              style: TextStyle(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 20),
             FutureBuilder<InsuranceSummaryModel>(
               future: ApiService.getInsuranceSummary(user.userId),
@@ -463,6 +471,15 @@ class _PolicyCard extends StatelessWidget {
             style: TextStyle(
               color: Colors.white.withOpacity(0.78),
               fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'GigShield member profile | CampTech',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.68),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 24),

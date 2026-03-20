@@ -198,6 +198,16 @@ class _HomeHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'GigShield',
+            style: TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(greeting, style: const TextStyle(color: AppTheme.textSecondary)),
           const SizedBox(height: 6),
           Text(
@@ -217,6 +227,11 @@ class _HomeHeader extends StatelessWidget {
           Text(
             city,
             style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Built by CampTech',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 18),
           environmentAsync.when(

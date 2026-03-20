@@ -102,9 +102,26 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 48),
+              const Text(
+                'GigShield',
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
               Text(
                 'Create an account',
                 style: Theme.of(context).textTheme.displayMedium,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Join GigShield by CampTech',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
               ),
               const SizedBox(height: 40),
               CustomTextField(
