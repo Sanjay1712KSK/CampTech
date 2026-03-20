@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
-import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
 
 class ClaimFlowScreen extends ConsumerStatefulWidget {
@@ -30,18 +28,16 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
       setState(() => _error = 'Eligibility failed: identity verification is required');
       return;
     }
-    if (await AuthStorageService.isBiometricEnabled()) {
-      final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Confirm your claim with fingerprint',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-      if (!authenticated) {
-        setState(() => _error = 'Biometric confirmation failed. Claim was not submitted.');
-        return;
-      }
+    final authenticated = await _localAuth.authenticate(
+      localizedReason: 'Confirm your claim with fingerprint',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
+      ),
+    );
+    if (!authenticated) {
+      setState(() => _error = 'Biometric confirmation failed. Claim was not submitted.');
+      return;
     }
 
     setState(() {
@@ -68,9 +64,6 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
             lat: location.lat,
             lon: location.lon,
           );
-      if ((result['status'] as String? ?? '').toUpperCase() == 'APPROVED') {
-        await BankService.payoutClaim((result['payout'] as num?)?.toDouble() ?? 0.0);
-      }
       if (!mounted) return;
       setState(() {
         _result = result;

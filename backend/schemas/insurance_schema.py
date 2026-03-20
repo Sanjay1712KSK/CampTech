@@ -79,6 +79,8 @@ class SupportChatResponse(BaseModel):
 class InsuranceSummaryResponse(BaseModel):
     user_id: int
     bank_linked: bool
+    account_number_masked: str | None = None
+    ifsc: str | None = None
     balance: float | None = None
     total_paid: float
     total_claimed: float
@@ -89,3 +91,4 @@ class InsuranceSummaryResponse(BaseModel):
     claim_message: str
     last_payout: float
     latest_claim_status: str | None = None
+    recent_remarks: list[str] = []

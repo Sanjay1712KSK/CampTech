@@ -46,6 +46,7 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
             'weekly_loss': result['weekly_loss'],
             'fraud_score': result['fraud_score'],
             'claim_request_txn_id': request_chain_resp.get('transaction_id'),
+            'remark': f"Claim payout credited for {result.get('claim_id')}",
         },
     )
     chain_resp = log_to_blockchain(
@@ -81,7 +82,10 @@ def payout_claim_endpoint(payload: ClaimPayoutRequest, db: Session = Depends(get
         transaction_type='MANUAL_CLAIM_PAYOUT',
         amount=payload.amount,
         reference_id=payload.claim_id,
-        metadata={'claim_id': payload.claim_id},
+        metadata={
+            'claim_id': payload.claim_id,
+            'remark': f'Manual claim payout credited for {payload.claim_id or "claim"}',
+        },
     )
     chain_resp = log_to_blockchain(
         event_type='claim_payout',

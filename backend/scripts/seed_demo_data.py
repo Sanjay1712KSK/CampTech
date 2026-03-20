@@ -416,79 +416,11 @@ def _seed_verified_request(session, user: User, document_number: str) -> None:
 
 
 def _seed_policy_and_claims(session, user: User, scenario: str) -> None:
-    if scenario == 'insufficient_data':
-        session.add(
-            Policy(
-                user_id=user.id,
-                start_date=date.today() - timedelta(days=2),
-                end_date=date.today() + timedelta(days=5),
-                premium_paid=False,
-                status='ACTIVE',
-            )
-        )
-        return
-
-    expired_policy = Policy(
-        user_id=user.id,
-        start_date=date.today() - timedelta(days=8),
-        end_date=date.today() - timedelta(days=1),
-        premium_paid=True,
-        status='EXPIRED',
-    )
-    session.add(expired_policy)
-
-    if scenario == 'approved_claim':
-        session.add(
-            Claim(
-                user_id=user.id,
-                week=expired_policy.start_date.strftime('%G-W%V'),
-                loss=2100.0,
-                payout=1680.0,
-                fraud_score=0.12,
-                status='APPROVED',
-                reasons_json='[]',
-            )
-        )
-    elif scenario == 'fraud_rejected':
-        session.add(
-            Claim(
-                user_id=user.id,
-                week=expired_policy.start_date.strftime('%G-W%V'),
-                loss=0.0,
-                payout=0.0,
-                fraud_score=0.92,
-                status='REJECTED',
-                reasons_json=json.dumps(['Weather data does not support a rain-related claim']),
-            )
-        )
-    elif scenario == 'normal_week':
-        session.add(
-            Claim(
-                user_id=user.id,
-                week=expired_policy.start_date.strftime('%G-W%V'),
-                loss=0.0,
-                payout=0.0,
-                fraud_score=0.25,
-                status='REJECTED',
-                reasons_json=json.dumps(['No eligible weekly loss detected']),
-            )
-        )
-    elif scenario == 'needs_review':
-        session.add(
-            Claim(
-                user_id=user.id,
-                week=expired_policy.start_date.strftime('%G-W%V'),
-                loss=1200.0,
-                payout=0.0,
-                fraud_score=0.58,
-                status='NEEDS_REVIEW',
-                reasons_json=json.dumps(['Borderline fraud score detected', 'City pattern needs manual review']),
-            )
-        )
+    return
 
 
 def _seed_financials(session, user: User, scenario: str) -> None:
-    account = link_account(
+    link_account(
         db=session,
         user_id=user.id,
         account_number=f'50000000{user.id:04d}',
@@ -496,26 +428,6 @@ def _seed_financials(session, user: User, scenario: str) -> None:
         opening_balance=5000.0,
     )
     session.flush()
-
-    if scenario != 'insufficient_data':
-        log_transaction(
-            db=session,
-            user_id=user.id,
-            transaction_type='PREMIUM_PAYMENT',
-            amount=214.0,
-            metadata={'seeded': True},
-        )
-        account.balance = _round(account.balance - 214.0)
-
-    if scenario == 'approved_claim':
-        log_transaction(
-            db=session,
-            user_id=user.id,
-            transaction_type='CLAIM_PAYOUT',
-            amount=1680.0,
-            metadata={'seeded': True},
-        )
-        account.balance = _round(account.balance + 1680.0)
 
 
 def main() -> None:

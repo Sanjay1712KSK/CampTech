@@ -53,7 +53,11 @@ def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_d
         user_id=payload.user_id,
         transaction_type='PREMIUM_PAYMENT',
         amount=payload.amount,
-        metadata={'amount': payload.amount, 'policy_id': policy.id},
+        metadata={
+            'amount': payload.amount,
+            'policy_id': policy.id,
+            'remark': f'Weekly premium paid for policy #{policy.id}',
+        },
     )
     chain_resp = log_to_blockchain(
         event_type='premium_payment',

@@ -6,8 +6,8 @@ import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/main.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
-import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -119,8 +119,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
               ),
             ),
             const SizedBox(height: 20),
-            FutureBuilder<BankSummary>(
-              future: BankService.getSummary(),
+            FutureBuilder<InsuranceSummaryModel>(
+              future: ApiService.getInsuranceSummary(user.userId),
               builder: (context, snapshot) {
                 final bank = snapshot.data;
                 return _PolicyCard(
@@ -158,8 +158,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
               ),
             const SizedBox(height: 20),
             _SectionTitle(title: 'Insurance Summary'),
-            FutureBuilder<BankSummary>(
-              future: BankService.getSummary(),
+            FutureBuilder<InsuranceSummaryModel>(
+              future: ApiService.getInsuranceSummary(user.userId),
               builder: (context, snapshot) {
                 final bank = snapshot.data;
                 return _SettingsCard(
@@ -181,13 +181,13 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     _InfoTile(
                       icon: Icons.show_chart_rounded,
                       label: 'Net Gain',
-                      value: 'Rs ${(bank?.netGain ?? 0).toStringAsFixed(0)}',
+                      value: 'Rs ${((bank?.totalClaimed ?? 0) - (bank?.totalPaid ?? 0)).toStringAsFixed(0)}',
                     ),
                     _DividerLine(),
                     _InfoTile(
                       icon: Icons.calendar_view_week_rounded,
-                      label: 'Last Week',
-                      value: bank?.lastWeekSummary ?? 'No activity yet',
+                      label: 'Latest Claim',
+                      value: bank?.latestClaimStatus ?? 'No claim yet',
                     ),
                   ],
                 );
@@ -195,8 +195,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
             ),
             const SizedBox(height: 20),
             _SectionTitle(title: 'Bank'),
-            FutureBuilder<BankSummary>(
-              future: BankService.getSummary(),
+            FutureBuilder<InsuranceSummaryModel>(
+              future: ApiService.getInsuranceSummary(user.userId),
               builder: (context, snapshot) {
                 final bank = snapshot.data;
                 return _SettingsCard(
@@ -204,7 +204,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     _InfoTile(
                       icon: Icons.account_balance_rounded,
                       label: 'Linked Account',
-                      value: bank?.maskedAccountNumber ?? 'Not linked',
+                      value: bank?.accountNumberMasked ?? 'Not linked',
                     ),
                     _DividerLine(),
                     _InfoTile(
@@ -218,6 +218,40 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                       label: 'Last Payout',
                       value: 'Rs ${(bank?.lastPayout ?? 0).toStringAsFixed(0)}',
                     ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.savings_outlined,
+                      label: 'Current Balance',
+                      value: 'Rs ${(bank?.balance ?? 0).toStringAsFixed(0)}',
+                    ),
+                    if ((bank?.recentRemarks ?? const []).isNotEmpty) ...[
+                      _DividerLine(),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Recent Bank Remarks',
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ...bank!.recentRemarks.map(
+                              (remark) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  '- $remark',
+                                  style: const TextStyle(color: AppTheme.textSecondary),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (bank?.bankLinked != true) ...[
                       _DividerLine(),
                       ListTile(

@@ -732,6 +732,8 @@ class DailyRecord {
 class InsuranceSummaryModel {
   final int userId;
   final bool bankLinked;
+  final String? accountNumberMasked;
+  final String? ifsc;
   final double? balance;
   final double totalPaid;
   final double totalClaimed;
@@ -740,12 +742,15 @@ class InsuranceSummaryModel {
   final bool claimReady;
   final double lastPayout;
   final String? latestClaimStatus;
+  final List<String> recentRemarks;
   final DateTime? policyStart;
   final DateTime? policyEnd;
 
   InsuranceSummaryModel({
     required this.userId,
     required this.bankLinked,
+    required this.accountNumberMasked,
+    required this.ifsc,
     required this.balance,
     required this.totalPaid,
     required this.totalClaimed,
@@ -754,6 +759,7 @@ class InsuranceSummaryModel {
     required this.claimReady,
     required this.lastPayout,
     required this.latestClaimStatus,
+    required this.recentRemarks,
     required this.policyStart,
     required this.policyEnd,
   });
@@ -762,6 +768,8 @@ class InsuranceSummaryModel {
     return InsuranceSummaryModel(
       userId: json['user_id'] as int? ?? 0,
       bankLinked: json['bank_linked'] as bool? ?? false,
+      accountNumberMasked: json['account_number_masked'] as String?,
+      ifsc: json['ifsc'] as String?,
       balance: (json['balance'] as num?)?.toDouble(),
       totalPaid: (json['total_paid'] as num?)?.toDouble() ?? 0.0,
       totalClaimed: (json['total_claimed'] as num?)?.toDouble() ?? 0.0,
@@ -770,6 +778,9 @@ class InsuranceSummaryModel {
       claimReady: json['claim_ready'] as bool? ?? false,
       lastPayout: (json['last_payout'] as num?)?.toDouble() ?? 0.0,
       latestClaimStatus: json['latest_claim_status'] as String?,
+      recentRemarks: (json['recent_remarks'] as List? ?? const [])
+          .map((e) => '$e')
+          .toList(),
       policyStart: json['policy_start'] != null
           ? DateTime.tryParse('${json['policy_start']}')
           : null,

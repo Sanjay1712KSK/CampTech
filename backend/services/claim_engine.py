@@ -1,4 +1,5 @@
 from datetime import date
+import os
 
 from sqlalchemy.orm import Session
 
@@ -119,7 +120,8 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             'fraud_score': 1.0,
         }
 
-    if date.today() <= policy.end_date:
+    demo_bypass = os.getenv('DEMO_ALLOW_INSTANT_CLAIM', 'true').lower() == 'true'
+    if not demo_bypass and date.today() <= policy.end_date:
         return {
             'status': 'REJECTED',
             'reasons': ['Claim available after policy period ends'],

@@ -146,6 +146,13 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         .order_by(Claim.created_at.desc(), Claim.id.desc())
         .first()
     )
+    recent_transactions = (
+        db.query(BankTransaction)
+        .filter(BankTransaction.user_id == int(user_id))
+        .order_by(BankTransaction.created_at.desc(), BankTransaction.id.desc())
+        .limit(5)
+        .all()
+    )
     policy = get_latest_policy(int(user_id), db)
 
     if policy is None:
@@ -164,6 +171,8 @@ def insurance_summary(db: Session, user_id: int) -> dict:
     return {
         'user_id': int(user_id),
         'bank_linked': account is not None,
+        'account_number_masked': f'****{account.account_number[-4:]}' if account is not None and account.account_number else None,
+        'ifsc': account.ifsc if account is not None else None,
         'balance': _round(account.balance) if account is not None else None,
         'total_paid': _round(total_paid or 0.0),
         'total_claimed': _round(total_claimed or 0.0),
@@ -174,4 +183,13 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         'claim_message': claim_message,
         'last_payout': _round(last_payout.amount) if last_payout else 0.0,
         'latest_claim_status': latest_claim.status if latest_claim else None,
+        'recent_remarks': [
+            (
+                json.loads(txn.metadata_json).get('remark')
+                if txn.metadata_json
+                else None
+            )
+            or f'{txn.transaction_type} of Rs {_round(txn.amount)}'
+            for txn in recent_transactions
+        ],
     }
