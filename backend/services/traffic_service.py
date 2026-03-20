@@ -15,6 +15,10 @@ DEFAULT_TRAFFIC = {
 
 
 def get_traffic(lat: float, lon: float) -> dict:
+    if not ORS_API_KEY or ORS_API_KEY == 'your_openrouteservice_api_key':
+        logger.warning('traffic api key missing, using fallback traffic response')
+        return DEFAULT_TRAFFIC.copy()
+
     headers = {
         'Authorization': ORS_API_KEY,
         'Content-Type': 'application/json',
@@ -56,5 +60,5 @@ def get_traffic(lat: float, lon: float) -> dict:
         return result
 
     except Exception as exc:
-        logger.exception('traffic fetch error, using fallback: %s', exc)
+        logger.warning('traffic fetch error, using fallback: %s', exc)
         return DEFAULT_TRAFFIC.copy()
