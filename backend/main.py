@@ -9,6 +9,7 @@ from routes import verification as verification_router
 from routes import digilocker as digilocker_router
 from routes import environment as environment_router
 from routes import gig as gig_router
+from routes import risk as risk_router
 from utils.response import error_response
 
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,7 @@ app.include_router(verification_router.router)
 app.include_router(digilocker_router.router)
 app.include_router(environment_router.router)
 app.include_router(gig_router.router)
+app.include_router(risk_router.router)
 
 
 @app.on_event('startup')

@@ -18,16 +18,16 @@ class DigiLockerConsentSchema(BaseModel):
     name: str = Field(..., min_length=2)
 
     @model_validator(mode='after')
-    def validate_document(cls, values):
-        dt = values.get('document_type')
-        dn = values.get('document_number')
+    def validate_document(self):
+        dt = self.document_type
+        dn = self.document_number
         if dt == 'aadhaar':
-            if not document_number_aadhaar.validate(dn):
+            if not dn.isdigit() or len(dn) != 12:
                 raise ValueError('Invalid Aadhaar format')
         if dt == 'license':
-            if not document_number_license.validate(dn):
+            if not dn.isalnum() or not (8 <= len(dn) <= 15):
                 raise ValueError('Invalid license format')
-        return values
+        return self
 
 
 class DigiLockerRequestResponseSchema(BaseModel):

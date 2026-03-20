@@ -2,7 +2,7 @@ import re
 
 
 def validate_aadhaar(aadhaar_number: str) -> bool:
-    return bool(re.fullmatch(r"\\d{12}", aadhaar_number))
+    return bool(re.fullmatch(r"\d{12}", aadhaar_number))
 
 
 def validate_license(license_number: str) -> bool:

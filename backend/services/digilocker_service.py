@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 import random
 import uuid
@@ -183,7 +183,7 @@ def process_consent(db: Session, request_id: str, document_type: str, document_n
     req.verified_address = document['address']
     req.issued_by = document['issued_by']
     req.issued_date = document['issued_date']
-    req.verified_at = datetime.utcnow()
+    req.verified_at = datetime.now(timezone.utc)
 
     chain_resp = log_verification(req.user_id)
     req.blockchain_txn_id = chain_resp.get('transaction_id', f"MOCK_TXN_{uuid.uuid4()}")
@@ -191,7 +191,7 @@ def process_consent(db: Session, request_id: str, document_type: str, document_n
     user = db.query(User).filter(User.id == req.user_id).first()
     if user:
         user.is_verified = True
-        user.verified_at = datetime.utcnow()
+        user.verified_at = datetime.now(timezone.utc)
 
     db.commit()
 

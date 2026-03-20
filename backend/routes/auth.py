@@ -13,7 +13,7 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 def signup(user_payload: UserCreate, db: Session = Depends(get_db)):
     try:
         user = auth_service.create_user(db, user_payload.name, user_payload.email, user_payload.phone, user_payload.password)
-        return success_response(UserResponse.from_orm(user).dict())
+        return success_response(UserResponse.model_validate(user).model_dump())
     except Exception as exc:
         return error_response('AUTH_SIGNUP_ERROR', str(exc))
 
@@ -22,7 +22,7 @@ def signup(user_payload: UserCreate, db: Session = Depends(get_db)):
 def login(login_payload: UserLogin, db: Session = Depends(get_db)):
     try:
         user = auth_service.authenticate_user(db, login_payload.email, login_payload.password)
-        return success_response(UserResponse.from_orm(user).dict())
+        return success_response(UserResponse.model_validate(user).model_dump())
     except Exception as exc:
         return error_response('AUTH_LOGIN_FAILED', str(exc))
 

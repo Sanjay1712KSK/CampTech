@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class GigIncomeRecord(BaseModel):
@@ -38,16 +38,17 @@ class GigIncomeRecord(BaseModel):
 
 
 class GenerateGigDataRequest(BaseModel):
-    user_id: int = Field(..., gt=0)
-    days: int = Field(..., ge=1, le=90)
-
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             'example': {
                 'user_id': 1,
                 'days': 30,
             }
         }
+    )
+
+    user_id: int = Field(..., gt=0)
+    days: int = Field(..., ge=1, le=90)
 
 
 class GenerateGigDataResponse(BaseModel):
