@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +9,24 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./gig_insurance.db')
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_SQLITE_PATH = BACKEND_DIR / 'gig_insurance.db'
+
+
+def _resolve_database_url(raw_url: str | None) -> str:
+    if not raw_url:
+        return f"sqlite:///{DEFAULT_SQLITE_PATH.as_posix()}"
+
+    if raw_url.startswith('sqlite:///'):
+        sqlite_path = raw_url.replace('sqlite:///', '', 1)
+        if sqlite_path == ':memory:' or os.path.isabs(sqlite_path):
+            return raw_url
+        return f"sqlite:///{(BACKEND_DIR / sqlite_path).resolve().as_posix()}"
+
+    return raw_url
+
+
+DATABASE_URL = _resolve_database_url(os.getenv('DATABASE_URL'))
 
 engine = create_engine(
     DATABASE_URL,
