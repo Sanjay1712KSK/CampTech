@@ -17,7 +17,7 @@ class AnalyticsTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.analytics, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Analytics', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             const Text('Your performance overview', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
             const SizedBox(height: 28),
