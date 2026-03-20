@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 
 from fastapi import HTTPException, status
@@ -9,7 +8,7 @@ from sqlalchemy.orm import Session
 from models.bank_account import BankAccount, BankTransaction
 from models.insurance import Claim
 from models.user_model import User
-from services.policy_service import get_latest_policy
+from services.policy_service import get_claimable_policy, get_latest_policy
 
 
 DEFAULT_OPENING_BALANCE = 10000.0
@@ -155,6 +154,7 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         .all()
     )
     policy = get_latest_policy(int(user_id), db)
+    claimable_policy = get_claimable_policy(int(user_id), db)
 
     if policy is None:
         policy_status = 'NOT PURCHASED'
@@ -163,13 +163,12 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         policy_start = None
         policy_end = None
     else:
-        demo_bypass = os.getenv('DEMO_ALLOW_INSTANT_CLAIM', 'true').lower() == 'true'
         policy_status = policy.status
-        claim_ready = policy.premium_paid and (policy.status == 'EXPIRED' or demo_bypass)
+        claim_ready = claimable_policy is not None
         claim_message = (
-            'Ready to claim now'
+            'Ready to claim previous completed week'
             if claim_ready
-            else 'Claim available after policy period ends'
+            else 'Claim available after the insured week completes'
         )
         policy_start = policy.start_date
         policy_end = policy.end_date

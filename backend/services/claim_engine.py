@@ -1,12 +1,11 @@
 from datetime import date
-import os
 
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
 from services.environment_service import get_environment
 from services.fraud_engine import validate_claim
-from services.policy_service import create_claim_record, get_latest_policy
+from services.policy_service import create_claim_record, get_claimable_policy
 from services.premium_engine import baseline_value, resolve_city_from_coordinates
 
 
@@ -101,7 +100,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             'fraud_score': 1.0,
         }
 
-    policy = get_latest_policy(user_id, db)
+    policy = get_claimable_policy(user_id, db)
     if policy is None or not policy.premium_paid:
         claim = create_claim_record(
             user_id=user_id,
@@ -111,21 +110,13 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             payout=0.0,
             fraud_score=1.0,
             status='REJECTED',
-            reasons=['No paid policy found for this user'],
+            reasons=['No completed policy week is available to claim yet'],
         )
         return {
             'status': 'REJECTED',
             'claim_id': f'claim_{claim.id}',
-            'reasons': ['No paid policy found for this user'],
+            'reasons': ['No completed policy week is available to claim yet'],
             'fraud_score': 1.0,
-        }
-
-    demo_bypass = os.getenv('DEMO_ALLOW_INSTANT_CLAIM', 'true').lower() == 'true'
-    if not demo_bypass and date.today() <= policy.end_date:
-        return {
-            'status': 'REJECTED',
-            'reasons': ['Claim available after policy period ends'],
-            'fraud_score': 0.0,
         }
 
     environment_data = get_environment(lat, lon)
