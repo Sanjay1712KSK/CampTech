@@ -24,7 +24,7 @@ def get_latest_policy(user_id: int, db: Session) -> Policy | None:
     policy = (
         db.query(Policy)
         .filter(Policy.user_id == int(user_id))
-        .order_by(Policy.created_at.desc(), Policy.id.desc())
+        .order_by(Policy.end_date.desc(), Policy.id.desc())
         .first()
     )
     if policy:
@@ -32,17 +32,31 @@ def get_latest_policy(user_id: int, db: Session) -> Policy | None:
     return policy
 
 
-def create_policy(user_id: int, db: Session, start_date: date | None = None) -> Policy:
-    start_date = start_date or date.today()
-    end_date = start_date + timedelta(days=7)
-
-    active_policies = (
+def get_claimable_policy(user_id: int, db: Session) -> Policy | None:
+    today = date.today()
+    policy = (
         db.query(Policy)
-        .filter(Policy.user_id == int(user_id), Policy.status == 'ACTIVE')
-        .all()
+        .filter(
+            Policy.user_id == int(user_id),
+            Policy.premium_paid.is_(True),
+            Policy.end_date < today,
+        )
+        .order_by(Policy.end_date.desc(), Policy.id.desc())
+        .first()
     )
-    for policy in active_policies:
-        policy.status = 'EXPIRED'
+    if policy:
+        refresh_policy_status(policy, today=today)
+    return policy
+
+
+def create_policy(user_id: int, db: Session, start_date: date | None = None) -> Policy:
+    latest_policy = get_latest_policy(user_id=int(user_id), db=db)
+    if start_date is None:
+        if latest_policy is not None and latest_policy.end_date >= date.today():
+            start_date = latest_policy.end_date + timedelta(days=1)
+        else:
+            start_date = date.today()
+    end_date = start_date + timedelta(days=7)
 
     policy = Policy(
         user_id=int(user_id),
