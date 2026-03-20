@@ -175,7 +175,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                         _checks(
                           env,
                           todayAsync.value ??
-                              const TodayIncomeModel(
+                              TodayIncomeModel(
                                 earnings: 0,
                                 ordersCompleted: 0,
                                 hoursWorked: 0,
@@ -472,6 +472,12 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
         ],
       ),
     );
+  }
+
+  Color _riskColor(String level) {
+    if (level == 'HIGH') return AppTheme.errorColor;
+    if (level == 'MEDIUM') return AppTheme.warningColor;
+    return AppTheme.successColor;
   }
 
   Widget _section(int index, Widget child) {
