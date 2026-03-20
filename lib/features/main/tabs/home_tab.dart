@@ -40,7 +40,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with TickerProviderStateMixin
     await Future.wait([
       ref.read(todayIncomeProvider.future),
       ref.read(riskProvider.future),
-    ]).catchError((_) => []);
+    ]).catchError((_) => <Object>[]);
   }
 
   String _getGreeting(AppLocalizations l10n) {

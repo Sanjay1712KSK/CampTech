@@ -39,14 +39,19 @@ class UserNotifier extends Notifier<UserState?> {
 
 final userProvider = NotifierProvider<UserNotifier, UserState?>(UserNotifier.new);
 
-// Location State (For demo purposes, we can hardcode Chennai or let it be updated)
+// Location State
 class LocationState {
   final double lat;
   final double lon;
   LocationState({required this.lat, required this.lon});
 }
 
-final locationProvider = StateProvider<LocationState>((ref) => LocationState(lat: 13.0827, lon: 80.2707));
+class LocationNotifier extends Notifier<LocationState> {
+  @override
+  LocationState build() => LocationState(lat: 13.0827, lon: 80.2707);
+}
+
+final locationProvider = NotifierProvider<LocationNotifier, LocationState>(LocationNotifier.new);
 
 // API Providers (Caches)
 

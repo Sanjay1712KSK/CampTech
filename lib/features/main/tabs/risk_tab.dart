@@ -22,7 +22,7 @@ class RiskTab extends ConsumerWidget {
             await Future.wait([
               ref.read(environmentProvider.future),
               ref.read(riskProvider.future),
-            ]).catchError((_) => []);
+            ]).catchError((_) => <Object>[]);
           },
           color: AppTheme.primaryColor,
           child: SingleChildScrollView(
@@ -76,9 +76,7 @@ class RiskTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildEnvironmentRow(Map<String, dynamic> envRaw) {
-    // Attempting to safely cast the decoded JSON to EnvironmentModel
-    final env = EnvironmentModel.fromJson(envRaw);
+  Widget _buildEnvironmentRow(EnvironmentModel env) {
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
