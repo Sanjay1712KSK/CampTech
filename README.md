@@ -170,3 +170,4 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 ## Conclusion
 
 GigShield creates a real-time, intelligent safety net for gig workers, protecting income dynamically using AI, automation, and blockchain.
+
