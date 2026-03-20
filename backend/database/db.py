@@ -1,13 +1,19 @@
 import os
+import time
+import logging
 from pathlib import Path
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.pool import NullPool
 
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+logger = logging.getLogger('gig_insurance_backend.db')
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_SQLITE_PATH = BACKEND_DIR / 'gig_insurance.db'
@@ -28,15 +34,21 @@ def _resolve_database_url(raw_url: str | None) -> str:
 
 DATABASE_URL = _resolve_database_url(os.getenv('DATABASE_URL'))
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={
-        "check_same_thread": False,
-        "timeout": 30,
-    } if DATABASE_URL.startswith('sqlite') else {},
-    echo=False,
-    future=True,
-)
+engine_kwargs = {
+    'echo': False,
+    'future': True,
+}
+
+if DATABASE_URL.startswith('sqlite'):
+    engine_kwargs['connect_args'] = {
+        'check_same_thread': False,
+        'timeout': 30,
+    }
+    engine_kwargs['poolclass'] = NullPool
+else:
+    engine_kwargs['connect_args'] = {}
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 Base = declarative_base()
@@ -46,10 +58,15 @@ if DATABASE_URL.startswith('sqlite'):
     @event.listens_for(engine, 'connect')
     def _set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
-        cursor.execute('PRAGMA journal_mode=WAL;')
-        cursor.execute('PRAGMA synchronous=NORMAL;')
-        cursor.execute('PRAGMA busy_timeout=30000;')
-        cursor.close()
+        try:
+            cursor.execute('PRAGMA busy_timeout=30000;')
+            try:
+                cursor.execute('PRAGMA journal_mode=WAL;')
+                cursor.execute('PRAGMA synchronous=NORMAL;')
+            except Exception as exc:
+                logger.warning('Could not fully apply SQLite WAL pragmas, continuing with defaults: %s', exc)
+        finally:
+            cursor.close()
 
 
 def get_db():
@@ -69,10 +86,28 @@ def reset_database():
 from sqlalchemy import text
 
 
+def _run_sqlite_with_retries(action, attempts: int = 5, delay_seconds: float = 0.25):
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return action()
+        except OperationalError as exc:
+            if 'database is locked' not in str(exc).lower():
+                raise
+            last_error = exc
+            if attempt == attempts:
+                break
+            time.sleep(delay_seconds * attempt)
+    raise last_error
+
+
 def _sqlite_has_column(table_name: str, column_name: str) -> bool:
-    with engine.connect() as conn:
-        result = conn.execute(text(f"PRAGMA table_info('{table_name}')"))
-        return any(row[1] == column_name for row in result)
+    def _action():
+        with engine.connect() as conn:
+            result = conn.execute(text(f"PRAGMA table_info('{table_name}')"))
+            return any(row[1] == column_name for row in result)
+
+    return _run_sqlite_with_retries(_action)
 
 
 def ensure_schema():
@@ -128,7 +163,7 @@ def ensure_schema():
 
     if not schema_ok:
         print('Schema mismatch detected: resetting database schema (dev mode)')
-        reset_database()
+        _run_sqlite_with_retries(reset_database)
     else:
-        Base.metadata.create_all(bind=engine)
+        _run_sqlite_with_retries(lambda: Base.metadata.create_all(bind=engine))
 
