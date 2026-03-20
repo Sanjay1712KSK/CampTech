@@ -22,13 +22,11 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
 
   bool _biometricEnabled = false;
   bool _isLoadingBiometric = true;
-  Future<BankSummary>? _bankFuture;
 
   @override
   void initState() {
     super.initState();
     _loadBiometricPreference();
-    _bankFuture = BankService.getSummary();
   }
 
   Future<void> _loadBiometricPreference() async {
@@ -147,9 +145,9 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 ),
               ),
             const SizedBox(height: 20),
-            _SectionTitle(title: 'Financial Tracking'),
+            _SectionTitle(title: 'Insurance Summary'),
             FutureBuilder<BankSummary>(
-              future: _bankFuture,
+              future: BankService.getSummary(),
               builder: (context, snapshot) {
                 final bank = snapshot.data;
                 return _SettingsCard(

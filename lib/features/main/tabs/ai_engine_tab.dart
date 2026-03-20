@@ -420,11 +420,14 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
             ],
           ),
           const SizedBox(height: 14),
-          _checkWrap([
-            _Check('Identity verified', isVerified),
-            _Check('Location available', !location.lat.isNaN && !location.lon.isNaN),
-            _Check('Premium paid', true),
-          ]),
+          FutureBuilder<bool>(
+            future: BankService.hasPaidPremium(),
+            builder: (context, snapshot) => _checkWrap([
+              _Check('Identity verified', isVerified),
+              _Check('Location available', !location.lat.isNaN && !location.lon.isNaN),
+              _Check('Premium paid', snapshot.data ?? false),
+            ]),
+          ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
