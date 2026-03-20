@@ -727,3 +727,4 @@ class _Result extends StatelessWidget {
           ],
         ),
       );
+}

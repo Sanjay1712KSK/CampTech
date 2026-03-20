@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class InsightsTab extends ConsumerWidget {
   const InsightsTab({super.key});
