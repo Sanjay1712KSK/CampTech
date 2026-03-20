@@ -64,7 +64,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Using backend user ID: ${widget.userId}',
+                'Connect to enable earnings tracking & auto-claims',
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 32),
