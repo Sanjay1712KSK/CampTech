@@ -122,7 +122,9 @@ We chose a **Mobile-first approach** because:
 Flutter, Riverpod, Geolocator, Local Auth  
 
 ### Backend
-FastAPI, Python, SQLAlchemy, SQLite  
+FastAPI, Python, (SQLAlchemy,SQLite - For Backend prototype), Will be upgraded to PostgreSQL 
+
+Note: SQLite is used for prototyping. The system is designed to scale to PostgreSQL in production.
 
 ### APIs
 Open-Meteo, OpenWeather, OpenRouteService  
