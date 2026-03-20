@@ -72,12 +72,74 @@ final userProvider = NotifierProvider<UserNotifier, UserState?>(UserNotifier.new
 class LocationState {
   final double lat;
   final double lon;
-  LocationState({required this.lat, required this.lon});
+  final String city;
+  final bool permissionGranted;
+  final bool isLive;
+  final String? error;
+
+  LocationState({
+    required this.lat,
+    required this.lon,
+    required this.city,
+    required this.permissionGranted,
+    required this.isLive,
+    this.error,
+  });
+
+  LocationState copyWith({
+    double? lat,
+    double? lon,
+    String? city,
+    bool? permissionGranted,
+    bool? isLive,
+    String? error,
+  }) {
+    return LocationState(
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+      city: city ?? this.city,
+      permissionGranted: permissionGranted ?? this.permissionGranted,
+      isLive: isLive ?? this.isLive,
+      error: error,
+    );
+  }
 }
 
 class LocationNotifier extends Notifier<LocationState> {
   @override
-  LocationState build() => LocationState(lat: 13.0827, lon: 80.2707);
+  LocationState build() => LocationState(
+        lat: 13.0827,
+        lon: 80.2707,
+        city: 'Chennai',
+        permissionGranted: false,
+        isLive: false,
+      );
+
+  void updateLocation({
+    required double lat,
+    required double lon,
+    required String city,
+    required bool permissionGranted,
+    required bool isLive,
+    String? error,
+  }) {
+    state = state.copyWith(
+      lat: lat,
+      lon: lon,
+      city: city,
+      permissionGranted: permissionGranted,
+      isLive: isLive,
+      error: error,
+    );
+  }
+
+  void setLimitedFallback({String? message}) {
+    state = state.copyWith(
+      permissionGranted: false,
+      isLive: false,
+      error: message,
+    );
+  }
 }
 
 final locationProvider = NotifierProvider<LocationNotifier, LocationState>(LocationNotifier.new);

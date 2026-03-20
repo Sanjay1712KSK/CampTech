@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/location_service.dart';
 
 class RiskTab extends ConsumerStatefulWidget {
   const RiskTab({super.key});
@@ -18,6 +19,7 @@ class _RiskTabState extends ConsumerState<RiskTab> {
   bool _started = false;
   bool _isFetching = false;
   int _activeStep = -1;
+  String? _locationMessage;
   Timer? _timer;
 
   final List<String> _steps = const [
@@ -34,12 +36,39 @@ class _RiskTabState extends ConsumerState<RiskTab> {
     super.dispose();
   }
 
-  Future<void> _startAnalysis() async {
+  Future<void> _startAnalysis({bool useLiveLocation = true}) async {
     setState(() {
       _started = true;
       _isFetching = true;
       _activeStep = 0;
+      _locationMessage = null;
     });
+
+    if (useLiveLocation) {
+      final result = await LocationService.requestCurrentLocation();
+      if (result.granted && result.lat != null && result.lon != null) {
+        ref.read(locationProvider.notifier).updateLocation(
+              lat: result.lat!,
+              lon: result.lon!,
+              city: result.city ?? 'Current City',
+              permissionGranted: true,
+              isLive: true,
+              error: null,
+            );
+      } else {
+        ref.read(locationProvider.notifier).setLimitedFallback(message: result.error);
+        if (mounted) {
+          setState(() => _locationMessage = result.error ?? 'Using fallback location');
+        }
+      }
+    } else {
+      ref.read(locationProvider.notifier).setLimitedFallback(
+            message: 'Using fallback location until permission is granted',
+          );
+      if (mounted) {
+        setState(() => _locationMessage = 'Using fallback location until permission is granted');
+      }
+    }
 
     int current = 0;
     _timer?.cancel();
@@ -73,14 +102,17 @@ class _RiskTabState extends ConsumerState<RiskTab> {
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _startAnalysis,
+          onRefresh: () => _startAnalysis(useLiveLocation: true),
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
             child: !_started
-                ? _PermissionStage(onAllow: _startAnalysis, onLimited: _startAnalysis)
+                ? _PermissionStage(
+                    onAllow: () => _startAnalysis(useLiveLocation: true),
+                    onLimited: () => _startAnalysis(useLiveLocation: false),
+                  )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -98,6 +130,10 @@ class _RiskTabState extends ConsumerState<RiskTab> {
                         activeStep: _activeStep,
                         isFetching: _isFetching,
                       ),
+                      if (_locationMessage != null) ...[
+                        const SizedBox(height: 12),
+                        _ErrorBlock(_locationMessage!),
+                      ],
                       const SizedBox(height: 20),
                       riskAsync.when(
                         data: (riskData) => environmentAsync.when(

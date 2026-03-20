@@ -101,6 +101,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   greeting: _greeting(),
                   userName: user.userName,
                   dateTime: _formatDateTime(),
+                  city: ref.watch(locationProvider).city,
                   environmentAsync: environmentAsync,
                 ),
                 const SizedBox(height: 20),
@@ -173,12 +174,14 @@ class _HomeHeader extends StatelessWidget {
   final String greeting;
   final String userName;
   final String dateTime;
+  final String city;
   final AsyncValue<EnvironmentModel> environmentAsync;
 
   const _HomeHeader({
     required this.greeting,
     required this.userName,
     required this.dateTime,
+    required this.city,
     required this.environmentAsync,
   });
 
@@ -209,6 +212,11 @@ class _HomeHeader extends StatelessWidget {
           Text(
             dateTime,
             style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            city,
+            style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 18),
           environmentAsync.when(

@@ -7,6 +7,7 @@ import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -69,6 +70,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         email: result.email,
         phone: result.phone,
       );
+      await AuthStorageService.saveCredentials(email: email, password: password);
 
       // Navigate directly to MainShell — no Login screen after Signup
       Navigator.pushReplacement(

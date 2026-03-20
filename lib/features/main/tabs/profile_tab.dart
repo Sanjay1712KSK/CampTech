@@ -6,6 +6,7 @@ import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/main.dart';
+import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +19,6 @@ class ProfileTab extends ConsumerStatefulWidget {
 }
 
 class _ProfileTabState extends ConsumerState<ProfileTab> {
-  static const _biometricPrefKey = 'biometric_enabled';
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   bool _biometricEnabled = false;
@@ -31,21 +31,23 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
   }
 
   Future<void> _loadBiometricPreference() async {
-    final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _biometricEnabled = prefs.getBool(_biometricPrefKey) ?? false;
+      _biometricEnabled = false;
+      _isLoadingBiometric = false;
+    });
+    final enabled = await AuthStorageService.isBiometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = enabled;
       _isLoadingBiometric = false;
     });
   }
 
   Future<void> _toggleBiometric(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-
     if (!value) {
-      await prefs.remove(_biometricPrefKey);
-      await prefs.remove('saved_email');
-      await prefs.remove('saved_password');
+      await AuthStorageService.setBiometricEnabled(false);
+      await AuthStorageService.clearCredentials();
       if (!mounted) return;
       setState(() => _biometricEnabled = false);
       return;
@@ -71,7 +73,12 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         throw Exception('Biometric setup was cancelled');
       }
 
-      await prefs.setBool(_biometricPrefKey, true);
+      final credentials = await AuthStorageService.getCredentials();
+      if (credentials == null) {
+        throw Exception('Login once manually before enabling biometric login');
+      }
+
+      await AuthStorageService.setBiometricEnabled(true);
       if (!mounted) return;
       setState(() => _biometricEnabled = true);
     } catch (error) {
@@ -308,8 +315,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     style: TextStyle(color: AppTheme.textSecondary),
                   ),
                   onTap: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.remove(_biometricPrefKey);
+                    await AuthStorageService.setBiometricEnabled(false);
+                    await AuthStorageService.clearCredentials();
                     if (!mounted) return;
                     ref.read(userProvider.notifier).logout();
                     Navigator.pushAndRemoveUntil(

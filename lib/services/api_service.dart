@@ -58,6 +58,7 @@ class ApiService {
   static const String _digilockerConsentPath = '/digilocker/consent';
   static const String _environmentPath = '/environment';
   static const String _gigGenerateDataPath = '/gig/generate-data';
+  static const String _gigConnectPath = '/gig/connect';
   static const String _gigBaselinePath = '/gig/baseline-income';
   static const String _gigTodayPath = '/gig/today-income';
   static const String _gigHistoryPath = '/gig/income-history';
@@ -83,6 +84,30 @@ class ApiService {
               body: jsonEncode({'user_id': userId, 'days': days}))
           .timeout(_timeout);
       
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      throw Exception('Network or server error: $e');
+    }
+  }
+
+  static Future<bool> connectGigAccount({
+    required int userId,
+    required String platform,
+    required String partnerId,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$_gigConnectPath'),
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'platform': platform.toLowerCase(),
+              'partner_id': partnerId,
+            }),
+          )
+          .timeout(_timeout);
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       throw Exception('Network or server error: $e');

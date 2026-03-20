@@ -8,6 +8,7 @@ import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -60,6 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: result.email,
         phone: result.phone,
       );
+      await AuthStorageService.saveCredentials(email: email, password: password);
 
       Navigator.pushReplacement(
         context,

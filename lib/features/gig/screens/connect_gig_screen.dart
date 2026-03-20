@@ -46,7 +46,11 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
       final user = ref.read(userProvider);
       if (user == null) throw Exception('User not logged in');
 
-      final success = await ApiService.generateGigData(user.userId);
+      final success = await ApiService.connectGigAccount(
+        userId: user.userId,
+        platform: _selectedPlatform.toLowerCase(),
+        partnerId: partnerId,
+      );
       if (!mounted) return;
 
       if (success) {

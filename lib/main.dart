@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
-import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
+import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('en'));
 
@@ -48,9 +53,87 @@ class MyApp extends StatelessWidget {
             Locale('te'),
             Locale('ur'),
           ],
-          home: const SignupScreen(),
+          home: const _AuthBootstrapScreen(),
         );
       },
     );
   }
 }
+
+class _AuthBootstrapScreen extends ConsumerStatefulWidget {
+  const _AuthBootstrapScreen();
+
+  @override
+  ConsumerState<_AuthBootstrapScreen> createState() => _AuthBootstrapScreenState();
+}
+
+class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
+  Future<_BootstrapResult>? _bootstrapFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrapFuture = _bootstrap();
+  }
+
+  Future<_BootstrapResult> _bootstrap() async {
+    final biometricEnabled = await AuthStorageService.isBiometricEnabled();
+    if (!biometricEnabled) return _BootstrapResult.login;
+
+    final credentials = await AuthStorageService.getCredentials();
+    if (credentials == null) return _BootstrapResult.login;
+
+    final auth = LocalAuthentication();
+    final canCheck = await auth.canCheckBiometrics;
+    final supported = await auth.isDeviceSupported();
+    if (!canCheck && !supported) return _BootstrapResult.login;
+
+    final didAuthenticate = await auth.authenticate(
+      localizedReason: 'Unlock your insured gig profile',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
+      ),
+    );
+    if (!didAuthenticate) return _BootstrapResult.login;
+
+    final result = await ApiService.login(
+      email: credentials.email,
+      password: credentials.password,
+    );
+    ref.read(userProvider.notifier).setUser(
+          result.userId,
+          result.name,
+          result.isVerified,
+          email: result.email,
+          phone: result.phone,
+        );
+    return _BootstrapResult.main;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_BootstrapResult>(
+      future: _bootstrapFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const LoginScreen();
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: AppTheme.backgroundColor,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.data == _BootstrapResult.main) {
+          return const MainShell();
+        }
+
+        return const LoginScreen();
+      },
+    );
+  }
+}
+
+enum _BootstrapResult { login, main }
