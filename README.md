@@ -1,15 +1,15 @@
-# 🚀 GigShield — AI-Powered Income Protection for Gig Workers  
-### 👥 Built by CampTech
+# GigShield — AI-Powered Income Protection for Gig Workers  
+###  Built by Team CampTech
 
 ---
 
-## 📌 Problem Statement
+##  Problem Statement
 
 Gig workers face unpredictable income loss due to external disruptions such as weather, traffic, and environmental conditions, with no existing safety net for daily wage loss.
 
 ---
 
-## 🎯 Persona & Scenarios
+## Persona & Scenarios
 
 ### Target Persona:
 Food delivery partners (Swiggy / Zomato)
@@ -22,7 +22,7 @@ Food delivery partners (Swiggy / Zomato)
 
 ---
 
-## 🔄 Workflow Overview
+##  Workflow Overview
 
 1. User logs in and connects gig account  
 2. System fetches real-time location + environmental data  
@@ -52,7 +52,7 @@ Gig workers earn weekly → pricing aligns with their real cash flow, making it 
 
 ---
 
-## 🔄 Parametric Triggers
+## Parametric Triggers
 
 Claims are triggered automatically when:
 
@@ -63,20 +63,20 @@ Claims are triggered automatically when:
 
 ---
 
-## ⚙️ Core Engines
+## Core Engines
 
-### 🧠 Risk Engine
+### Risk Engine
 Calculates real-time risk using weather, AQI, traffic, and location data  
 
-### 💰 Premium Engine
+### Premium Engine
 Generates dynamic weekly pricing based on risk and income  
 
-### ⚡ Claim Engine
+### Claim Engine
 Detects income loss and triggers payouts automatically  
 
 ---
 
-## 🛡 Fraud Detection Strategy
+## Fraud Detection Strategy
 
 Integrated within claim processing:
 
@@ -87,7 +87,7 @@ Integrated within claim processing:
 
 ---
 
-## 🤖 AI/ML Integration Plan
+## AI/ML Integration Plan
 
 - Predictive risk modeling using historical data  
 - Adaptive premium pricing  
@@ -96,7 +96,7 @@ Integrated within claim processing:
 
 ---
 
-## 🔗 Blockchain Integration
+## Blockchain Integration
 
 NBFLite is used to:
 
@@ -106,7 +106,7 @@ NBFLite is used to:
 
 ---
 
-## 📱 Platform Choice
+## Platform Choice
 
 We chose a **Mobile-first approach** because:
 
@@ -116,7 +116,7 @@ We chose a **Mobile-first approach** because:
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 Flutter, Riverpod, Geolocator, Local Auth  
@@ -132,7 +132,7 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 
 ---
 
-## 🚀 Development Plan
+## Development Plan
 
 - Phase 1: Prototype with real-time APIs and mock data  
 - Phase 2: Automation of claims and pricing  
@@ -140,7 +140,7 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 
 ---
 
-## 📊 Current Status
+## Current Status
 
 - Functional prototype  
 - Real-time risk calculation  
@@ -150,7 +150,7 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 
 ---
 
-## 💡 Innovation
+## Innovation
 
 - Fully automated parametric insurance  
 - Weekly pricing aligned with gig economy  
@@ -159,12 +159,12 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 
 ---
 
-## 🎥 Demo
+## Demo
 
 👉 [Add your 2-minute demo link]
 
 ---
 
-## 📌 Conclusion
+## Conclusion
 
 GigShield creates a real-time, intelligent safety net for gig workers, protecting income dynamically using AI, automation, and blockchain.
