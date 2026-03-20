@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from database.db import get_db
-from schemas.insurance_schema import LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
-from services.bank_service import debit, link_account, log_transaction
+from schemas.insurance_schema import InsuranceSummaryResponse, LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
+from services.bank_service import debit, insurance_summary, link_account, log_transaction
 from services.blockchain_service import log_to_blockchain
-from services.policy_service import create_policy
+from services.policy_service import create_policy, get_latest_policy
 
 router = APIRouter(prefix='/payment', tags=['payment'])
+
+
+@router.get('/summary', response_model=InsuranceSummaryResponse)
+def payment_summary_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
+    return insurance_summary(db=db, user_id=user_id)
 
 
 @router.post('/link-bank', response_model=LinkBankResponse)
@@ -29,6 +34,17 @@ def link_bank_endpoint(payload: LinkBankRequest, db: Session = Depends(get_db)):
 
 @router.post('/pay-premium', response_model=PaymentResponse)
 def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_db)):
+    latest_policy = get_latest_policy(user_id=payload.user_id, db=db)
+    if latest_policy is not None and latest_policy.premium_paid and latest_policy.status == 'ACTIVE':
+        return {
+            'status': 'SUCCESS',
+            'user_id': payload.user_id,
+            'amount': 0.0,
+            'balance': float(get_account := insurance_summary(db=db, user_id=payload.user_id)['balance'] or 0.0),
+            'transaction_id': f'policy_{latest_policy.id}',
+            'blockchain_txn_id': None,
+        }
+
     account = debit(db=db, user_id=payload.user_id, amount=payload.amount)
     policy = create_policy(user_id=payload.user_id, db=db)
     txn = log_transaction(

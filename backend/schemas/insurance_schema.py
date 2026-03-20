@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -72,3 +74,18 @@ class SupportChatRequest(BaseModel):
 
 class SupportChatResponse(BaseModel):
     response: str
+
+
+class InsuranceSummaryResponse(BaseModel):
+    user_id: int
+    bank_linked: bool
+    balance: float | None = None
+    total_paid: float
+    total_claimed: float
+    policy_status: str
+    policy_start: date | None = None
+    policy_end: date | None = None
+    claim_ready: bool
+    claim_message: str
+    last_payout: float
+    latest_claim_status: str | None = None
