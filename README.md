@@ -1,4 +1,4 @@
-# GigShield — AI-Powered Income Protection for Gig Workers  
+# GigShield — AI-Powered Income Protection for Gig Workers  (Guidewire - DevTrails Hackathon)
 ###  Built by Team CampTech
 
 ---
