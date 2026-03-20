@@ -1,81 +1,54 @@
-# 🚀 AI-Powered Parametric Insurance for Gig Workers
+# 🚀 GigShield — AI-Powered Income Protection for Gig Workers  
+### 👥 Built by CampTech
+
+---
 
 ## 📌 Problem Statement
 
-Gig workers (Swiggy, Zomato delivery partners) face unpredictable income loss due to external disruptions such as weather, traffic, and environmental conditions.  
-
-Currently, there is no system that protects their **daily income loss**, forcing them to bear financial risks without any safety net.
+Gig workers face unpredictable income loss due to external disruptions such as weather, traffic, and environmental conditions, with no existing safety net for daily wage loss.
 
 ---
 
-## 💡 Our Solution
+## 🎯 Persona & Scenarios
 
-We propose an **AI-powered parametric insurance platform** that:
+### Target Persona:
+Food delivery partners (Swiggy / Zomato)
 
-- Predicts real-time risk using environmental and behavioral data
-- Calculates **dynamic weekly premiums**
-- Automatically detects income loss and processes claims
-- Ensures secure and transparent operations using **NBFLite blockchain**
-
----
-
-## 🎯 Persona Focus
-
-- Target Users: **Food delivery partners (Swiggy/Zomato)**
-- Coverage Scope: **Loss of income only**
-- Pricing Model: **Weekly (aligned with gig payout cycles)**
+### Key Scenarios:
+- 🌧 Heavy rain → deliveries reduced → income loss  
+- 🚦 High traffic → fewer orders completed  
+- 🌫 Poor AQI → unsafe working conditions  
+- ❌ Normal day → no claim triggered  
 
 ---
 
-## ⚙️ System Architecture (Core Engines)
+## 🔄 Workflow Overview
 
-Our platform is powered by three interconnected engines:
-
-### 🧠 1. Risk Engine
-- Uses real-time APIs:
-  - Weather (Open-Meteo)
-  - AQI (OpenWeather)
-  - Traffic (OpenRouteService)
-- Computes a **dynamic risk score** based on location and conditions
-
----
-
-### 💰 2. Premium Engine
-- Converts risk into a **dynamic weekly premium**
-- Adapts based on:
-  - User income patterns
-  - Environmental risk levels
-- Ensures fair and flexible pricing aligned with gig workers’ weekly earnings
+1. User logs in and connects gig account  
+2. System fetches real-time location + environmental data  
+3. Risk Engine computes risk score  
+4. Premium Engine generates weekly premium  
+5. User subscribes to policy  
+6. Disruption occurs → income drops  
+7. Claim Engine detects loss  
+8. Fraud checks are performed  
+9. Payout is processed  
 
 ---
 
-### ⚡ 3. Claim Engine
-- Detects income loss using:
-  - Gig income data
-  - Environmental disruptions
-- Automatically triggers payouts
-- Integrates **fraud detection before approval**
+## 💰 Weekly Premium Model
 
----
+- Premium is calculated **weekly** to match gig worker payout cycles  
+- Based on:
+  - Risk score (weather, traffic, AQI)
+  - User income patterns  
 
-## 🛡 Fraud Detection (Integrated)
+### Behavior:
+- High-risk week → higher premium  
+- Low-risk week → lower premium  
 
-Fraud detection is embedded within the system:
-
-- 📍 Location validation (geo-consistency)
-- 🌧 Weather verification (real vs claimed)
-- 📊 Activity pattern analysis
-- 🔁 Duplicate claim prevention
-
----
-
-## 🔗 Blockchain Integration
-
-We use **NBFLite blockchain** to:
-
-- Record policies, claims, and payouts
-- Ensure **tamper-proof verification**
-- Maintain transparency and trust
+### Why Weekly?
+Gig workers earn weekly → pricing aligns with their real cash flow, making it practical and affordable.
 
 ---
 
@@ -83,29 +56,38 @@ We use **NBFLite blockchain** to:
 
 Claims are triggered automatically when:
 
-- Rainfall exceeds threshold
-- Traffic congestion is high
-- AQI levels are unsafe
-- Environmental disruptions reduce delivery activity
+- Rainfall exceeds threshold  
+- Traffic congestion is high  
+- AQI reaches unsafe levels  
+- External disruptions reduce delivery activity  
 
 ---
 
-## 📱 Workflow Overview
+## ⚙️ Core Engines
 
-1. User logs in and connects gig account  
-2. System fetches **real-time location + environmental data**  
-3. Risk Engine computes risk score  
-4. Premium Engine generates weekly premium  
-5. User subscribes to policy  
-6. Claim Engine detects disruption and income loss  
-7. Fraud checks are performed  
-8. Payout is processed securely  
+### 🧠 Risk Engine
+Calculates real-time risk using weather, AQI, traffic, and location data  
+
+### 💰 Premium Engine
+Generates dynamic weekly pricing based on risk and income  
+
+### ⚡ Claim Engine
+Detects income loss and triggers payouts automatically  
 
 ---
 
-## 🤖 AI/ML Roadmap
+## 🛡 Fraud Detection Strategy
 
-The system is designed to evolve with ML:
+Integrated within claim processing:
+
+- Location validation  
+- Weather verification  
+- Activity pattern analysis  
+- Duplicate claim detection  
+
+---
+
+## 🤖 AI/ML Integration Plan
 
 - Predictive risk modeling using historical data  
 - Adaptive premium pricing  
@@ -114,52 +96,75 @@ The system is designed to evolve with ML:
 
 ---
 
+## 🔗 Blockchain Integration
+
+NBFLite is used to:
+
+- Store policies, claims, and payouts  
+- Ensure tamper-proof records  
+- Provide transparency  
+
+---
+
+## 📱 Platform Choice
+
+We chose a **Mobile-first approach** because:
+
+- Gig workers primarily operate via smartphones  
+- Real-time location tracking is essential  
+- Faster adoption and accessibility  
+
+---
+
 ## 🛠 Tech Stack
 
 ### Frontend
-- Flutter (Mobile App)
-- Riverpod (State Management)
+Flutter, Riverpod, Geolocator, Local Auth  
 
 ### Backend
-- FastAPI
-- SQLite (Mock DB)
+FastAPI, Python, SQLAlchemy, SQLite  
 
 ### APIs
-- Open-Meteo (Weather)
-- OpenWeather (AQI)
-- OpenRouteService (Traffic)
+Open-Meteo, OpenWeather, OpenRouteService  
 
-### Security & Infra
-- NBFLite Blockchain
-- Biometric Authentication
+### Security
+NBFLite Blockchain, DigiLocker (Mock), Biometrics  
 
 ---
 
-## 📊 Current Status (Phase 1)
+## 🚀 Development Plan
 
-- ✅ Functional prototype with real-time APIs  
-- ✅ Mock gig data integration  
-- ✅ Risk + Premium + Claim engines (demo logic)  
-- ✅ Fraud detection simulation  
-- ✅ Blockchain integration (NBFLite)  
+- Phase 1: Prototype with real-time APIs and mock data  
+- Phase 2: Automation of claims and pricing  
+- Phase 3: ML integration and scaling  
 
 ---
 
-## 🚀 Future Scope
+## 📊 Current Status
 
-- Full ML model integration  
-- Real gig platform APIs  
-- Production-grade payment systems  
-- Advanced fraud detection (GPS spoofing, anomaly detection)  
+- Functional prototype  
+- Real-time risk calculation  
+- Weekly pricing model  
+- Claim simulation with fraud detection  
+- Blockchain integration  
+
+---
+
+## 💡 Innovation
+
+- Fully automated parametric insurance  
+- Weekly pricing aligned with gig economy  
+- AI-driven risk + pricing + claims  
+- Blockchain-backed transparency  
 
 ---
 
 ## 🎥 Demo
 
-👉 [Add your 2-minute video link here]
+👉 [Add your 2-minute demo link]
 
 ---
 
 ## 📌 Conclusion
 
-This platform creates a **real-time, intelligent safety net for gig workers**, protecting their income dynamically using AI, automation, and blockchain.
+GigShield creates a real-time, intelligent safety net for gig workers, protecting income dynamically using AI, automation, and blockchain.
