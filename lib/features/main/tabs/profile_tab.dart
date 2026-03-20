@@ -91,7 +91,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    AppLocalizations.of(context)!;
     final user = ref.watch(userProvider);
 
     if (user == null) {
@@ -146,8 +146,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                       ),
                     ),
                   ),
+                ),
               ),
-            ),
             const SizedBox(height: 20),
             _SectionTitle(title: 'Financial Tracking'),
             FutureBuilder<BankSummary>(
