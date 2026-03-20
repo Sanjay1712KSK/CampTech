@@ -1,18 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
+import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
+import 'package:guidewire_gig_ins/main.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:guidewire_gig_ins/main.dart'; // import appLocale
 
-class ProfileTab extends ConsumerWidget {
+class ProfileTab extends ConsumerStatefulWidget {
   const ProfileTab({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends ConsumerState<ProfileTab> {
+  static const _biometricPrefKey = 'biometric_enabled';
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
+  bool _biometricEnabled = false;
+  bool _isLoadingBiometric = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricPreference();
+  }
+
+  Future<void> _loadBiometricPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = prefs.getBool(_biometricPrefKey) ?? false;
+      _isLoadingBiometric = false;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!value) {
+      await prefs.remove(_biometricPrefKey);
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      if (!mounted) return;
+      setState(() => _biometricEnabled = false);
+      return;
+    }
+
+    try {
+      final canCheck = await _localAuth.canCheckBiometrics;
+      final isSupported = await _localAuth.isDeviceSupported();
+
+      if (!canCheck && !isSupported) {
+        throw Exception('Biometric authentication is not available');
+      }
+
+      final didAuthenticate = await _localAuth.authenticate(
+        localizedReason: 'Enable fingerprint login for your account',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      if (!didAuthenticate) {
+        throw Exception('Biometric setup was cancelled');
+      }
+
+      await prefs.setBool(_biometricPrefKey, true);
+      if (!mounted) return;
+      setState(() => _biometricEnabled = true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _biometricEnabled = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(userProvider);
 
@@ -20,157 +95,139 @@ class ProfileTab extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final userName = user.userName;
-    final isVerified = user.isVerified;
-    final userId = user.userId;
+    final policyStatus = user.isVerified ? 'ACTIVE' : 'INACTIVE';
+    final verificationStatus = user.isVerified ? 'VERIFIED' : 'NOT VERIFIED';
 
     return SafeArea(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.profile, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 28),
-
-            // ── Avatar + Name ───────────────────────────────────────
-            Center(
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppTheme.primaryColor,
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
+            const Text(
+              'Profile',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _PolicyCard(
+              userName: user.userName,
+              userId: user.userId,
+              policyStatus: policyStatus,
+              verificationStatus: verificationStatus,
+            ),
+            const SizedBox(height: 20),
+            if (!user.isVerified)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DigilockerVerificationScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.verified_user_outlined),
+                    label: const Text('Verify Identity'),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(userName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text('ID: #$userId', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // ── Verification Status ─────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isVerified ? AppTheme.successColor.withOpacity(0.3) : AppTheme.errorColor.withOpacity(0.3),
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    isVerified ? Icons.verified_user_rounded : Icons.gpp_bad_rounded,
-                    color: isVerified ? AppTheme.successColor : AppTheme.errorColor,
-                    size: 28,
+            _SectionTitle(title: 'Security'),
+            _SettingsCard(
+              children: [
+                SwitchListTile.adaptive(
+                  value: _biometricEnabled,
+                  onChanged: _isLoadingBiometric ? null : _toggleBiometric,
+                  activeColor: AppTheme.primaryColor,
+                  title: const Text(
+                    'Enable Fingerprint Login',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isVerified ? 'DigiLocker • Blockchain Secured' : 'Complete DigiLocker verification',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                      ),
-                      if (!isVerified) ...[
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()));
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            minimumSize: const Size(100, 32),
-                          ),
-                          child: const Text('Verify Now', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
-                        )
-                      ]
-                    ],
+                  subtitle: Text(
+                    _biometricEnabled
+                        ? 'Biometric login is active on this device'
+                        : 'Use fingerprint to unlock the app faster',
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   ),
-                ],
-              ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            // ── Info rows ───────────────────────────────────────────
-            const Text('Account Info', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            _InfoRow(icon: Icons.person_outline, label: 'Name', value: userName),
-            const SizedBox(height: 10),
-            _InfoRow(icon: Icons.tag_rounded, label: 'User ID', value: '#$userId'),
-            const SizedBox(height: 10),
-            _InfoRow(icon: Icons.policy_rounded, label: l10n.activePolicy, value: 'POL-391X'),
-
-            const SizedBox(height: 24),
-
-            // ── Language Switcher ───────────────────────────────────
-            const Text('Language', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: Localizations.localeOf(context).languageCode,
-                  isExpanded: true,
-                  dropdownColor: AppTheme.surfaceColor,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                  icon: const Icon(Icons.language_rounded, color: AppTheme.textSecondary),
-                  items: const [
-                    DropdownMenuItem(value: 'en', child: Text('English (en)')),
-                    DropdownMenuItem(value: 'hi', child: Text('Hindi (hi)')),
-                    DropdownMenuItem(value: 'ta', child: Text('Tamil (ta)')),
-                    DropdownMenuItem(value: 'te', child: Text('Telugu (te)')),
-                    DropdownMenuItem(value: 'kn', child: Text('Kannada (kn)')),
-                    DropdownMenuItem(value: 'mr', child: Text('Marathi (mr)')),
-                    DropdownMenuItem(value: 'ur', child: Text('Urdu (ur)')),
-                  ],
-                  onChanged: (String? newLang) async {
-                    if (newLang != null) {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setString('app_language', newLang);
-                      appLocale.value = Locale(newLang);
-                    }
+            const SizedBox(height: 20),
+            _SectionTitle(title: 'Account'),
+            _SettingsCard(
+              children: [
+                _InfoTile(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Name',
+                  value: user.userName,
+                ),
+                _DividerLine(),
+                _InfoTile(
+                  icon: Icons.email_outlined,
+                  label: 'Email',
+                  value: user.email.isNotEmpty ? user.email : 'Not available',
+                ),
+                _DividerLine(),
+                _InfoTile(
+                  icon: Icons.phone_outlined,
+                  label: 'Phone',
+                  value: user.phone.isNotEmpty ? user.phone : 'Not available',
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(title: 'Language'),
+            _LanguageCard(currentLanguage: Localizations.localeOf(context).languageCode),
+            const SizedBox(height: 20),
+            _SectionTitle(title: 'Actions'),
+            _SettingsCard(
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.logout_rounded,
+                    color: AppTheme.errorColor,
+                  ),
+                  title: const Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: AppTheme.errorColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Sign out from this device',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  onTap: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove(_biometricPrefKey);
+                    if (!mounted) return;
+                    ref.read(userProvider.notifier).logout();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignupScreen()),
+                      (route) => false,
+                    );
                   },
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // ── Logout ──────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(userProvider.notifier).logout();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SignupScreen()),
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded, size: 18, color: AppTheme.errorColor),
-                label: const Text('Log Out', style: TextStyle(color: AppTheme.errorColor)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.errorColor),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
+              ],
             ),
           ],
         ),
@@ -179,25 +236,277 @@ class ProfileTab extends ConsumerWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
+class _PolicyCard extends StatelessWidget {
+  final String userName;
+  final int userId;
+  final String policyStatus;
+  final String verificationStatus;
+
+  const _PolicyCard({
+    required this.userName,
+    required this.userId,
+    required this.policyStatus,
+    required this.verificationStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = policyStatus == 'ACTIVE';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2F3B2F),
+            Color(0xFF1F2921),
+            Color(0xFF121612),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
+          ),
+        ],
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.shield_rounded,
+                color: AppTheme.primaryColor,
+                size: 28,
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppTheme.successColor.withOpacity(0.18)
+                      : AppTheme.warningColor.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  policyStatus,
+                  style: TextStyle(
+                    color: isActive
+                        ? AppTheme.successColor
+                        : AppTheme.warningColor,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Text(
+            userName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Policy Type: Gig Income Protection',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.78),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _CardFact(label: 'User ID', value: '#$userId'),
+              ),
+              Expanded(
+                child: _CardFact(
+                  label: 'Verification',
+                  value: verificationStatus,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardFact extends StatelessWidget {
   final String label;
   final String value;
-  const _InfoRow({required this.icon, required this.label, required this.value});
+
+  const _CardFact({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 11,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textPrimary,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: AppTheme.surfaceColor, borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: AppTheme.textSecondary),
-          const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        ],
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.primaryColor),
+      title: Text(
+        label,
+        style: const TextStyle(
+          color: AppTheme.textSecondary,
+          fontSize: 13,
+        ),
+      ),
+      subtitle: Text(
+        value,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _DividerLine extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.white.withOpacity(0.05),
+    );
+  }
+}
+
+class _LanguageCard extends StatelessWidget {
+  final String currentLanguage;
+
+  const _LanguageCard({required this.currentLanguage});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: currentLanguage,
+          isExpanded: true,
+          dropdownColor: AppTheme.surfaceColor,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 13,
+          ),
+          icon: const Icon(
+            Icons.language_rounded,
+            color: AppTheme.textSecondary,
+          ),
+          items: const [
+            DropdownMenuItem(value: 'en', child: Text('English (en)')),
+            DropdownMenuItem(value: 'hi', child: Text('Hindi (hi)')),
+            DropdownMenuItem(value: 'ta', child: Text('Tamil (ta)')),
+            DropdownMenuItem(value: 'te', child: Text('Telugu (te)')),
+            DropdownMenuItem(value: 'kn', child: Text('Kannada (kn)')),
+            DropdownMenuItem(value: 'mr', child: Text('Marathi (mr)')),
+            DropdownMenuItem(value: 'ur', child: Text('Urdu (ur)')),
+          ],
+          onChanged: (String? newLang) async {
+            if (newLang == null) return;
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('app_language', newLang);
+            appLocale.value = Locale(newLang);
+          },
+        ),
       ),
     );
   }

@@ -20,9 +20,17 @@ class IncomeIntelligenceScreen extends StatefulWidget {
 
 class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
     with SingleTickerProviderStateMixin {
+  final TextEditingController _partnerIdController = TextEditingController();
+  final FocusNode _partnerFocusNode = FocusNode();
+
   Future<List<dynamic>>? _dataFuture;
   late final AnimationController _glowController;
   late final Animation<double> _glowAnimation;
+
+  String _selectedPlatform = 'Swiggy';
+  bool _isConnecting = false;
+  bool _isConnected = false;
+  String? _connectionError;
 
   @override
   void initState() {
@@ -37,6 +45,14 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
     _fetchData();
   }
 
+  @override
+  void dispose() {
+    _partnerIdController.dispose();
+    _partnerFocusNode.dispose();
+    _glowController.dispose();
+    super.dispose();
+  }
+
   void _fetchData() {
     setState(() {
       _dataFuture = Future.wait([
@@ -47,10 +63,47 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
     });
   }
 
-  @override
-  void dispose() {
-    _glowController.dispose();
-    super.dispose();
+  Future<void> _connectAccount() async {
+    FocusScope.of(context).unfocus();
+    final partnerId = _partnerIdController.text.trim();
+
+    if (partnerId.isEmpty) {
+      setState(() => _connectionError = 'Partner ID cannot be empty');
+      return;
+    }
+
+    setState(() {
+      _isConnecting = true;
+      _connectionError = null;
+    });
+
+    try {
+      final success = await ApiService.generateGigData(widget.userId);
+      if (!mounted) return;
+
+      if (success) {
+        setState(() => _isConnected = true);
+        _fetchData();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$_selectedPlatform account connected successfully',
+            ),
+          ),
+        );
+      } else {
+        setState(() => _connectionError = 'Unable to connect account');
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _connectionError = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+      }
+    }
   }
 
   Widget _buildAnimatedSection({
@@ -59,11 +112,11 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
   }) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 500 + (index * 100)),
+      duration: Duration(milliseconds: 450 + (index * 80)),
       curve: Curves.easeOutCubic,
       builder: (context, value, animatedChild) {
         return Transform.translate(
-          offset: Offset(0, 30 * (1 - value)),
+          offset: Offset(0, 20 * (1 - value)),
           child: Opacity(opacity: value, child: animatedChild),
         );
       },
@@ -79,6 +132,7 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
@@ -94,6 +148,7 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                   ),
                 );
               }
+
               if (snapshot.hasError || !snapshot.hasData) {
                 return Center(
                   child: Column(
@@ -110,6 +165,7 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppTheme.textSecondary),
                       ),
+                      const SizedBox(height: 12),
                       TextButton(
                         onPressed: _fetchData,
                         child: const Text(
@@ -138,33 +194,58 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                   children: [
                     _buildAnimatedSection(
                       index: 0,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Income Intelligence',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'AI-powered earnings breakdown',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: 32),
-                        ],
+                      child: const Text(
+                        'Income Intelligence',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 8),
                     _buildAnimatedSection(
                       index: 1,
+                      child: const Text(
+                        'Connect your gig platform and monitor performance in one place.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildAnimatedSection(
+                      index: 2,
+                      child: _ConnectAccountCard(
+                        selectedPlatform: _selectedPlatform,
+                        onPlatformChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedPlatform = value);
+                          }
+                        },
+                        idController: _partnerIdController,
+                        focusNode: _partnerFocusNode,
+                        onConnect: _connectAccount,
+                        isConnecting: _isConnecting,
+                        isConnected: _isConnected,
+                        errorText: _connectionError,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildAnimatedSection(
+                      index: 3,
                       child: Row(
                         children: [
+                          Expanded(
+                            child: _StatCard(
+                              title: l10n.todayIncome,
+                              value: 'Rs ${today.earnings.toInt()}',
+                              icon: Icons.account_balance_wallet_rounded,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: _StatCard(
                               title: l10n.baselineIncome,
@@ -174,39 +255,40 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                               color: AppTheme.textSecondary,
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: _StatCard(
-                              title: l10n.todayIncome,
-                              value: 'Rs ${today.earnings.toInt()}',
-                              icon: Icons.account_balance_wallet_rounded,
-                              color: AppTheme.primaryColor,
+                              title: l10n.orders,
+                              value: '${today.ordersCompleted}',
+                              icon: Icons.inventory_2_outlined,
+                              color: AppTheme.warningColor,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     if (lossAmount > 0)
                       _buildAnimatedSection(
-                        index: 2,
+                        index: 4,
                         child: AnimatedBuilder(
                           animation: _glowAnimation,
                           builder: (context, child) {
                             return Container(
-                              padding: const EdgeInsets.all(20),
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18),
                               decoration: BoxDecoration(
                                 color: AppTheme.surfaceColor,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                  color: AppTheme.errorColor.withOpacity(0.5),
+                                  color: AppTheme.errorColor.withOpacity(0.4),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppTheme.errorColor.withOpacity(
-                                      _glowAnimation.value,
+                                      _glowAnimation.value * 0.25,
                                     ),
-                                    blurRadius: 20,
+                                    blurRadius: 18,
                                   ),
                                 ],
                               ),
@@ -215,9 +297,9 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                                   const Icon(
                                     Icons.trending_down_rounded,
                                     color: AppTheme.errorColor,
-                                    size: 32,
+                                    size: 30,
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -226,18 +308,16 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                                         Text(
                                           l10n.lossIndicator,
                                           style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
                                             color: AppTheme.errorColor,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 6),
                                         Text(
-                                          'Rs ${lossAmount.toInt()} below baseline today',
+                                          'Disruption: ${today.disruptionType.toUpperCase()} • Loss: Rs ${lossAmount.toInt()}',
                                           style: const TextStyle(
-                                            fontSize: 16,
                                             color: AppTheme.textPrimary,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ],
@@ -249,71 +329,156 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
                           },
                         ),
                       ),
-                    if (lossAmount > 0) const SizedBox(height: 32),
+                    if (lossAmount > 0) const SizedBox(height: 20),
                     _buildAnimatedSection(
-                      index: 3,
-                      child: _WeeklyTrendChart(
-                        history: history.records,
-                        l10n: l10n,
-                      ),
+                      index: 5,
+                      child: _ChartCard(history: history.records),
                     ),
-                    const SizedBox(height: 32),
-                    if (history.bestDay != null || history.worstDay != null) ...[
+                    const SizedBox(height: 20),
+                    if (history.bestDay != null || history.worstDay != null)
                       _buildAnimatedSection(
-                        index: 4,
-                        child: Text(
-                          l10n.extremeDays,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        index: 6,
+                        child: Row(
+                          children: [
+                            if (history.bestDay != null)
+                              Expanded(
+                                child: _ExtremeDayCard(
+                                  label: l10n.bestDay,
+                                  day: history.bestDay!,
+                                  highlightColor: AppTheme.successColor,
+                                  icon: Icons.arrow_upward_rounded,
+                                ),
+                              ),
+                            if (history.bestDay != null &&
+                                history.worstDay != null)
+                              const SizedBox(width: 12),
+                            if (history.worstDay != null)
+                              Expanded(
+                                child: _ExtremeDayCard(
+                                  label: l10n.worstDay,
+                                  day: history.worstDay!,
+                                  highlightColor: AppTheme.errorColor,
+                                  icon: Icons.arrow_downward_rounded,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      if (history.bestDay != null)
-                        _buildAnimatedSection(
-                          index: 5,
-                          child: _ExtremeDayCard(
-                            day: history.bestDay!,
-                            title: l10n.bestDay,
-                            isBest: true,
-                            l10n: l10n,
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      if (history.worstDay != null)
-                        _buildAnimatedSection(
-                          index: 6,
-                          child: _ExtremeDayCard(
-                            day: history.worstDay!,
-                            title: l10n.worstDay,
-                            isBest: false,
-                            l10n: l10n,
-                          ),
-                        ),
-                      const SizedBox(height: 32),
-                    ],
-                    _buildAnimatedSection(
-                      index: 7,
-                      child: Text(
-                        l10n.breakdown,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildAnimatedSection(
-                      index: 8,
-                      child: _BreakdownGrid(today: today, l10n: l10n),
-                    ),
                   ],
                 ),
               );
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ConnectAccountCard extends StatelessWidget {
+  final String selectedPlatform;
+  final ValueChanged<String?> onPlatformChanged;
+  final TextEditingController idController;
+  final FocusNode focusNode;
+  final VoidCallback onConnect;
+  final bool isConnecting;
+  final bool isConnected;
+  final String? errorText;
+
+  const _ConnectAccountCard({
+    required this.selectedPlatform,
+    required this.onPlatformChanged,
+    required this.idController,
+    required this.focusNode,
+    required this.onConnect,
+    required this.isConnecting,
+    required this.isConnected,
+    required this.errorText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Connect Gig Account',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: selectedPlatform,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.storefront_outlined),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Swiggy', child: Text('Swiggy')),
+              DropdownMenuItem(value: 'Zomato', child: Text('Zomato')),
+            ],
+            onChanged: onPlatformChanged,
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: idController,
+            keyboardType: TextInputType.text,
+            focusNode: focusNode,
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Enter Partner ID',
+              prefixIcon: const Icon(Icons.badge_outlined),
+              errorText: errorText,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (isConnected)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.successColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Text(
+                'Account connected successfully',
+                style: TextStyle(
+                  color: AppTheme.successColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          if (isConnected) const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isConnecting ? null : onConnect,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: isConnecting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Text('Connect Account'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -335,311 +500,196 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 16),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WeeklyTrendChart extends StatelessWidget {
-  final List<DailyRecord> history;
-  final AppLocalizations l10n;
-
-  const _WeeklyTrendChart({
-    required this.history,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (history.isEmpty) return const SizedBox();
-    final maxEarning = history.map((e) => e.earnings).reduce(max);
-    final recent = history.length > 7
-        ? history.sublist(history.length - 7)
-        : history;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.weeklyTrend,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 150,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: recent.map((record) {
-                final heightFactor =
-                    maxEarning == 0 ? 0.0 : (record.earnings / maxEarning);
-                final label = _formatShortDate(record.date);
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: heightFactor),
-                      duration: const Duration(milliseconds: 1000),
-                      curve: Curves.easeOutBack,
-                      builder: (ctx, val, child) {
-                        return Container(
-                          width: 24,
-                          height: val * 120,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  String _formatShortDate(String rawDate) {
+class _ChartCard extends StatelessWidget {
+  final List<DailyRecord> history;
+
+  const _ChartCard({required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = history.length > 7
+        ? history.sublist(history.length - 7)
+        : history;
+    final maxEarning =
+        recent.isEmpty ? 0.0 : recent.map((e) => e.earnings).reduce(max);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Weekly Earnings Trend',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 18),
+          if (recent.isEmpty)
+            const Text(
+              'No history available yet',
+              style: TextStyle(color: AppTheme.textSecondary),
+            )
+          else
+            SizedBox(
+              height: 170,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: recent.map((record) {
+                  final heightFactor =
+                      maxEarning == 0 ? 0.0 : record.earnings / maxEarning;
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Rs ${record.earnings.toInt()}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: heightFactor),
+                        duration: const Duration(milliseconds: 900),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Container(
+                            width: 26,
+                            height: max(14, value * 110),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _shortDate(record.date),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _shortDate(String date) {
     try {
-      final parsed = DateTime.parse(rawDate);
+      final parsed = DateTime.parse(date);
       return '${parsed.day}/${parsed.month}';
     } catch (_) {
-      return rawDate;
+      return date;
     }
   }
 }
 
 class _ExtremeDayCard extends StatelessWidget {
+  final String label;
   final DailyRecord day;
-  final String title;
-  final bool isBest;
-  final AppLocalizations l10n;
+  final Color highlightColor;
+  final IconData icon;
 
   const _ExtremeDayCard({
+    required this.label,
     required this.day,
-    required this.title,
-    required this.isBest,
-    required this.l10n,
+    required this.highlightColor,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isBest ? AppTheme.successColor : AppTheme.errorColor;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: highlightColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: highlightColor.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                isBest
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: highlightColor, size: 18),
               const SizedBox(width: 8),
               Text(
-                title,
+                label,
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                day.date,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
+                  color: highlightColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _MiniStat(label: l10n.earnings, val: 'Rs ${day.earnings.toInt()}'),
-              _MiniStat(label: l10n.orders, val: '${day.orders}'),
-              if (day.weather != null)
-                _MiniStat(
-                  label: l10n.rainfall,
-                  val: '${day.weather!.rainfall}mm',
-                  icon: Icons.water_drop_rounded,
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String val;
-  final IconData? icon;
-
-  const _MiniStat({
-    required this.label,
-    required this.val,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (icon != null) Icon(icon, color: AppTheme.textSecondary, size: 14),
-        if (icon == null)
+          const SizedBox(height: 10),
           Text(
-            label,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+            day.date,
+            style: const TextStyle(color: AppTheme.textSecondary),
           ),
-        const SizedBox(height: 4),
-        Text(
-          val,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+          const SizedBox(height: 6),
+          Text(
+            'Rs ${day.earnings.toInt()}',
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BreakdownGrid extends StatelessWidget {
-  final TodayIncomeModel today;
-  final AppLocalizations l10n;
-
-  const _BreakdownGrid({
-    required this.today,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final averageEarnings = today.ordersCompleted > 0
-        ? (today.earnings / today.ordersCompleted)
-        : 0.0;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          _BreakdownRow(label: l10n.totalOrders, value: '${today.ordersCompleted}'),
-          const Divider(color: Colors.white10, height: 24),
-          _BreakdownRow(
-            label: l10n.totalHours,
-            value: '${today.hoursWorked} hrs',
-          ),
-          const Divider(color: Colors.white10, height: 24),
-          _BreakdownRow(
-            label: l10n.avgEarnings,
-            value: 'Rs ${averageEarnings.toStringAsFixed(1)}',
-          ),
-          const Divider(color: Colors.white10, height: 24),
-          _BreakdownRow(
-            label: 'Disruption',
-            value: today.disruptionType.toUpperCase(),
-            valueColor: today.disruptionType == 'none'
-                ? AppTheme.successColor
-                : AppTheme.warningColor,
+          const SizedBox(height: 6),
+          Text(
+            '${day.orders} orders',
+            style: const TextStyle(color: AppTheme.textSecondary),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BreakdownRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  const _BreakdownRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? AppTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ],
     );
   }
 }

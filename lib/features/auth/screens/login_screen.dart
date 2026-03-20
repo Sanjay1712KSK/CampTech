@@ -53,8 +53,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (!mounted) return;
 
-      final userName = email.split('@').first;
-      ref.read(userProvider.notifier).setUser(result.userId, userName, result.isVerified);
+      ref.read(userProvider.notifier).setUser(
+        result.userId,
+        result.name,
+        result.isVerified,
+        email: result.email,
+        phone: result.phone,
+      );
 
       Navigator.pushReplacement(
         context,

@@ -62,7 +62,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
       if (!mounted) return;
 
-      ref.read(userProvider.notifier).setUser(result.userId, name, result.isVerified);
+      ref.read(userProvider.notifier).setUser(
+        result.userId,
+        result.name,
+        result.isVerified,
+        email: result.email,
+        phone: result.phone,
+      );
 
       // Navigate directly to MainShell — no Login screen after Signup
       Navigator.pushReplacement(

@@ -5,14 +5,30 @@ import 'package:guidewire_gig_ins/services/api_service.dart';
 class UserState {
   final int userId;
   final String userName;
+  final String email;
+  final String phone;
   final bool isVerified;
   
-  UserState({required this.userId, required this.userName, required this.isVerified});
+  UserState({
+    required this.userId,
+    required this.userName,
+    required this.email,
+    required this.phone,
+    required this.isVerified,
+  });
   
-  UserState copyWith({int? userId, String? userName, bool? isVerified}) {
+  UserState copyWith({
+    int? userId,
+    String? userName,
+    String? email,
+    String? phone,
+    bool? isVerified,
+  }) {
     return UserState(
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
       isVerified: isVerified ?? this.isVerified,
     );
   }
@@ -22,8 +38,20 @@ class UserNotifier extends Notifier<UserState?> {
   @override
   UserState? build() => null;
 
-  void setUser(int id, String name, bool verified) {
-    state = UserState(userId: id, userName: name, isVerified: verified);
+  void setUser(
+    int id,
+    String name,
+    bool verified, {
+    String email = '',
+    String phone = '',
+  }) {
+    state = UserState(
+      userId: id,
+      userName: name,
+      email: email,
+      phone: phone,
+      isVerified: verified,
+    );
   }
 
   void updateVerification(bool verified) {

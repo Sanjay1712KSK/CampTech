@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
+import 'package:guidewire_gig_ins/features/gig/screens/income_intelligence_screen.dart';
+import 'package:guidewire_gig_ins/features/main/tabs/risk_tab.dart';
+import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
@@ -14,8 +18,7 @@ class HomeTab extends ConsumerStatefulWidget {
   ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends ConsumerState<HomeTab>
-    with TickerProviderStateMixin {
+class _HomeTabState extends ConsumerState<HomeTab> {
   late DateTime _now;
   late Timer _timer;
 
@@ -43,18 +46,20 @@ class _HomeTabState extends ConsumerState<HomeTab>
     ref.invalidate(environmentProvider);
     await Future.wait([
       ref.read(todayIncomeProvider.future),
+      ref.read(baselineIncomeProvider.future),
       ref.read(riskProvider.future),
+      ref.read(environmentProvider.future),
     ]).catchError((_) => <Object>[]);
   }
 
-  String _getGreeting(AppLocalizations l10n) {
+  String _greeting(AppLocalizations l10n) {
     final hour = _now.hour;
     if (hour < 12) return l10n.goodMorning;
     if (hour < 17) return l10n.goodAfternoon;
     return l10n.goodEvening;
   }
 
-  String get _formattedDate {
+  String get _formattedDateTime {
     const months = [
       'Jan',
       'Feb',
@@ -69,303 +74,400 @@ class _HomeTabState extends ConsumerState<HomeTab>
       'Nov',
       'Dec',
     ];
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return '${days[_now.weekday - 1]}, ${_now.day} ${months[_now.month - 1]} ${_now.year}';
-  }
-
-  String get _formattedTime {
-    final hour = _now.hour > 12 ? _now.hour - 12 : (_now.hour == 0 ? 12 : _now.hour);
+    final hour =
+        _now.hour > 12 ? _now.hour - 12 : (_now.hour == 0 ? 12 : _now.hour);
     final minute = _now.minute.toString().padLeft(2, '0');
     final period = _now.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  Widget _buildAnimatedSection({
-    required Widget child,
-    required int index,
-  }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 500 + (index * 100)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, animatedChild) {
-        return Transform.translate(
-          offset: Offset(0, 30 * (1 - value)),
-          child: Opacity(opacity: value, child: animatedChild),
-        );
-      },
-      child: child,
-    );
+    return '${_now.day} ${months[_now.month - 1]} • $hour:$minute $period';
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final user = ref.watch(userProvider);
+    final location = ref.watch(locationProvider);
 
     if (l10n == null || user == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final todayAsync = ref.watch(todayIncomeProvider);
-    final riskAsync = ref.watch(riskProvider);
     final baselineAsync = ref.watch(baselineIncomeProvider);
+    final riskAsync = ref.watch(riskProvider);
+    final environmentAsync = ref.watch(environmentProvider);
 
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: _onRefresh,
-        color: AppTheme.primaryColor,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppTheme.primaryColor,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HeaderSection(
+                  greeting: _greeting(l10n),
+                  userName: user.userName,
+                  dateTime: _formattedDateTime,
+                  lat: location.lat,
+                  lon: location.lon,
+                  environmentAsync: environmentAsync,
+                ),
+                const SizedBox(height: 20),
+                _SectionTitle(title: 'Today Snapshot'),
+                const SizedBox(height: 12),
+                todayAsync.when(
+                  data: (today) => _TodaySnapshotCard(today: today),
+                  loading: () => const _SkeletonCard(height: 150),
+                  error: (_, __) =>
+                      const _InlineErrorCard(message: 'Unable to load today data'),
+                ),
+                const SizedBox(height: 20),
+                _SectionTitle(title: 'Risk Status'),
+                const SizedBox(height: 12),
+                riskAsync.when(
+                  data: (riskData) => _RiskStatusCard(riskData: riskData),
+                  loading: () => const _SkeletonCard(height: 160),
+                  error: (_, __) =>
+                      const _InlineErrorCard(message: 'Unable to load risk status'),
+                ),
+                const SizedBox(height: 20),
+                _SectionTitle(title: 'Baseline vs Today'),
+                const SizedBox(height: 12),
+                _BaselineSection(
+                  baselineAsync: baselineAsync,
+                  todayAsync: todayAsync,
+                ),
+                const SizedBox(height: 20),
+                _SectionTitle(title: 'Quick Actions'),
+                const SizedBox(height: 12),
+                _QuickActionsGrid(
+                  onVerify: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DigilockerVerificationScreen(),
+                      ),
+                    );
+                  },
+                  onConnectGig: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ConnectGigScreen(),
+                      ),
+                    );
+                  },
+                  onViewEarnings: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            IncomeIntelligenceScreen(userId: user.userId),
+                      ),
+                    );
+                  },
+                  onViewRisk: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RiskTab()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                _SectionTitle(title: 'Mini Insights'),
+                const SizedBox(height: 12),
+                _MiniInsightsSection(
+                  todayAsync: todayAsync,
+                  baselineAsync: baselineAsync,
+                  environmentAsync: environmentAsync,
+                ),
+              ],
+            ),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-          child: Column(
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderSection extends StatelessWidget {
+  final String greeting;
+  final String userName;
+  final String dateTime;
+  final double lat;
+  final double lon;
+  final AsyncValue<EnvironmentModel> environmentAsync;
+
+  const _HeaderSection({
+    required this.greeting,
+    required this.userName,
+    required this.dateTime,
+    required this.lat,
+    required this.lon,
+    required this.environmentAsync,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF262F1C),
+            Color(0xFF191F17),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAnimatedSection(
-                index: 0,
-                child: Row(
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${_getGreeting(l10n)},',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.userName,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '$_formattedDate • $_formattedTime',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '$greeting,',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
                     ),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: AppTheme.surfaceColor,
-                      child: Text(
-                        user.userName.isNotEmpty
-                            ? user.userName[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      dateTime,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              _buildAnimatedSection(
-                index: 1,
-                child: _VerificationStatusCard(isVerified: user.isVerified),
-              ),
-              const SizedBox(height: 16),
-              _buildAnimatedSection(
-                index: 2,
-                child: riskAsync.when(
-                  data: (data) => _RiskCard(data: data),
-                  loading: () => _buildSkeletonCard(80),
-                  error: (e, _) => _buildErrorCard('Failed to load risk data'),
+              Container(
+                height: 50,
+                width: 50,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildAnimatedSection(
-                index: 3,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: todayAsync.when(
-                        data: (data) => _TodaySummaryCard(today: data),
-                        loading: () => _buildSkeletonCard(180),
-                        error: (e, _) =>
-                            _buildErrorCard('Failed to load today data'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: baselineAsync.when(
-                        data: (data) => _BaselineCard(
-                          baseline: data,
-                          today: todayAsync.value,
-                        ),
-                        loading: () => _buildSkeletonCard(180),
-                        error: (e, _) => _buildErrorCard('Error'),
-                      ),
-                    ),
-                  ],
+                child: const Icon(
+                  Icons.shield_rounded,
+                  color: AppTheme.primaryColor,
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkeletonCard(double height) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Center(
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.2, end: 0.6),
-          duration: const Duration(seconds: 1),
-          curve: Curves.easeInOut,
-          builder: (ctx, val, child) {
-            return Opacity(
-              opacity: val,
-              child: Container(height: 20, width: 40, color: Colors.white24),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorCard(String error) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppTheme.errorColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              error,
-              style: const TextStyle(
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 16,
                 color: AppTheme.textSecondary,
-                fontSize: 13,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VerificationStatusCard extends StatelessWidget {
-  final bool isVerified;
-
-  const _VerificationStatusCard({required this.isVerified});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isVerified ? AppTheme.successColor : AppTheme.warningColor;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isVerified
-                ? Icons.verified_user_rounded
-                : Icons.gpp_bad_rounded,
-            color: color,
-            size: 28,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isVerified ? 'DigiLocker Verified' : 'Not Verified',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
-                  ),
-                ),
-                if (isVerified)
-                  const Text(
-                    'Blockchain Secured',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                if (!isVerified)
-                  const Text(
-                    'Complete KYC to trigger automated claims',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (!isVerified)
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                backgroundColor: color.withOpacity(0.2),
-              ),
-              child: Text(
-                'Verify',
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 6),
+              Text(
+                'Chennai • ${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
                   fontSize: 12,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          environmentAsync.when(
+            data: (env) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: _HeaderMetric(
+                      icon: Icons.wb_sunny_outlined,
+                      label: 'Weather',
+                      value: '${env.weather.temperature.toStringAsFixed(1)}°C',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HeaderMetric(
+                      icon: Icons.air,
+                      label: 'AQI',
+                      value: '${env.aqi.aqi}',
+                    ),
+                  ),
+                ],
+              );
+            },
+            loading: () => Row(
+              children: const [
+                Expanded(child: _SkeletonChip()),
+                SizedBox(width: 12),
+                Expanded(child: _SkeletonChip()),
+              ],
             ),
+            error: (_, __) => const Text(
+              'Weather and AQI unavailable right now',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _RiskCard extends StatelessWidget {
-  final Map<String, dynamic> data;
+class _HeaderMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
 
-  const _RiskCard({required this.data});
+  const _HeaderMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final risk = (data['risk'] as Map<String, dynamic>?) ?? data;
-    final String level =
-        (risk['risk_level'] as String?)?.toUpperCase() ?? 'UNKNOWN';
-    final double score =
-        ((risk['risk_score'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
-    final String recommendation =
-        risk['recommendation'] as String? ?? 'Analysis unavailable';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.primaryColor, size: 18),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodaySnapshotCard extends StatelessWidget {
+  final TodayIncomeModel today;
+
+  const _TodaySnapshotCard({required this.today});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                color: AppTheme.primaryColor,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Performance at a glance',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricTile(
+                  label: 'Earnings',
+                  value: 'Rs ${today.earnings.toInt()}',
+                  icon: Icons.currency_rupee_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricTile(
+                  label: 'Orders',
+                  value: '${today.ordersCompleted}',
+                  icon: Icons.inventory_2_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricTile(
+                  label: 'Hours',
+                  value: '${today.hoursWorked}',
+                  icon: Icons.schedule_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RiskStatusCard extends StatelessWidget {
+  final Map<String, dynamic> riskData;
+
+  const _RiskStatusCard({required this.riskData});
+
+  @override
+  Widget build(BuildContext context) {
+    final risk = (riskData['risk'] as Map<String, dynamic>?) ?? riskData;
+    final level = (risk['risk_level'] as String? ?? 'LOW').toUpperCase();
+    final score = ((risk['risk_score'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
+    final recommendation =
+        risk['recommendation'] as String? ?? 'No recommendation available';
 
     Color color;
     if (level == 'HIGH') {
@@ -377,183 +479,426 @@ class _RiskCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
-        boxShadow: level == 'HIGH'
-            ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 20)]
-            : [],
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Risk Score',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                  fontSize: 14,
-                ),
-              ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: color.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   level,
                   style: TextStyle(
                     color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                score.toStringAsFixed(2),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            score.toStringAsFixed(2),
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+          const SizedBox(height: 14),
+          const Text(
+            'Recommendation',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             recommendation,
             style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TodaySummaryCard extends StatelessWidget {
-  final TodayIncomeModel today;
-
-  const _TodaySummaryCard({required this.today});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.account_balance_wallet_rounded,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Today',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Rs ${today.earnings.toInt()}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
               color: AppTheme.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
-          _RowStat(label: 'Orders', val: '${today.ordersCompleted}'),
-          const SizedBox(height: 8),
-          _RowStat(label: 'Hours', val: '${today.hoursWorked}h'),
         ],
       ),
     );
   }
 }
 
-class _BaselineCard extends StatelessWidget {
-  final BaselineIncomeModel baseline;
-  final TodayIncomeModel? today;
+class _BaselineSection extends StatelessWidget {
+  final AsyncValue<BaselineIncomeModel> baselineAsync;
+  final AsyncValue<TodayIncomeModel> todayAsync;
 
-  const _BaselineCard({
-    required this.baseline,
-    this.today,
+  const _BaselineSection({
+    required this.baselineAsync,
+    required this.todayAsync,
   });
 
   @override
   Widget build(BuildContext context) {
-    final expected = baseline.baselineDailyIncome;
-    final diff = today != null ? (today!.earnings - expected) : 0.0;
-    final isLoss = diff < 0;
+    return baselineAsync.when(
+      data: (baseline) {
+        return todayAsync.when(
+          data: (today) {
+            final difference = today.earnings - baseline.baselineDailyIncome;
+            final isProfit = difference >= 0;
+            return Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MetricTile(
+                          label: 'Baseline',
+                          value: 'Rs ${baseline.baselineDailyIncome.toInt()}',
+                          icon: Icons.insights_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _MetricTile(
+                          label: 'Today',
+                          value: 'Rs ${today.earnings.toInt()}',
+                          icon: Icons.today_outlined,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: (isProfit
+                              ? AppTheme.successColor
+                              : AppTheme.errorColor)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isProfit
+                              ? Icons.trending_up_rounded
+                              : Icons.trending_down_rounded,
+                          color: isProfit
+                              ? AppTheme.successColor
+                              : AppTheme.errorColor,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${isProfit ? 'Profit' : 'Loss'}: Rs ${difference.abs().toInt()}',
+                          style: TextStyle(
+                            color: isProfit
+                                ? AppTheme.successColor
+                                : AppTheme.errorColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const _SkeletonCard(height: 160),
+          error: (_, __) =>
+              const _InlineErrorCard(message: 'Unable to compare earnings'),
+        );
+      },
+      loading: () => const _SkeletonCard(height: 160),
+      error: (_, __) =>
+          const _InlineErrorCard(message: 'Unable to load baseline income'),
+    );
+  }
+}
 
+class _QuickActionsGrid extends StatelessWidget {
+  final VoidCallback onVerify;
+  final VoidCallback onConnectGig;
+  final VoidCallback onViewEarnings;
+  final VoidCallback onViewRisk;
+
+  const _QuickActionsGrid({
+    required this.onVerify,
+    required this.onConnectGig,
+    required this.onViewEarnings,
+    required this.onViewRisk,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.35,
+      children: [
+        _ActionCard(
+          icon: Icons.verified_user_outlined,
+          title: 'Verify Identity',
+          subtitle: 'Complete DigiLocker verification',
+          onTap: onVerify,
+        ),
+        _ActionCard(
+          icon: Icons.link_rounded,
+          title: 'Connect Gig Account',
+          subtitle: 'Add your delivery partner account',
+          onTap: onConnectGig,
+        ),
+        _ActionCard(
+          icon: Icons.bar_chart_rounded,
+          title: 'View Earnings',
+          subtitle: 'Open income intelligence',
+          onTap: onViewEarnings,
+        ),
+        _ActionCard(
+          icon: Icons.security_rounded,
+          title: 'View Risk',
+          subtitle: 'Check live safety signals',
+          onTap: onViewRisk,
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniInsightsSection extends StatelessWidget {
+  final AsyncValue<TodayIncomeModel> todayAsync;
+  final AsyncValue<BaselineIncomeModel> baselineAsync;
+  final AsyncValue<EnvironmentModel> environmentAsync;
+
+  const _MiniInsightsSection({
+    required this.todayAsync,
+    required this.baselineAsync,
+    required this.environmentAsync,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        todayAsync.when(
+          data: (today) {
+            return baselineAsync.when(
+              data: (baseline) {
+                final gap = baseline.baselineDailyIncome == 0
+                    ? 0.0
+                    : ((baseline.baselineDailyIncome - today.earnings) /
+                            baseline.baselineDailyIncome) *
+                        100;
+                final isLower = gap > 0;
+                final insight = isLower
+                    ? 'You earned ${gap.abs().toStringAsFixed(0)}% less than baseline today.'
+                    : 'You are outperforming baseline by ${gap.abs().toStringAsFixed(0)}% today.';
+                return _InsightCard(
+                  icon: isLower
+                      ? Icons.cloudy_snowing
+                      : Icons.trending_up_rounded,
+                  title: 'Earnings Insight',
+                  description: insight,
+                );
+              },
+              loading: () => const _SkeletonCard(height: 88),
+              error: (_, __) =>
+                  const _InlineErrorCard(message: 'Insights unavailable'),
+            );
+          },
+          loading: () => const _SkeletonCard(height: 88),
+          error: (_, __) =>
+              const _InlineErrorCard(message: 'Insights unavailable'),
+        ),
+        const SizedBox(height: 12),
+        environmentAsync.when(
+          data: (env) {
+            final peakBoost = env.traffic.trafficLevel == 'LOW' ? 20 : 12;
+            final weatherHint = env.weather.rainfall > 0
+                ? 'Rain conditions may be suppressing earnings.'
+                : 'Stable weather supports stronger peak-hour earnings.';
+            return _InsightCard(
+              icon: Icons.lightbulb_outline_rounded,
+              title: 'Operations Insight',
+              description:
+                  'Peak hours improved earnings by $peakBoost%. $weatherHint',
+            );
+          },
+          loading: () => const _SkeletonCard(height: 88),
+          error: (_, __) =>
+              const _InlineErrorCard(message: 'Operational insight unavailable'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.insights_rounded, color: AppTheme.textSecondary),
-          const SizedBox(height: 16),
-          const Text(
-            'Baseline',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          Icon(icon, color: AppTheme.primaryColor, size: 18),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Rs ${expected.toInt()}',
+            value,
             style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
               color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
             ),
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: isLoss
-                  ? AppTheme.errorColor.withOpacity(0.1)
-                  : AppTheme.successColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppTheme.primaryColor, size: 24),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _InsightCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  isLoss
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
-                  color: isLoss
-                      ? AppTheme.errorColor
-                      : AppTheme.successColor,
-                  size: 14,
-                ),
-                const SizedBox(width: 4),
                 Text(
-                  'Rs ${diff.abs().toInt()}',
-                  style: TextStyle(
-                    color: isLoss
-                        ? AppTheme.errorColor
-                        : AppTheme.successColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -565,36 +910,74 @@ class _BaselineCard extends StatelessWidget {
   }
 }
 
-class _RowStat extends StatelessWidget {
-  final String label;
-  final String val;
+class _SectionTitle extends StatelessWidget {
+  final String title;
 
-  const _RowStat({
-    required this.label,
-    required this.val,
-  });
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 12,
-          ),
-        ),
-        Text(
-          val,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-      ],
+    return Text(
+      title,
+      style: const TextStyle(
+        color: AppTheme.textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _InlineErrorCard extends StatelessWidget {
+  final String message;
+
+  const _InlineErrorCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(color: AppTheme.textSecondary),
+      ),
+    );
+  }
+}
+
+class _SkeletonCard extends StatelessWidget {
+  final double height;
+
+  const _SkeletonCard({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+    );
+  }
+}
+
+class _SkeletonChip extends StatelessWidget {
+  const _SkeletonChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
     );
   }
 }

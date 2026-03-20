@@ -7,9 +7,18 @@ import 'package:guidewire_gig_ins/config.dart';
 /// Response model for signup / login
 class AuthResult {
   final int userId;
+  final String name;
+  final String email;
+  final String phone;
   final bool isVerified;
 
-  const AuthResult({required this.userId, required this.isVerified});
+  const AuthResult({
+    required this.userId,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.isVerified,
+  });
 }
 
 /// Response model for DigiLocker request
@@ -187,7 +196,13 @@ class ApiService {
         // Backend returns user object with "id" or "user_id"
         final id = (body['id'] ?? body['user_id']) as int;
         final isVerified = (body['is_verified'] as bool?) ?? false;
-        return AuthResult(userId: id, isVerified: isVerified);
+        return AuthResult(
+          userId: id,
+          name: body['name'] as String? ?? name,
+          email: body['email'] as String? ?? email,
+          phone: body['phone'] as String? ?? phone,
+          isVerified: isVerified,
+        );
       }
 
       final errorBody = _tryDecodeError(response.body);
@@ -217,7 +232,13 @@ class ApiService {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final id = (body['id'] ?? body['user_id']) as int;
         final isVerified = (body['is_verified'] as bool?) ?? false;
-        return AuthResult(userId: id, isVerified: isVerified);
+        return AuthResult(
+          userId: id,
+          name: body['name'] as String? ?? email.split('@').first,
+          email: body['email'] as String? ?? email,
+          phone: body['phone'] as String? ?? '',
+          isVerified: isVerified,
+        );
       }
 
       if (response.statusCode == 401 || response.statusCode == 400) {
