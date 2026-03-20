@@ -36,11 +36,12 @@ def link_bank_endpoint(payload: LinkBankRequest, db: Session = Depends(get_db)):
 def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_db)):
     latest_policy = get_latest_policy(user_id=payload.user_id, db=db)
     if latest_policy is not None and latest_policy.premium_paid and latest_policy.status == 'ACTIVE':
+        summary = insurance_summary(db=db, user_id=payload.user_id)
         return {
             'status': 'SUCCESS',
             'user_id': payload.user_id,
             'amount': 0.0,
-            'balance': float(get_account := insurance_summary(db=db, user_id=payload.user_id)['balance'] or 0.0),
+            'balance': float(summary['balance'] or 0.0),
             'transaction_id': f'policy_{latest_policy.id}',
             'blockchain_txn_id': None,
         }
