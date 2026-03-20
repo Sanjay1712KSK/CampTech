@@ -70,6 +70,8 @@ def ensure_schema():
 
     required_columns = {
         'users': ['verified_at', 'is_verified'],
+        'bank_accounts': ['user_id', 'account_number', 'ifsc', 'balance', 'created_at'],
+        'bank_transactions': ['user_id', 'transaction_type', 'amount', 'status', 'reference_id', 'metadata_json'],
         'gig_income': [
             'weather_condition',
             'temperature',

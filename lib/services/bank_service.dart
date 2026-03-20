@@ -22,6 +22,7 @@ class BankService {
   static const _totalClaimedKey = 'mock_total_claimed';
   static const _lastWeekPremiumKey = 'mock_last_week_premium';
   static const _lastWeekClaimKey = 'mock_last_week_claim';
+  static const _premiumPaidKey = 'mock_has_paid_premium';
 
   static Future<bool> linkBank() async {
     final prefs = await SharedPreferences.getInstance();
@@ -35,6 +36,7 @@ class BankService {
     final lastWeekPremium = prefs.getDouble(_lastWeekPremiumKey) ?? 0.0;
     await prefs.setDouble(_totalPaidKey, totalPaid + amount);
     await prefs.setDouble(_lastWeekPremiumKey, lastWeekPremium + amount);
+    await prefs.setBool(_premiumPaidKey, true);
     return true;
   }
 
@@ -63,5 +65,11 @@ class BankService {
       lastWeekSummary:
           'Last 7 days: paid Rs ${lastWeekPremium.toStringAsFixed(0)}, claimed Rs ${lastWeekClaim.toStringAsFixed(0)}',
     );
+  }
+
+  static Future<bool> hasPaidPremium() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getBool(_premiumPaidKey) ?? false) ||
+        ((prefs.getDouble(_totalPaidKey) ?? 0.0) > 0);
   }
 }

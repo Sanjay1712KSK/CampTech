@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import date, timedelta
 from unittest.mock import patch
 
 from sqlalchemy import create_engine
@@ -8,18 +9,23 @@ from sqlalchemy.orm import sessionmaker
 
 import main
 from database.db import Base
+from models import bank_account as bank_account_model  # noqa: F401
 from models import digilocker_request as digilocker_request_model  # noqa: F401
 from models import gig_income as gig_income_model  # noqa: F401
 from models import user_model as user_model_module  # noqa: F401
 from routes import auth as auth_routes
+from routes import claim as claim_routes
 from routes import digilocker as digilocker_routes
 from routes import environment as environment_routes
 from routes import gig as gig_routes
+from routes import payment as payment_routes
+from routes import premium as premium_routes
 from routes import risk as risk_routes
 from services.digilocker_service import MOCK_DOCUMENTS
 from schemas.environment_schema import CoordinatesQuery
 from schemas.digilocker_schema import DigiLockerConsentSchema, DigiLockerRequestSchema
 from schemas.gig_schema import GenerateGigDataRequest
+from schemas.insurance_schema import ClaimProcessRequest, LinkBankRequest, PayPremiumRequest
 from schemas.user_schema import UserCreate, UserLogin, VerificationRequest
 
 
@@ -182,6 +188,131 @@ class BackendRouteTests(unittest.TestCase):
 
         status_result = digilocker_routes.digilocker_status(user_id=user_id, db=self.db)
         self.assertEqual(status_result["status"], "VERIFIED")
+
+    def test_premium_calculation(self):
+        signup_result = self._signup_user(email="premium@example.com", phone="9011111111")
+        user_id = signup_result["id"]
+
+        self.db.add_all([
+            gig_income_model.GigIncome(
+                user_id=user_id,
+                date=date.today(),
+                orders_completed=18,
+                hours_worked=8.0,
+                earnings=900.0,
+                earnings_per_order=50.0,
+                platform="swiggy",
+                disruption_type="none",
+            ),
+            gig_income_model.GigIncome(
+                user_id=user_id,
+                date=date.today() - timedelta(days=1),
+                orders_completed=17,
+                hours_worked=7.5,
+                earnings=860.0,
+                earnings_per_order=50.0,
+                platform="zomato",
+                disruption_type="none",
+            ),
+        ])
+        self.db.commit()
+
+        fake_environment = {
+            "weather": {"temperature": 30.0, "humidity": 60.0, "wind_speed": 5.0, "rainfall": 1.0},
+            "aqi": {"aqi": 2, "pm2_5": 20.0, "pm10": 30.0},
+            "traffic": {"traffic_score": 1.1, "traffic_level": "MEDIUM"},
+            "context": {"hour": 10, "day_type": "weekday"},
+        }
+        with patch("services.premium_engine.get_environment", return_value=fake_environment):
+            result = premium_routes.calculate_premium_endpoint(user_id=user_id, db=self.db)
+
+        self.assertGreater(result["baseline"], 0)
+        self.assertGreaterEqual(result["risk_score"], 0)
+        self.assertGreaterEqual(result["weekly_premium"], 0)
+
+    def test_link_bank_and_pay_premium(self):
+        signup_result = self._signup_user(email="bank@example.com", phone="9022222222")
+        user_id = signup_result["id"]
+
+        link_result = payment_routes.link_bank_endpoint(
+            LinkBankRequest(user_id=user_id, account_number="123456789012", ifsc="HDFC0001234"),
+            db=self.db,
+        )
+        self.assertEqual(link_result["status"], "LINKED")
+
+        with patch("routes.payment.log_to_blockchain", return_value={"transaction_id": "MOCK-TXN"}):
+            payment_result = payment_routes.pay_premium_endpoint(
+                PayPremiumRequest(user_id=user_id, amount=200.0),
+                db=self.db,
+            )
+
+        self.assertEqual(payment_result["status"], "SUCCESS")
+        self.assertEqual(payment_result["amount"], 200.0)
+        self.assertLess(payment_result["balance"], link_result["balance"])
+
+    def test_claim_process_approved(self):
+        signup_result = self._signup_user(email="claim@example.com", phone="9033333333")
+        user_id = signup_result["id"]
+
+        payment_routes.link_bank_endpoint(
+            LinkBankRequest(user_id=user_id, account_number="555555555555", ifsc="SBIN0001234"),
+            db=self.db,
+        )
+
+        self.db.add_all([
+            gig_income_model.GigIncome(
+                user_id=user_id,
+                date=date(2026, 3, 18),
+                orders_completed=20,
+                hours_worked=8.0,
+                earnings=1000.0,
+                earnings_per_order=50.0,
+                platform="swiggy",
+                disruption_type="none",
+            ),
+            gig_income_model.GigIncome(
+                user_id=user_id,
+                date=date(2026, 3, 17),
+                orders_completed=19,
+                hours_worked=7.8,
+                earnings=920.0,
+                earnings_per_order=48.5,
+                platform="zomato",
+                disruption_type="none",
+            ),
+            gig_income_model.GigIncome(
+                user_id=user_id,
+                date=date.today(),
+                orders_completed=6,
+                hours_worked=6.0,
+                earnings=300.0,
+                earnings_per_order=50.0,
+                platform="swiggy",
+                disruption_type="rain",
+                rainfall=7.0,
+                traffic_level="HIGH",
+                traffic_score=1.7,
+            ),
+        ])
+        self.db.commit()
+
+        fake_environment = {
+            "weather": {"temperature": 26.0, "humidity": 88.0, "wind_speed": 8.0, "rainfall": 7.0},
+            "aqi": {"aqi": 2, "pm2_5": 18.0, "pm10": 28.0},
+            "traffic": {"traffic_score": 1.7, "traffic_level": "HIGH"},
+            "context": {"hour": 18, "day_type": "weekday"},
+        }
+        with patch("services.claim_engine.get_environment", return_value=fake_environment), patch(
+            "routes.claim.log_to_blockchain",
+            return_value={"transaction_id": "MOCK-TXN"},
+        ):
+            result = claim_routes.process_claim_endpoint(
+                ClaimProcessRequest(user_id=user_id, lat=13.0827, lon=80.2707),
+                db=self.db,
+            )
+
+        self.assertEqual(result["status"], "APPROVED")
+        self.assertGreater(result["payout"], 0)
 
 
 if __name__ == "__main__":

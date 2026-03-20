@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -17,27 +18,23 @@ class AIEngineTab extends ConsumerStatefulWidget {
 
 class _AIEngineTabState extends ConsumerState<AIEngineTab>
     with TickerProviderStateMixin {
-  late final AnimationController _pageController;
   late final AnimationController _pulseController;
   Future<BankSummary>? _bankFuture;
+  bool _isLinkingBank = false;
+  bool _isPayingPremium = false;
 
   @override
   void initState() {
     super.initState();
-    _pageController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..forward();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
+      duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
     _bankFuture = BankService.getSummary();
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -45,84 +42,140 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
   Future<void> _refreshAll() async {
     ref.invalidate(environmentProvider);
     ref.invalidate(riskProvider);
-    ref.invalidate(baselineIncomeProvider);
     ref.invalidate(todayIncomeProvider);
+    ref.invalidate(baselineIncomeProvider);
+    ref.invalidate(premiumProvider);
+    ref.read(claimProvider.notifier).reset();
     setState(() => _bankFuture = BankService.getSummary());
-    await Future.wait([
-      ref.read(environmentProvider.future),
-      ref.read(riskProvider.future),
-      ref.read(baselineIncomeProvider.future),
-      ref.read(todayIncomeProvider.future),
-    ]).catchError((_) => <Object>[]);
   }
 
-  Future<void> _linkBank() async {
-    await BankService.linkBank();
-    setState(() => _bankFuture = BankService.getSummary());
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bank linked')),
-    );
+  Future<void> _linkBank(int userId) async {
+    if (_isLinkingBank) return;
+    setState(() => _isLinkingBank = true);
+    try {
+      await ApiService.linkBankAccount(userId);
+      await BankService.linkBank();
+      setState(() => _bankFuture = BankService.getSummary());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bank linked successfully')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _isLinkingBank = false);
+    }
   }
 
-  Future<void> _payPremium(double amount) async {
-    await BankService.payPremium(amount);
-    setState(() => _bankFuture = BankService.getSummary());
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Premium paid: Rs ${amount.toStringAsFixed(2)}')),
-    );
+  Future<void> _payPremium(int userId, double amount) async {
+    if (_isPayingPremium) return;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceColor,
+            title: const Text('Confirm Premium Payment',
+                style: TextStyle(color: AppTheme.textPrimary)),
+            content: Text(
+              'Pay Rs ${amount.toStringAsFixed(2)} for this week?',
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Pay Premium'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    setState(() => _isPayingPremium = true);
+    try {
+      await ApiService.payPremium(userId, amount);
+      await BankService.payPremium(amount);
+      setState(() => _bankFuture = BankService.getSummary());
+      ref.invalidate(premiumProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Premium Paid Successfully')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _isPayingPremium = false);
+    }
   }
 
-  List<_Check> _checks(
+  List<_Check> _steps(
     EnvironmentModel env,
     TodayIncomeModel today,
     BaselineIncomeModel baseline,
     LocationState location,
   ) {
     return [
-      _Check(
-        'Location match',
-        (location.lat - 13.0827).abs() < 1.5 &&
-            (location.lon - 80.2707).abs() < 1.5,
-      ),
-      _Check(
-        'Weather validation',
-        env.weather.rainfall > 0 ? today.disruptionType == 'rain' : true,
-      ),
-      _Check(
-        'Income drop validation',
-        baseline.baselineDailyIncome - today.earnings >= 0,
-      ),
-      _Check(
-        'Activity check',
-        today.ordersCompleted > 0 && today.hoursWorked > 0,
-      ),
+      _Check('Checking weather...', env.weather.rainfall > 0 ? today.disruptionType == 'rain' : true),
+      _Check('Checking traffic...', env.traffic.trafficLevel == 'LOW' ? today.disruptionType != 'traffic' : true),
+      _Check('Checking income drop...', baseline.baselineDailyIncome > 0 ? today.earnings < baseline.baselineDailyIncome * 0.8 : false),
+      _Check('Running fraud detection...', (location.lat - 13.0827).abs() < 5 && (location.lon - 80.2707).abs() < 5),
     ];
   }
 
-  Future<void> _runClaim(
-    EnvironmentModel env,
-    TodayIncomeModel today,
-    BaselineIncomeModel baseline,
-    LocationState location,
-  ) async {
-    final checks = _checks(env, today, baseline, location);
-    final approved = checks.every((e) => e.pass);
-    final payout = max(0.0, baseline.baselineDailyIncome - today.earnings) * 0.8;
+  Future<void> _claim({
+    required int userId,
+    required bool isVerified,
+    required LocationState location,
+    required EnvironmentModel environment,
+    required TodayIncomeModel today,
+    required BaselineIncomeModel baseline,
+  }) async {
+    if (!isVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verify identity before making a claim')),
+      );
+      return;
+    }
+    if (location.lat.isNaN || location.lon.isNaN) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location is required to process a claim')),
+      );
+      return;
+    }
+    if (!await BankService.hasPaidPremium()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pay premium before claiming insurance')),
+      );
+      return;
+    }
 
+    final checks = _steps(environment, today, baseline, location);
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => _ClaimDialog(
         checks: checks,
-        approved: approved,
-        payout: payout,
-        onFinish: () async {
-          if (approved && payout > 0) {
-            await BankService.payoutClaim(payout);
+        runClaim: () async {
+          final result = await ref.read(claimProvider.notifier).submitClaim(
+                userId: userId,
+                lat: location.lat,
+                lon: location.lon,
+              );
+          if ((result['status'] as String? ?? '').toUpperCase() == 'APPROVED') {
+            await BankService.payoutClaim((result['payout'] as num?)?.toDouble() ?? 0);
             setState(() => _bankFuture = BankService.getSummary());
           }
-          if (context.mounted) Navigator.pop(context);
+          return result;
         },
       ),
     );
@@ -130,96 +183,60 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
 
   @override
   Widget build(BuildContext context) {
-    final envAsync = ref.watch(environmentProvider);
+    final user = ref.watch(userProvider);
+    final environmentAsync = ref.watch(environmentProvider);
     final riskAsync = ref.watch(riskProvider);
-    final baselineAsync = ref.watch(baselineIncomeProvider);
     final todayAsync = ref.watch(todayIncomeProvider);
+    final baselineAsync = ref.watch(baselineIncomeProvider);
+    final premiumAsync = ref.watch(premiumProvider);
     final location = ref.watch(locationProvider);
+
+    if (user == null) return const Center(child: CircularProgressIndicator());
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshAll,
-          color: AppTheme.primaryColor,
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _section(
-                  0,
-                  _hero(),
+                _hero(),
+                const SizedBox(height: 18),
+                FutureBuilder<BankSummary>(
+                  future: _bankFuture,
+                  builder: (context, snapshot) => _bankCard(user.userId, snapshot.data),
                 ),
                 const SizedBox(height: 18),
-                _section(
-                  1,
-                  FutureBuilder<BankSummary>(
-                    future: _bankFuture,
-                    builder: (context, snapshot) => _bankCard(
-                      snapshot.data,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _section(
-                  2,
-                  envAsync.when(
-                    data: (env) => riskAsync.when(
-                      data: (riskData) => _riskCard(
-                        env,
-                        riskData,
-                        _checks(
-                          env,
-                          todayAsync.value ??
-                              TodayIncomeModel(
-                                earnings: 0,
-                                ordersCompleted: 0,
-                                hoursWorked: 0,
-                                disruptionType: 'none',
-                              ),
-                          baselineAsync.value ??
-                              BaselineIncomeModel(baselineDailyIncome: 0),
-                          location,
-                        ),
-                      ),
-                      loading: () => const _LoadingCard(),
-                      error: (_, __) => const _ErrorCard('Risk engine unavailable'),
-                    ),
+                environmentAsync.when(
+                  data: (environment) => riskAsync.when(
+                    data: (riskData) => _riskCard(environment, riskData),
                     loading: () => const _LoadingCard(),
-                    error: (_, __) => const _ErrorCard('Environment unavailable'),
+                    error: (_, __) => const _ErrorCard('Risk engine unavailable'),
                   ),
+                  loading: () => const _LoadingCard(),
+                  error: (_, __) => const _ErrorCard('Environment unavailable'),
                 ),
                 const SizedBox(height: 18),
-                _section(
-                  3,
-                  baselineAsync.when(
-                    data: (baseline) => riskAsync.when(
-                      data: (riskData) => _premiumCard(baseline, riskData),
-                      loading: () => const _LoadingCard(),
-                      error: (_, __) => const _ErrorCard('Premium engine unavailable'),
-                    ),
-                    loading: () => const _LoadingCard(),
-                    error: (_, __) => const _ErrorCard('Baseline unavailable'),
-                  ),
+                premiumAsync.when(
+                  data: (premium) => _premiumCard(user.userId, premium),
+                  loading: () => const _LoadingCard(),
+                  error: (_, __) => const _ErrorCard('Premium engine unavailable'),
                 ),
                 const SizedBox(height: 18),
-                _section(
-                  4,
-                  envAsync.when(
-                    data: (env) => baselineAsync.when(
-                      data: (baseline) => todayAsync.when(
-                        data: (today) => _claimCard(
-                          env,
-                          today,
-                          baseline,
-                          location,
-                        ),
-                        loading: () => const _LoadingCard(),
-                        error: (_, __) => const _ErrorCard('Claim inputs unavailable'),
+                environmentAsync.when(
+                  data: (environment) => todayAsync.when(
+                    data: (today) => baselineAsync.when(
+                      data: (baseline) => _claimCard(
+                        userId: user.userId,
+                        isVerified: user.isVerified,
+                        location: location,
+                        environment: environment,
+                        today: today,
+                        baseline: baseline,
                       ),
                       loading: () => const _LoadingCard(),
                       error: (_, __) => const _ErrorCard('Claim inputs unavailable'),
@@ -227,6 +244,8 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                     loading: () => const _LoadingCard(),
                     error: (_, __) => const _ErrorCard('Claim inputs unavailable'),
                   ),
+                  loading: () => const _LoadingCard(),
+                  error: (_, __) => const _ErrorCard('Claim inputs unavailable'),
                 ),
               ],
             ),
@@ -236,87 +255,64 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     );
   }
 
-  Widget _hero() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1F291B), Color(0xFF161A16)],
+  Widget _hero() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF1F291B), Color(0xFF161A16)]),
+          borderRadius: BorderRadius.circular(24),
         ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'AI Insurance System',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Real-time risk, dynamic premium, fraud-aware claims, and finance tracking in one flow.',
-            style: TextStyle(color: AppTheme.textSecondary, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('AI Insurance System', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            SizedBox(height: 8),
+            Text('See premium, pay weekly cover, and process claims with live backend intelligence.', style: TextStyle(color: AppTheme.textSecondary, height: 1.5)),
+          ],
+        ),
+      );
 
-  Widget _bankCard(BankSummary? bank) {
-    return GlassCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _pill(
-                bank?.bankLinked == true ? 'BANK LINKED' : 'BANK NOT LINKED',
-                bank?.bankLinked == true
-                    ? AppTheme.successColor
-                    : AppTheme.warningColor,
-              ),
-              const Spacer(),
-              if (bank?.bankLinked != true)
-                TextButton(
-                  onPressed: _linkBank,
-                  child: const Text('Link Bank'),
+  Widget _bankCard(int userId, BankSummary? bank) => GlassCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _pill(
+                  bank?.bankLinked == true ? 'BANK LINKED' : 'BANK NOT LINKED',
+                  bank?.bankLinked == true ? AppTheme.successColor : AppTheme.warningColor,
                 ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: _metric('Paid', 'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}')),
-              const SizedBox(width: 12),
-              Expanded(child: _metric('Claimed', 'Rs ${(bank?.totalClaimed ?? 0).toStringAsFixed(0)}')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+                const Spacer(),
+                if (bank?.bankLinked != true)
+                  TextButton(
+                    onPressed: _isLinkingBank ? null : () => _linkBank(userId),
+                    child: Text(_isLinkingBank ? 'Linking...' : 'Link Bank'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: _metric('Total Paid', 'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}')),
+                const SizedBox(width: 12),
+                Expanded(child: _metric('Total Claimed', 'Rs ${(bank?.totalClaimed ?? 0).toStringAsFixed(0)}')),
+              ],
+            ),
+          ],
+        ),
+      );
 
-  Widget _riskCard(EnvironmentModel env, Map<String, dynamic> riskData, List<_Check> checks) {
+  Widget _riskCard(EnvironmentModel env, Map<String, dynamic> riskData) {
     final risk = (riskData['risk'] as Map<String, dynamic>?) ?? riskData;
     final score = ((risk['risk_score'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
     final level = (risk['risk_level'] as String? ?? 'LOW').toUpperCase();
-
     return GlassCard(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Title(
-            index: '01',
-            title: 'Risk Engine',
-            subtitle: 'Inputs -> fraud checks -> live risk output',
-          ),
+          const _Title('01', 'Risk Engine', 'Live environment signals feeding the risk model'),
           const SizedBox(height: 18),
           Wrap(
             spacing: 10,
@@ -328,8 +324,6 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
               _input(Icons.schedule_rounded, 'Time', '${env.context.hour}:00'),
             ],
           ),
-          const SizedBox(height: 14),
-          _checkWrap(checks.take(2).toList()),
           const SizedBox(height: 14),
           _flowLine(),
           const SizedBox(height: 14),
@@ -362,54 +356,39 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     );
   }
 
-  Widget _premiumCard(BaselineIncomeModel baseline, Map<String, dynamic> riskData) {
-    final risk = (riskData['risk'] as Map<String, dynamic>?) ?? riskData;
-    final score = ((risk['risk_score'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
-    final weeklyPremium = baseline.baselineDailyIncome * 7 * score * 0.05;
-
+  Widget _premiumCard(int userId, Map<String, dynamic> data) {
+    final baseline = (data['baseline'] as num?)?.toDouble() ?? 0.0;
+    final weeklyIncome = (data['weekly_income'] as num?)?.toDouble() ?? 0.0;
+    final riskScore = (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+    final weeklyPremium = (data['weekly_premium'] as num?)?.toDouble() ?? 0.0;
     return GlassCard(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Title(
-            index: '02',
-            title: 'Premium Engine',
-            subtitle: 'Baseline x 7 x risk x 0.05',
-          ),
+          const _Title('02', 'Your Weekly Premium', 'Baseline, risk, and premium from the backend'),
           const SizedBox(height: 18),
           Row(
             children: [
-              Expanded(child: _metric('Baseline', 'Rs ${baseline.baselineDailyIncome.toStringAsFixed(0)}')),
+              Expanded(child: _metric('Baseline Income', 'Rs ${baseline.toStringAsFixed(0)}')),
               const SizedBox(width: 12),
-              Expanded(child: _metric('Risk', score.toStringAsFixed(2))),
+              Expanded(child: _metric('Weekly Income', 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
             ],
           ),
-          const SizedBox(height: 14),
-          _flowLine(),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Weekly Premium', style: TextStyle(color: AppTheme.textSecondary)),
-                const SizedBox(height: 6),
-                Text('Rs ${weeklyPremium.toStringAsFixed(2)}', style: const TextStyle(color: AppTheme.primaryColor, fontSize: 30, fontWeight: FontWeight.bold)),
-              ],
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _metric('Risk Score', riskScore.toStringAsFixed(2))),
+              const SizedBox(width: 12),
+              Expanded(child: _metric('Weekly Premium', 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+            ],
           ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _payPremium(weeklyPremium),
-              child: const Text('Pay Premium'),
+              onPressed: _isPayingPremium ? null : () => _payPremium(userId, weeklyPremium),
+              child: Text(_isPayingPremium ? 'Paying...' : 'Pay Premium'),
             ),
           ),
         ],
@@ -417,56 +396,48 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     );
   }
 
-  Widget _claimCard(EnvironmentModel env, TodayIncomeModel today, BaselineIncomeModel baseline, LocationState location) {
-    final checks = _checks(env, today, baseline, location);
-    final incomeDrop = max(0.0, baseline.baselineDailyIncome - today.earnings);
-    final payout = incomeDrop * 0.8;
-
+  Widget _claimCard({
+    required int userId,
+    required bool isVerified,
+    required LocationState location,
+    required EnvironmentModel environment,
+    required TodayIncomeModel today,
+    required BaselineIncomeModel baseline,
+  }) {
+    final estimatedPayout = max(0.0, baseline.baselineDailyIncome - today.earnings) * 0.8;
     return GlassCard(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Title(
-            index: '03',
-            title: 'Claim Engine',
-            subtitle: 'Trigger -> verification -> approve or reject',
-          ),
+          const _Title('03', 'Claim Engine', 'Verify claim signals and trigger payout'),
           const SizedBox(height: 18),
           Row(
             children: [
               Expanded(child: _metric('Disruption', today.disruptionType.toUpperCase())),
               const SizedBox(width: 12),
-              Expanded(child: _metric('Income Drop', 'Rs ${incomeDrop.toStringAsFixed(0)}')),
+              Expanded(child: _metric('Estimated Payout', 'Rs ${estimatedPayout.toStringAsFixed(0)}')),
             ],
           ),
           const SizedBox(height: 14),
-          _checkWrap(checks),
-          const SizedBox(height: 14),
-          _flowLine(),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Estimated Payout', style: TextStyle(color: AppTheme.textSecondary)),
-                const SizedBox(height: 6),
-                Text('Rs ${payout.toStringAsFixed(2)}', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 28, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
+          _checkWrap([
+            _Check('Identity verified', isVerified),
+            _Check('Location available', !location.lat.isNaN && !location.lon.isNaN),
+            _Check('Premium paid', true),
+          ]),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _runClaim(env, today, baseline, location),
-              child: const Text('Run Claim Verification'),
+              onPressed: () => _claim(
+                userId: userId,
+                isVerified: isVerified,
+                location: location,
+                environment: environment,
+                today: today,
+                baseline: baseline,
+              ),
+              child: const Text('Claim Insurance'),
             ),
           ),
         ],
@@ -480,161 +451,104 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     return AppTheme.successColor;
   }
 
-  Widget _section(int index, Widget child) {
-    final animation = CurvedAnimation(
-      parent: _pageController,
-      curve: Interval(min(0.16 * index, 0.7), 1.0, curve: Curves.easeOutCubic),
-    );
-    return FadeTransition(
-      opacity: animation,
-      child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(animation),
-        child: child,
-      ),
-    );
-  }
+  Widget _metric(String label, String value) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+            const SizedBox(height: 6),
+            Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+      );
 
-  Widget _metric(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
-        ],
-      ),
-    );
-  }
-
-  Widget _input(IconData icon, String label, String value) {
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.primaryColor, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                const SizedBox(height: 4),
-                Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _coreNode() {
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        final glow = 0.18 + (_pulseController.value * 0.18);
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor.withOpacity(glow),
-                AppTheme.primaryColor.withOpacity(0.08),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.memory_rounded, color: AppTheme.primaryColor, size: 24),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'AI Core\nScores and verifies signals before action',
-                  style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, height: 1.4),
-                ),
+  Widget _input(IconData icon, String label, String value) => Container(
+        width: 150,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.primaryColor, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                  const SizedBox(height: 4),
+                  Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
               ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+            ),
+          ],
+        ),
+      );
 
-  Widget _flowLine() {
-    return SizedBox(
-      height: 20,
-      child: AnimatedBuilder(
+  Widget _coreNode() => AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
-          return Stack(
+          final glow = 0.16 + (_pulseController.value * 0.18);
+          return Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(glow), AppTheme.primaryColor.withOpacity(0.08)]),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.memory_rounded, color: AppTheme.primaryColor, size: 24),
+                SizedBox(width: 12),
+                Expanded(child: Text('AI Core\nValidates signals before action', style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, height: 1.4))),
+              ],
+            ),
+          );
+        },
+      );
+
+  Widget _flowLine() => SizedBox(
+        height: 20,
+        child: AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, child) => Stack(
             alignment: Alignment.centerLeft,
             children: [
               Container(height: 2, width: double.infinity, color: Colors.white.withOpacity(0.08)),
               Align(
                 alignment: Alignment(-1 + (_pulseController.value * 2), 0),
-                child: Container(
-                  width: 34,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
+                child: Container(width: 34, height: 6, decoration: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(999))),
               ),
             ],
+          ),
+        ),
+      );
+
+  Widget _checkWrap(List<_Check> checks) => Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: checks.map((item) {
+          final color = item.pass ? AppTheme.successColor : AppTheme.warningColor;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(item.pass ? Icons.check : Icons.warning_amber_rounded, color: color, size: 14),
+                const SizedBox(width: 6),
+                Text(item.label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
           );
-        },
-      ),
-    );
-  }
+        }).toList(),
+      );
 
-  Widget _checkWrap(List<_Check> checks) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: checks.map((item) {
-        final color = item.pass ? AppTheme.successColor : AppTheme.warningColor;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(item.pass ? Icons.check : Icons.warning_amber_rounded, color: color, size: 14),
-              const SizedBox(width: 6),
-              Text(item.label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _pill(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
-    );
-  }
+  Widget _pill(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(color: color.withOpacity(0.14), borderRadius: BorderRadius.circular(999)),
+        child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+      );
 }
 
 class _Check {
@@ -647,7 +561,7 @@ class _Title extends StatelessWidget {
   final String index;
   final String title;
   final String subtitle;
-  const _Title({required this.index, required this.title, required this.subtitle});
+  const _Title(this.index, this.title, this.subtitle, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -655,10 +569,7 @@ class _Title extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(999),
-          ),
+          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
           child: Text(index, style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 12)),
         ),
         const SizedBox(width: 12),
@@ -679,46 +590,24 @@ class _Title extends StatelessWidget {
 
 class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
-
   @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Container(
-        height: 260,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(24),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => GlassCard(
+        padding: EdgeInsets.zero,
+        child: Container(height: 220, decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(24))),
+      );
 }
 
 class _ErrorCard extends StatelessWidget {
   final String message;
-  const _ErrorCard(this.message);
-
+  const _ErrorCard(this.message, {super.key});
   @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      child: Text(message, style: const TextStyle(color: AppTheme.textSecondary)),
-    );
-  }
+  Widget build(BuildContext context) => GlassCard(child: Text(message, style: const TextStyle(color: AppTheme.textSecondary)));
 }
 
 class _ClaimDialog extends StatefulWidget {
   final List<_Check> checks;
-  final bool approved;
-  final double payout;
-  final Future<void> Function() onFinish;
-
-  const _ClaimDialog({
-    required this.checks,
-    required this.approved,
-    required this.payout,
-    required this.onFinish,
-  });
+  final Future<Map<String, dynamic>> Function() runClaim;
+  const _ClaimDialog({required this.checks, required this.runClaim});
 
   @override
   State<_ClaimDialog> createState() => _ClaimDialogState();
@@ -726,6 +615,9 @@ class _ClaimDialog extends StatefulWidget {
 
 class _ClaimDialogState extends State<_ClaimDialog> {
   int visibleSteps = 0;
+  bool loading = true;
+  Map<String, dynamic>? result;
+  String? error;
 
   @override
   void initState() {
@@ -734,15 +626,32 @@ class _ClaimDialogState extends State<_ClaimDialog> {
   }
 
   Future<void> _run() async {
-    for (var i = 0; i < widget.checks.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 320));
+    try {
+      for (var i = 0; i < widget.checks.length; i++) {
+        await Future.delayed(const Duration(milliseconds: 420));
+        if (!mounted) return;
+        setState(() => visibleSteps = i + 1);
+      }
+      final response = await widget.runClaim();
       if (!mounted) return;
-      setState(() => visibleSteps = i + 1);
+      setState(() {
+        result = response;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        error = e.toString().replaceFirst('Exception: ', '');
+        loading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final approved = (result?['status'] as String? ?? '').toUpperCase() == 'APPROVED';
+    final payout = (result?['payout'] as num?)?.toDouble() ?? 0.0;
+    final reasons = (result?['reasons'] as List?)?.map((e) => '$e').join('\n');
     return Dialog(
       backgroundColor: AppTheme.backgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -752,12 +661,10 @@ class _ClaimDialogState extends State<_ClaimDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Claim Validation Flow', style: TextStyle(color: AppTheme.textPrimary, fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Running verification checks before claim approval', style: TextStyle(color: AppTheme.textSecondary)),
-            const SizedBox(height: 18),
-            ...List.generate(min(visibleSteps, widget.checks.length), (index) {
-              final item = widget.checks[index];
+            const Text('Verifying your claim...', style: TextStyle(color: AppTheme.textPrimary, fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ...List.generate(min(visibleSteps, widget.checks.length), (i) {
+              final item = widget.checks[i];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
@@ -765,39 +672,29 @@ class _ClaimDialogState extends State<_ClaimDialog> {
                     Icon(item.pass ? Icons.check_circle : Icons.warning_amber_rounded, color: item.pass ? AppTheme.successColor : AppTheme.warningColor, size: 18),
                     const SizedBox(width: 10),
                     Expanded(child: Text(item.label, style: const TextStyle(color: AppTheme.textPrimary))),
-                    Text(item.pass ? 'PASS' : 'REVIEW', style: TextStyle(color: item.pass ? AppTheme.successColor : AppTheme.warningColor, fontWeight: FontWeight.bold)),
                   ],
                 ),
               );
             }),
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: widget.approved ? AppTheme.successColor.withOpacity(0.1) : AppTheme.errorColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(18),
+            if (loading)
+              const Center(child: CircularProgressIndicator())
+            else
+              _Result(
+                color: error != null ? AppTheme.errorColor : approved ? AppTheme.successColor : AppTheme.warningColor,
+                title: error != null
+                    ? 'Claim failed'
+                    : approved
+                        ? 'Claim Approved'
+                        : 'Claim Rejected',
+                body: error ?? (approved ? 'Rs ${payout.toStringAsFixed(0)} credited to your account' : (reasons ?? 'Claim could not be approved')),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.approved ? 'Claim Approved' : 'Claim Rejected', style: TextStyle(color: widget.approved ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.approved
-                        ? 'Estimated payout: Rs ${widget.payout.toStringAsFixed(2)}'
-                        : 'Verification mismatch detected. Manual review required.',
-                    style: const TextStyle(color: AppTheme.textPrimary),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: widget.onFinish,
-                child: Text(widget.approved ? 'Finish and Payout' : 'Close'),
+                onPressed: loading ? null : () => Navigator.pop(context),
+                child: Text(loading ? 'Processing...' : 'Close'),
               ),
             ),
           ],
@@ -806,3 +703,24 @@ class _ClaimDialogState extends State<_ClaimDialog> {
     );
   }
 }
+
+class _Result extends StatelessWidget {
+  final Color color;
+  final String title;
+  final String body;
+  const _Result({required this.color, required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(18)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 6),
+            Text(body, style: const TextStyle(color: AppTheme.textPrimary)),
+          ],
+        ),
+      );

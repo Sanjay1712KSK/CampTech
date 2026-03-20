@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'dart:async';
 
 // User State
 class UserState {
@@ -115,3 +116,34 @@ final incomeHistoryProvider = FutureProvider<IncomeHistoryModel>((ref) async {
   if (user == null) throw Exception("User not logged in");
   return await ApiService.getIncomeHistory(user.userId);
 });
+
+final premiumProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final user = ref.watch(userProvider);
+  if (user == null) throw Exception("User not logged in");
+  return await ApiService.getPremium(user.userId);
+});
+
+class ClaimNotifier extends AsyncNotifier<Map<String, dynamic>?> {
+  @override
+  FutureOr<Map<String, dynamic>?> build() => null;
+
+  Future<Map<String, dynamic>> submitClaim({
+    required int userId,
+    required double lat,
+    required double lon,
+  }) async {
+    state = const AsyncLoading();
+    final result = await AsyncValue.guard(
+      () => ApiService.processClaim(userId, lat, lon),
+    );
+    state = result;
+    return result.requireValue;
+  }
+
+  void reset() {
+    state = const AsyncData(null);
+  }
+}
+
+final claimProvider =
+    AsyncNotifierProvider<ClaimNotifier, Map<String, dynamic>?>(ClaimNotifier.new);

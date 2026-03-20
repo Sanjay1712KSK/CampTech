@@ -105,6 +105,21 @@ def log_event(event_type: str, entity_id: str, data: dict, metadata: dict = None
         return _mock_blockchain_response(str(ex))
 
 
+def log_to_blockchain(event_type: str, payload: dict) -> dict:
+    entity_id = str(
+        payload.get('transaction_id')
+        or payload.get('claim_id')
+        or payload.get('user_id')
+        or f'{event_type}_{uuid.uuid4()}'
+    )
+    return log_event(
+        event_type=event_type,
+        entity_id=entity_id,
+        data=payload,
+        metadata={'source': 'gig_insurance_backend'},
+    )
+
+
 def log_verification(user_id: int) -> dict:
     return log_event(
         event_type='identity_verification',

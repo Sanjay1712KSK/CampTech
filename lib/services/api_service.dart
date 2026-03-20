@@ -62,6 +62,11 @@ class ApiService {
   static const String _gigTodayPath = '/gig/today-income';
   static const String _gigHistoryPath = '/gig/income-history';
   static const String _digilockerStatusPath = '/digilocker/status';
+  static const String _premiumPath = '/premium';
+  static const String _premiumCalculatePath = '/premium/calculate';
+  static const String _paymentPayPremiumPath = '/payment/pay-premium';
+  static const String _paymentLinkBankPath = '/payment/link-bank';
+  static const String _claimProcessPath = '/claim/process';
 
   static const Duration _timeout = Duration(seconds: 15);
 
@@ -165,6 +170,106 @@ class ApiService {
       throw Exception('Server not reachable');
     } catch (e) {
       throw Exception('Risk Data error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getPremium(int userId) async {
+    try {
+      final primaryUri = Uri.parse('${Config.baseUrl}$_premiumPath?user_id=$userId');
+      var response = await http.get(primaryUri, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 404) {
+        final fallbackUri = Uri.parse('${Config.baseUrl}$_premiumCalculatePath?user_id=$userId');
+        response = await http.get(fallbackUri, headers: _headers).timeout(_timeout);
+      }
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load premium');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Premium error: $e');
+    }
+  }
+
+  static Future<void> payPremium(int userId, double amount) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$_paymentPayPremiumPath'),
+            headers: _headers,
+            body: jsonEncode({'user_id': userId, 'amount': amount}),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return;
+      }
+
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to pay premium');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Premium payment error: $e');
+    }
+  }
+
+  static Future<void> linkBankAccount(
+    int userId, {
+    String accountNumber = '123456789012',
+    String ifsc = 'HDFC0001234',
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$_paymentLinkBankPath'),
+            headers: _headers,
+            body: jsonEncode({
+              'user_id': userId,
+              'account_number': accountNumber,
+              'ifsc': ifsc,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return;
+      }
+
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to link bank account');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Bank linking error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> processClaim(int userId, double lat, double lon) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$_claimProcessPath'),
+            headers: _headers,
+            body: jsonEncode({'user_id': userId, 'lat': lat, 'lon': lon}),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to process claim');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Claim error: $e');
     }
   }
 

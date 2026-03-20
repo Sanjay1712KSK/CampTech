@@ -1,0 +1,63 @@
+from sqlalchemy.orm import Session
+
+from models.gig_income import GigIncome
+from services.environment_service import get_environment
+from services.risk_engine import calculate_risk
+
+
+CITY_COORDINATES = {
+    'chennai': (13.0827, 80.2707),
+    'bengaluru': (12.9716, 77.5946),
+    'mumbai': (19.0760, 72.8777),
+    'pune': (18.5204, 73.8567),
+    'hyderabad': (17.3850, 78.4867),
+}
+
+
+def _round(value: float) -> float:
+    return float(round(float(value), 2))
+
+
+def _baseline_value(user_id: int, db: Session) -> float:
+    records = (
+        db.query(GigIncome)
+        .filter(GigIncome.user_id == int(user_id), GigIncome.disruption_type == 'none')
+        .order_by(GigIncome.earnings.desc())
+        .limit(5)
+        .all()
+    )
+    if not records:
+        return 0.0
+    return _round(sum(record.earnings for record in records) / len(records))
+
+
+def _resolve_coordinates(user_id: int, db: Session) -> tuple[float, float]:
+    latest = (
+        db.query(GigIncome)
+        .filter(GigIncome.user_id == int(user_id))
+        .order_by(GigIncome.date.desc(), GigIncome.created_at.desc())
+        .first()
+    )
+    if latest and latest.city:
+        coords = CITY_COORDINATES.get(str(latest.city).lower())
+        if coords:
+            return coords
+    return CITY_COORDINATES['chennai']
+
+
+def calculate_weekly_premium(user_id: int, db: Session) -> dict:
+    baseline = _baseline_value(user_id, db)
+    lat, lon = _resolve_coordinates(user_id, db)
+    environment = get_environment(lat, lon)
+    risk_result = calculate_risk(environment)
+    risk_score = float(risk_result.get('risk_score', 0.0))
+
+    weekly_income = _round(baseline * 7)
+    weekly_premium = _round(weekly_income * risk_score * 0.05)
+
+    return {
+        'baseline': baseline,
+        'weekly_income': weekly_income,
+        'risk_score': _round(risk_score),
+        'weekly_premium': weekly_premium,
+    }
