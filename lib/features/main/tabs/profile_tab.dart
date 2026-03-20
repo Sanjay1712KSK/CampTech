@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
+import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/main.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
@@ -93,8 +94,6 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
     if (user == null) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    final policyStatus = user.isVerified ? 'ACTIVE' : 'INACTIVE';
     final verificationStatus = user.isVerified ? 'VERIFIED' : 'NOT VERIFIED';
 
     return SafeArea(
@@ -113,11 +112,17 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
               ),
             ),
             const SizedBox(height: 20),
-            _PolicyCard(
-              userName: user.userName,
-              userId: user.userId,
-              policyStatus: policyStatus,
-              verificationStatus: verificationStatus,
+            FutureBuilder<BankSummary>(
+              future: BankService.getSummary(),
+              builder: (context, snapshot) {
+                final bank = snapshot.data;
+                return _PolicyCard(
+                  userName: user.userName,
+                  userId: user.userId,
+                  policyStatus: bank?.policyStatus ?? 'NOT PURCHASED',
+                  verificationStatus: verificationStatus,
+                );
+              },
             ),
             const SizedBox(height: 20),
             if (!user.isVerified)
@@ -177,6 +182,56 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                       label: 'Last Week',
                       value: bank?.lastWeekSummary ?? 'No activity yet',
                     ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(title: 'Bank'),
+            FutureBuilder<BankSummary>(
+              future: BankService.getSummary(),
+              builder: (context, snapshot) {
+                final bank = snapshot.data;
+                return _SettingsCard(
+                  children: [
+                    _InfoTile(
+                      icon: Icons.account_balance_rounded,
+                      label: 'Linked Account',
+                      value: bank?.maskedAccountNumber ?? 'Not linked',
+                    ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.qr_code_2_rounded,
+                      label: 'IFSC',
+                      value: bank?.ifsc ?? 'Unavailable',
+                    ),
+                    _DividerLine(),
+                    _InfoTile(
+                      icon: Icons.payments_outlined,
+                      label: 'Last Payout',
+                      value: 'Rs ${(bank?.lastPayout ?? 0).toStringAsFixed(0)}',
+                    ),
+                    if (bank?.bankLinked != true) ...[
+                      _DividerLine(),
+                      ListTile(
+                        leading: const Icon(Icons.link_rounded, color: AppTheme.primaryColor),
+                        title: const Text(
+                          'Link Bank Account',
+                          style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: const Text(
+                          'Add payout account details',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const LinkBankScreen()),
+                          );
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ],
                   ],
                 );
               },
