@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 enum VerificationStatus { notVerified, requesting, inputRequired, verifying, verified }
 
-class DigilockerVerificationScreen extends StatefulWidget {
-  final int userId;
-
-  const DigilockerVerificationScreen({Key? key, required this.userId}) : super(key: key);
+class DigilockerVerificationScreen extends ConsumerStatefulWidget {
+  const DigilockerVerificationScreen({Key? key}) : super(key: key);
 
   @override
-  State<DigilockerVerificationScreen> createState() => _DigilockerVerificationScreenState();
+  ConsumerState<DigilockerVerificationScreen> createState() => _DigilockerVerificationScreenState();
 }
 
-class _DigilockerVerificationScreenState extends State<DigilockerVerificationScreen> {
+class _DigilockerVerificationScreenState extends ConsumerState<DigilockerVerificationScreen> {
   String? _selectedDocument;
   VerificationStatus _status = VerificationStatus.notVerified;
 
@@ -44,7 +44,10 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
     setState(() => _status = VerificationStatus.requesting);
 
     try {
-      final result = await ApiService.createDigiLockerRequest(userId: widget.userId);
+      final user = ref.read(userProvider);
+      if (user == null) throw Exception("User not logged in");
+      
+      final result = await ApiService.createDigiLockerRequest(userId: user.userId);
 
       if (!mounted) return;
 
@@ -105,7 +108,17 @@ class _DigilockerVerificationScreenState extends State<DigilockerVerificationScr
       if (!mounted) return;
 
       if (result.verified) {
-        setState(() => _status = VerificationStatus.verified);
+        // Step 3: Poll status
+        final status = await ApiService.getDigiLockerStatus(_requestId!);
+        if (!mounted) return;
+        
+        if (status.toUpperCase() == 'VERIFIED' || status.toUpperCase() == 'APPROVED' || result.verified) {
+           ref.read(userProvider.notifier).updateVerification(true);
+           setState(() => _status = VerificationStatus.verified);
+        } else {
+           setState(() => _status = VerificationStatus.inputRequired);
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('DigiLocker Status: $status')));
+        }
       } else {
         setState(() => _status = VerificationStatus.inputRequired);
         final reason = result.reason ?? 'Verification failed. Check your details.';

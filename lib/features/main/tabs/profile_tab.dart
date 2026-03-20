@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
+import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:guidewire_gig_ins/main.dart'; // import appLocale
 
-class ProfileTab extends StatelessWidget {
-  final int userId;
-  final String userName;
-  final bool isVerified;
-
-  const ProfileTab({
-    Key? key,
-    required this.userId,
-    required this.userName,
-    this.isVerified = false,
-  }) : super(key: key);
+class ProfileTab extends ConsumerWidget {
+  const ProfileTab({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final user = ref.watch(userProvider);
+
+    if (user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final userName = user.userName;
+    final isVerified = user.isVerified;
+    final userId = user.userId;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -84,9 +87,23 @@ class ProfileTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
+                      Text(
                         isVerified ? 'DigiLocker • Blockchain Secured' : 'Complete DigiLocker verification',
                         style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
                       ),
+                      if (!isVerified) ...[
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const DigilockerVerificationScreen()));
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            minimumSize: const Size(100, 32),
+                          ),
+                          child: const Text('Verify Now', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+                        )
+                      ]
                     ],
                   ),
                 ],
@@ -149,6 +166,7 @@ class ProfileTab extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
+                  ref.read(userProvider.notifier).logout();
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const SignupScreen()),
