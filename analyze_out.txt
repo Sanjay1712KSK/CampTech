@@ -1,6 +1,5 @@
 ﻿Analyzing guidewire_gig_ins...                                  
 
-  error - The function 'StateProvider' isn't defined - lib\core\providers.dart:49:26 - undefined_function
    info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\core\theme.dart:23:9 - deprecated_member_use
    info - 'MaterialStateProperty' is deprecated and shouldn't be used. Use WidgetStateProperty instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre - lib\core\theme.dart:75:20 - deprecated_member_use
    info - 'MaterialState' is deprecated and shouldn't be used. Use WidgetState instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre - lib\core\theme.dart:76:31 - deprecated_member_use
@@ -39,14 +38,12 @@ warning - Unused import: 'package:guidewire_gig_ins/core/theme.dart' - lib\featu
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\gig\screens\income_intelligence_screen.dart:288:22 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\gig\screens\income_intelligence_screen.dart:290:41 - deprecated_member_use
    info - Parameter 'key' could be a super parameter - lib\features\main\main_shell.dart:12:9 - use_super_parameters
-  error - The named parameter 'userId' is required, but there's no corresponding argument - lib\features\main\main_shell.dart:39:13 - missing_required_argument
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\ai_engine_tab.dart:6:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\ai_engine_tab.dart:116:42 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\ai_engine_tab.dart:159:22 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\ai_engine_tab.dart:161:41 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\ai_engine_tab.dart:162:53 - deprecated_member_use
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\analytics_tab.dart:6:9 - use_super_parameters
-  error - The getter 'analytics' isn't defined for the type 'AppLocalizations' - lib\features\main\tabs\analytics_tab.dart:20:23 - undefined_getter
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\analytics_tab.dart:60:9 - use_super_parameters
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\analytics_tab.dart:100:9 - use_super_parameters
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\claims_tab.dart:6:9 - use_super_parameters
@@ -55,7 +52,6 @@ warning - Unused import: 'package:guidewire_gig_ins/core/theme.dart' - lib\featu
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\claims_tab.dart:94:35 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\claims_tab.dart:118:39 - deprecated_member_use
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\home_tab.dart:9:9 - use_super_parameters
-warning - A value of type 'List<dynamic>' can't be returned by the 'onError' handler because it must be assignable to 'FutureOr<List<Object>>' - lib\features\main\tabs\home_tab.dart:43:26 - invalid_return_type_for_catch_error
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\home_tab.dart:227:22 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\home_tab.dart:229:41 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\home_tab.dart:251:66 - deprecated_member_use
@@ -81,13 +77,11 @@ warning - A value of type 'List<dynamic>' can't be returned by the 'onError' han
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\profile_tab.dart:66:61 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\profile_tab.dart:66:100 - deprecated_member_use
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\risk_tab.dart:8:9 - use_super_parameters
-warning - A value of type 'List<dynamic>' can't be returned by the 'onError' handler because it must be assignable to 'FutureOr<List<Object>>' - lib\features\main\tabs\risk_tab.dart:25:34 - invalid_return_type_for_catch_error
-  error - The argument type 'EnvironmentModel' can't be assigned to the parameter type 'Map<String, dynamic>'.  - lib\features\main\tabs\risk_tab.dart:43:56 - argument_type_not_assignable
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:124:18 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:126:37 - deprecated_member_use
-   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:213:27 - curly_braces_in_flow_control_structures
-   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:214:32 - curly_braces_in_flow_control_structures
-   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:215:10 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:122:18 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:124:37 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:211:27 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:212:32 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:213:10 - curly_braces_in_flow_control_structures
    info - Parameter 'key' could be a super parameter - lib\features\verification\screens\digilocker_verification_screen.dart:11:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\verification\screens\digilocker_verification_screen.dart:287:58 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\verification\screens\digilocker_verification_screen.dart:348:32 - deprecated_member_use
@@ -97,5 +91,4 @@ warning - A value of type 'List<dynamic>' can't be returned by the 'onError' han
    info - Parameter 'key' could be a super parameter - lib\features\verification\screens\digilocker_verification_screen.dart:423:9 - use_super_parameters
    info - Parameter 'key' could be a super parameter - lib\features\verification\screens\digilocker_verification_screen.dart:444:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\verification\screens\digilocker_verification_screen.dart:459:53 - deprecated_member_use
-warning - Unused import: 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart' - lib\main.dart:6:8 - unused_import
 
