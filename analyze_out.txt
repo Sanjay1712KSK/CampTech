@@ -1,18 +1,6 @@
 ﻿Analyzing guidewire_gig_ins...                                  
 
-  error - Classes can only extend other classes - lib\core\providers.dart:21:28 - extends_non_class
-  error - Too many positional arguments: 0 expected, but 1 found - lib\core\providers.dart:22:26 - extra_positional_arguments
-  error - Undefined name 'state' - lib\core\providers.dart:25:5 - undefined_identifier
-  error - Undefined name 'state' - lib\core\providers.dart:29:9 - undefined_identifier
-  error - Undefined name 'state' - lib\core\providers.dart:30:7 - undefined_identifier
-  error - Undefined name 'state' - lib\core\providers.dart:30:15 - undefined_identifier
-  error - Undefined name 'state' - lib\core\providers.dart:35:5 - undefined_identifier
-  error - The function 'StateNotifierProvider' isn't defined - lib\core\providers.dart:39:22 - undefined_function
-  error - The function 'StateProvider' isn't defined - lib\core\providers.dart:48:26 - undefined_function
-  error - The returned type 'EnvironmentModel' isn't returnable from a 'Future<Map<String, dynamic>>' function, as required by the closure's context - lib\core\providers.dart:55:10 - return_of_invalid_type_from_closure
-  error - 1 positional argument expected by 'getBaselineIncome', but 0 found - lib\core\providers.dart:69:45 - not_enough_positional_arguments
-  error - 1 positional argument expected by 'getTodayIncome', but 0 found - lib\core\providers.dart:73:42 - not_enough_positional_arguments
-  error - 1 positional argument expected by 'getIncomeHistory', but 0 found - lib\core\providers.dart:77:44 - not_enough_positional_arguments
+  error - The function 'StateProvider' isn't defined - lib\core\providers.dart:49:26 - undefined_function
    info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\core\theme.dart:23:9 - deprecated_member_use
    info - 'MaterialStateProperty' is deprecated and shouldn't be used. Use WidgetStateProperty instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre - lib\core\theme.dart:75:20 - deprecated_member_use
    info - 'MaterialState' is deprecated and shouldn't be used. Use WidgetState instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre - lib\core\theme.dart:76:31 - deprecated_member_use
@@ -43,7 +31,6 @@ warning - Unused import: 'package:guidewire_gig_ins/core/theme.dart' - lib\featu
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\widgets\risk_profile_card.dart:24:53 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\widgets\risk_profile_card.dart:42:35 - deprecated_member_use
    info - Parameter 'key' could be a super parameter - lib\features\dashboard\widgets\verification_status_card.dart:10:9 - use_super_parameters
-  error - The named parameter 'userId' isn't defined - lib\features\dashboard\widgets\verification_status_card.dart:75:82 - undefined_named_parameter
    info - Parameter 'key' could be a super parameter - lib\features\gig\screens\connect_gig_screen.dart:9:9 - use_super_parameters
    info - Parameter 'key' could be a super parameter - lib\features\gig\screens\income_intelligence_screen.dart:10:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\gig\screens\income_intelligence_screen.dart:134:75 - deprecated_member_use
@@ -93,12 +80,9 @@ warning - A value of type 'List<dynamic>' can't be returned by the 'onError' han
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\profile_tab.dart:12:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\profile_tab.dart:66:61 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\profile_tab.dart:66:100 - deprecated_member_use
-  error - The argument type 'Text' can't be assigned to the parameter type 'String'.  - lib\features\main\tabs\profile_tab.dart:90:23 - argument_type_not_assignable
-  error - Expected an identifier - lib\features\main\tabs\profile_tab.dart:94:23 - missing_identifier
-  error - Expected to find ')' - lib\features\main\tabs\profile_tab.dart:94:23 - expected_token
-  error - Expected to find ',' - lib\features\main\tabs\profile_tab.dart:94:23 - expected_token
    info - Parameter 'key' could be a super parameter - lib\features\main\tabs\risk_tab.dart:8:9 - use_super_parameters
-warning - A value of type 'List<dynamic>' can't be returned by the 'onError' handler because it must be assignable to 'FutureOr<List<Map<String, dynamic>>>' - lib\features\main\tabs\risk_tab.dart:25:34 - invalid_return_type_for_catch_error
+warning - A value of type 'List<dynamic>' can't be returned by the 'onError' handler because it must be assignable to 'FutureOr<List<Object>>' - lib\features\main\tabs\risk_tab.dart:25:34 - invalid_return_type_for_catch_error
+  error - The argument type 'EnvironmentModel' can't be assigned to the parameter type 'Map<String, dynamic>'.  - lib\features\main\tabs\risk_tab.dart:43:56 - argument_type_not_assignable
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:124:18 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\main\tabs\risk_tab.dart:126:37 - deprecated_member_use
    info - Statements in an if should be enclosed in a block - lib\features\main\tabs\risk_tab.dart:213:27 - curly_braces_in_flow_control_structures
@@ -113,5 +97,5 @@ warning - A value of type 'List<dynamic>' can't be returned by the 'onError' han
    info - Parameter 'key' could be a super parameter - lib\features\verification\screens\digilocker_verification_screen.dart:423:9 - use_super_parameters
    info - Parameter 'key' could be a super parameter - lib\features\verification\screens\digilocker_verification_screen.dart:444:9 - use_super_parameters
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\verification\screens\digilocker_verification_screen.dart:459:53 - deprecated_member_use
-  error - The name 'SignupScreen' isn't a class - lib\main.dart:51:23 - creation_with_non_type
+warning - Unused import: 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart' - lib\main.dart:6:8 - unused_import
 
