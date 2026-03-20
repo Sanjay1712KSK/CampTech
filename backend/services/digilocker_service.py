@@ -1,7 +1,9 @@
-from datetime import datetime, timezone
-from typing import Dict
+import json
 import random
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
@@ -11,7 +13,7 @@ from models.digilocker_request import DigiLockerRequest
 from services.blockchain_service import log_verification
 from utils.validators import validate_aadhaar, validate_license
 
-MOCK_DOCUMENTS = [
+DEFAULT_MOCK_DOCUMENTS = [
     {
         'document_type': 'aadhaar',
         'document_number': '123456789012',
@@ -79,6 +81,28 @@ MOCK_DOCUMENTS = [
         'status': 'valid',
     },
 ]
+
+MOCK_DATASET_PATH = Path(__file__).resolve().parent.parent / 'data' / 'digilocker_mock_documents.json'
+
+
+def _load_mock_documents() -> list[dict]:
+    if MOCK_DATASET_PATH.exists():
+        try:
+            payload = json.loads(MOCK_DATASET_PATH.read_text(encoding='utf-8'))
+            if isinstance(payload, list):
+                return payload
+        except (OSError, json.JSONDecodeError):
+            pass
+    return list(DEFAULT_MOCK_DOCUMENTS)
+
+
+MOCK_DOCUMENTS = _load_mock_documents()
+
+
+def refresh_mock_documents() -> list[dict]:
+    global MOCK_DOCUMENTS
+    MOCK_DOCUMENTS = _load_mock_documents()
+    return MOCK_DOCUMENTS
 
 
 def _mask_document(document_type: str, doc_number: str):
