@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from database import db
 from routes import auth as auth_router
+from routes import bank as bank_router
 from routes import claim as claim_router
 from routes import digilocker as digilocker_router
 from routes import environment as environment_router
@@ -14,6 +15,7 @@ from routes import gig as gig_router
 from routes import payment as payment_router
 from routes import premium as premium_router
 from routes import risk as risk_router
+from routes import support as support_router
 from utils.response import error_response
 
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +24,7 @@ logger = logging.getLogger('gig_insurance_backend')
 app = FastAPI(title='Gig Insurance API', version='1.0.0')
 
 app.include_router(auth_router.router)
+app.include_router(bank_router.router)
 app.include_router(claim_router.router)
 app.include_router(digilocker_router.router)
 app.include_router(environment_router.router)
@@ -29,6 +32,7 @@ app.include_router(gig_router.router)
 app.include_router(payment_router.router)
 app.include_router(premium_router.router)
 app.include_router(risk_router.router)
+app.include_router(support_router.router)
 
 
 @app.on_event('startup')

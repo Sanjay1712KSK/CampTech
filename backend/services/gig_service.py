@@ -126,7 +126,7 @@ def _risk_score(stats):
     return _round(_clamp(score, 0.0, 1.0), 3)
 
 
-def _generate_day_record(user_id: int, day: date, expected_baseline: float = None):
+def _generate_day_record(user_id: int, day: date, expected_baseline: float = None, platform: str | None = None):
     weekend = day.weekday() >= 5
     holiday = _is_holiday(day)
 
@@ -213,7 +213,7 @@ def _generate_day_record(user_id: int, day: date, expected_baseline: float = Non
         'hours_worked': _round(hours),
         'earnings': earnings,
         'earnings_per_order': _round(earnings_per_order),
-        'platform': random.choice(PLATFORMS),
+        'platform': platform or random.choice(PLATFORMS),
         'disruption_type': disruption_type,
         'weather_condition': weather['weather_condition'],
         'temperature': weather['temperature'],
@@ -249,7 +249,7 @@ def _ensure_user_exists(session: Session, user_id: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
 
-def generate_data(user_id: int, days: int = 30):
+def generate_data(user_id: int, days: int = 30, platform: str | None = None):
     if days < 1:
         raise ValueError('days must be >= 1')
     if days > 90:
@@ -266,7 +266,7 @@ def generate_data(user_id: int, days: int = 30):
         new_records = []
         for i in range(days):
             day = start_date + timedelta(days=i)
-            record_data = _generate_day_record(user_id=user_id, day=day)
+            record_data = _generate_day_record(user_id=user_id, day=day, platform=platform)
 
             existing = session.query(GigIncome).filter(GigIncome.user_id == user_id, GigIncome.date == day).one_or_none()
             if existing:

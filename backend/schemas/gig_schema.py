@@ -57,6 +57,22 @@ class GenerateGigDataResponse(BaseModel):
     data: list[GigIncomeRecord]
 
 
+class GigConnectRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    platform: str = Field(..., min_length=3, max_length=20)
+    partner_id: str = Field(..., min_length=3, max_length=64)
+
+
+class GigConnectResponse(BaseModel):
+    status: str
+    user_id: int
+    platform: str
+    partner_id: str
+    generated: int
+
+
 class GigIncomeHistoryItem(BaseModel):
     date: date
     orders_completed: int

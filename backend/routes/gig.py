@@ -7,6 +7,8 @@ from database.db import get_db
 from models.gig_income import GigIncome
 from schemas.gig_schema import (
     BaselineIncomeResponse,
+    GigConnectRequest,
+    GigConnectResponse,
     GenerateGigDataRequest,
     GenerateGigDataResponse,
     TodayIncomeResponse,
@@ -23,6 +25,25 @@ def generate_data_endpoint(payload: GenerateGigDataRequest):
     try:
         data = generate_data(user_id=payload.user_id, days=payload.days)
         return GenerateGigDataResponse(generated=len(data), data=data).model_dump(mode='json')
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post('/connect', response_model=GigConnectResponse)
+def connect_gig_account_endpoint(payload: GigConnectRequest):
+    platform = payload.platform.strip().lower()
+    if platform not in {'swiggy', 'zomato'}:
+        raise HTTPException(status_code=400, detail='Platform must be swiggy or zomato')
+
+    try:
+        data = generate_data(user_id=payload.user_id, days=30, platform=platform)
+        return {
+            'status': 'CONNECTED',
+            'user_id': payload.user_id,
+            'platform': platform,
+            'partner_id': payload.partner_id,
+            'generated': len(data),
+        }
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -53,3 +53,22 @@ class ClaimProcessResponse(BaseModel):
     payout: float | None = None
     fraud_score: float | None = Field(default=None, ge=0.0, le=1.0)
     reasons: list[str] | None = None
+
+
+class ClaimPayoutRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    amount: float = Field(..., gt=0)
+    claim_id: str | None = None
+
+
+class SupportChatRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    query: str = Field(..., min_length=2, max_length=500)
+
+
+class SupportChatResponse(BaseModel):
+    response: str
