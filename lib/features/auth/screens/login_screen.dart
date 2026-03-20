@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
@@ -7,14 +9,14 @@ import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.d
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _isLoading = false;
@@ -51,16 +53,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      final userName = email.split('@').first;
+      ref.read(userProvider.notifier).setUser(result.userId, userName, result.isVerified);
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => MainShell(
-            userId: result.userId,
-            isVerified: result.isVerified,
-            // Use email prefix as fallback name until API returns name
-            userName: email.split('@').first,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } catch (error) {
       if (!mounted) return;

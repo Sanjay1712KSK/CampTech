@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -60,16 +62,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
+      ref.read(userProvider.notifier).setUser(result.userId, name, result.isVerified);
+
       // Navigate directly to MainShell — no Login screen after Signup
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => MainShell(
-            userId: result.userId,
-            isVerified: result.isVerified,
-            userName: name,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } catch (error) {
       if (!mounted) return;
