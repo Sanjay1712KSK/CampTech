@@ -16,6 +16,7 @@ from routes import digilocker as digilocker_routes
 from routes import environment as environment_routes
 from routes import gig as gig_routes
 from routes import risk as risk_routes
+from schemas.environment_schema import CoordinatesQuery
 from schemas.digilocker_schema import DigiLockerConsentSchema, DigiLockerRequestSchema
 from schemas.gig_schema import GenerateGigDataRequest
 from schemas.user_schema import UserCreate, UserLogin, VerificationRequest
@@ -55,19 +56,17 @@ class BackendRouteTests(unittest.TestCase):
 
     def test_auth_signup_and_login(self):
         signup_result = self._signup_user()
-        self.assertTrue(signup_result["success"])
-        self.assertEqual(signup_result["data"]["email"], "sanju@example.com")
+        self.assertEqual(signup_result["email"], "sanju@example.com")
 
         login_result = auth_routes.login(
             UserLogin(email="sanju@example.com", password="password123"),
             db=self.db,
         )
-        self.assertTrue(login_result["success"])
-        self.assertEqual(login_result["data"]["name"], "Sanju")
+        self.assertEqual(login_result["name"], "Sanju")
 
     def test_auth_verify_identity(self):
         signup_result = self._signup_user()
-        user_id = signup_result["data"]["id"]
+        user_id = signup_result["id"]
 
         with patch("services.verification_service.log_verification", return_value={"transaction_id": "MOCK-TXN"}):
             verify_result = auth_routes.verify_identity(
@@ -75,9 +74,8 @@ class BackendRouteTests(unittest.TestCase):
                 db=self.db,
             )
 
-        self.assertTrue(verify_result["success"])
-        self.assertEqual(verify_result["data"]["status"], "verified")
-        self.assertEqual(verify_result["data"]["document_type"], "aadhaar")
+        self.assertEqual(verify_result["status"], "verified")
+        self.assertEqual(verify_result["document_type"], "aadhaar")
 
     def test_environment_route(self):
         fake_environment = {
@@ -88,10 +86,9 @@ class BackendRouteTests(unittest.TestCase):
         }
 
         with patch.object(environment_routes, "get_environment", return_value=fake_environment):
-            result = environment_routes.environment(12.97, 77.59)
+            result = environment_routes.environment(CoordinatesQuery(lat=12.97, lon=77.59))
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["data"], fake_environment)
+        self.assertEqual(result, fake_environment)
 
     def test_risk_route_without_user(self):
         fake_environment = {
@@ -102,12 +99,11 @@ class BackendRouteTests(unittest.TestCase):
         }
 
         with patch.object(risk_routes, "get_environment", return_value=fake_environment):
-            result = risk_routes.risk(12.97, 77.59, user_id=None)
+            result = risk_routes.risk(CoordinatesQuery(lat=12.97, lon=77.59), user_id=None)
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["data"]["environment"], fake_environment)
-        self.assertEqual(result["data"]["risk"]["risk_level"], "HIGH")
-        self.assertIsNone(result["data"]["gig_context"])
+        self.assertEqual(result["environment"], fake_environment)
+        self.assertEqual(result["risk"]["risk_level"], "HIGH")
+        self.assertIsNone(result["gig_context"])
 
     def test_risk_route_with_user(self):
         fake_environment = {
@@ -129,39 +125,35 @@ class BackendRouteTests(unittest.TestCase):
             "today_income",
             return_value=fake_today,
         ):
-            result = risk_routes.risk(12.97, 77.59, user_id=1)
+            result = risk_routes.risk(CoordinatesQuery(lat=12.97, lon=77.59), user_id=1)
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["data"]["gig_context"]["earnings_today"], 540.0)
-        self.assertEqual(result["data"]["gig_context"]["orders_completed"], 12)
+        self.assertEqual(result["gig_context"]["earnings_today"], 540.0)
+        self.assertEqual(result["gig_context"]["orders_completed"], 12)
 
     def test_gig_generate_and_today_income(self):
         signup_result = self._signup_user(email="gig@example.com", phone="9123456789")
-        user_id = signup_result["data"]["id"]
+        user_id = signup_result["id"]
 
         with patch("services.gig_service.SessionLocal", self.SessionLocal):
             generate_result = gig_routes.generate_data_endpoint(
                 GenerateGigDataRequest(user_id=user_id, days=3)
             )
-        self.assertTrue(generate_result["success"])
-        self.assertEqual(generate_result["data"]["generated"], 3)
+        self.assertEqual(generate_result["generated"], 3)
 
         with patch("services.gig_service.SessionLocal", self.SessionLocal):
             today_result = gig_routes.today_income_endpoint(user_id=user_id)
-        self.assertTrue(today_result["success"])
-        self.assertIn("earnings", today_result["data"])
-        self.assertIn("orders_completed", today_result["data"])
+        self.assertIn("earnings", today_result)
+        self.assertIn("orders_completed", today_result)
 
     def test_digilocker_request_consent_and_status(self):
         signup_result = self._signup_user(email="dl@example.com", phone="9234567890")
-        user_id = signup_result["data"]["id"]
+        user_id = signup_result["id"]
 
         request_result = digilocker_routes.digilocker_request(
             DigiLockerRequestSchema(user_id=user_id),
             db=self.db,
         )
-        self.assertTrue(request_result["success"])
-        request_id = request_result["data"]["request_id"]
+        request_id = request_result["request_id"]
 
         with patch("services.digilocker_service.log_verification", return_value={"transaction_id": "MOCK-TXN"}):
             consent_result = digilocker_routes.digilocker_consent(
@@ -174,12 +166,10 @@ class BackendRouteTests(unittest.TestCase):
                 db=self.db,
             )
 
-        self.assertTrue(consent_result["success"])
-        self.assertEqual(consent_result["data"]["status"], "VERIFIED")
+        self.assertEqual(consent_result["status"], "VERIFIED")
 
         status_result = digilocker_routes.digilocker_status(user_id=user_id, db=self.db)
-        self.assertTrue(status_result["success"])
-        self.assertEqual(status_result["data"]["status"], "VERIFIED")
+        self.assertEqual(status_result["status"], "VERIFIED")
 
 
 if __name__ == "__main__":

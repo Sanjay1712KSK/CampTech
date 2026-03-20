@@ -39,6 +39,7 @@ class GigIncomeRecord(BaseModel):
 
 class GenerateGigDataRequest(BaseModel):
     model_config = ConfigDict(
+        extra='forbid',
         json_schema_extra={
             'example': {
                 'user_id': 1,
@@ -56,6 +57,15 @@ class GenerateGigDataResponse(BaseModel):
     data: list[GigIncomeRecord]
 
 
+class GigIncomeHistoryItem(BaseModel):
+    date: date
+    orders_completed: int
+    hours_worked: float
+    earnings: float
+    platform: str
+    disruption_type: str
+
+
 class BaselineIncomeResponse(BaseModel):
     baseline_daily_income: float
 
@@ -65,7 +75,14 @@ class TodayIncomeResponse(BaseModel):
     orders_completed: int
     hours_worked: float
     disruption_type: str
-    platform: str
+
+
+class WeeklySummaryDay(BaseModel):
+    date: date
+    earnings: float
+    weather_condition: str
+    traffic_level: str
+    disruption_type: str
 
 
 class WeeklySummaryResponse(BaseModel):
@@ -74,5 +91,5 @@ class WeeklySummaryResponse(BaseModel):
     total_hours: float
     total_loss_amount: float
     avg_risk_score: float
-    best_day: GigIncomeRecord | None
-    worst_day: GigIncomeRecord | None
+    best_day: WeeklySummaryDay | None
+    worst_day: WeeklySummaryDay | None

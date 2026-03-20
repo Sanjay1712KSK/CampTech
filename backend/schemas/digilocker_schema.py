@@ -1,6 +1,11 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, Field, constr, model_validator
+
+from pydantic import BaseModel, ConfigDict, Field, constr, model_validator
+
+
+RequestId = constr(pattern=r'^[0-9a-fA-F\-]{36}$')
+NameField = constr(min_length=2, strip_whitespace=True)
 
 
 document_number_aadhaar = constr(pattern=r'^\d{12}$')
@@ -8,14 +13,18 @@ document_number_license = constr(pattern=r'^[A-Za-z0-9]{8,15}$')
 
 
 class DigiLockerRequestSchema(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     user_id: int = Field(..., gt=0)
 
 
 class DigiLockerConsentSchema(BaseModel):
-    request_id: constr(pattern=r'^[0-9a-fA-F\-]{36}$')
+    model_config = ConfigDict(extra='forbid')
+
+    request_id: RequestId
     document_type: Literal['aadhaar', 'license']
     document_number: str
-    name: str = Field(..., min_length=2)
+    name: NameField
 
     @model_validator(mode='after')
     def validate_document(self):
@@ -31,20 +40,19 @@ class DigiLockerConsentSchema(BaseModel):
 
 
 class DigiLockerRequestResponseSchema(BaseModel):
-    request_id: str
-    status: str
-    provider_name: str
+    request_id: RequestId
+    status: Literal['PENDING']
 
 
-class DigiLockerConsentResponseSchema(BaseModel):
-    status: str
-    provider_name: str
-    verification_score: float | None = None
-    document_type: str | None = None
-    document_number_masked: str | None = None
-    verified_profile: dict | None = None
-    failure_reason: str | None = None
-    blockchain_txn_id: str | None = None
+class DigiLockerConsentSuccessResponseSchema(BaseModel):
+    status: Literal['VERIFIED']
+    name: str
+    document_type: Literal['aadhaar', 'license']
+
+
+class DigiLockerConsentFailureResponseSchema(BaseModel):
+    status: Literal['FAILED']
+    reason: str
 
 
 class DigiLockerStatusResponseSchema(BaseModel):

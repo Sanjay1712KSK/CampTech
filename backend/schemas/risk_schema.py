@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from schemas.environment_schema import EnvironmentResponse
+
 
 class RiskFactorsResponse(BaseModel):
     weather_risk: float = Field(..., ge=0.0, le=1.0)
@@ -15,7 +17,12 @@ class RiskResponse(BaseModel):
     recommendation: str
 
 
+class GigContextResponse(BaseModel):
+    earnings_today: float
+    orders_completed: int
+
+
 class RiskEnvelopeResponse(BaseModel):
-    environment: dict
+    environment: EnvironmentResponse
     risk: RiskResponse
-    gig_context: dict | None = None
+    gig_context: GigContextResponse | None = None

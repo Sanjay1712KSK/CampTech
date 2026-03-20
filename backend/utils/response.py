@@ -1,17 +1,5 @@
-def success_response(data):
+def error_response(message: str):
     return {
-        "success": True,
-        "data": data,
-        "error": None,
-    }
-
-
-def error_response(code, message):
-    return {
-        "success": False,
-        "data": None,
-        "error": {
-            "code": code,
-            "message": message,
-        },
+        'error': True,
+        'message': message,
     }

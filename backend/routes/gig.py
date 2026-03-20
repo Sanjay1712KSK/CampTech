@@ -1,50 +1,42 @@
 from fastapi import APIRouter, HTTPException, Query
 
-from schemas.gig_schema import GenerateGigDataRequest
-from services.gig_service import generate_data, income_history, baseline_income, today_income, weekly_summary
-from utils.response import success_response, error_response
+from schemas.gig_schema import (
+    BaselineIncomeResponse,
+    GenerateGigDataRequest,
+    GenerateGigDataResponse,
+    GigIncomeHistoryItem,
+    TodayIncomeResponse,
+    WeeklySummaryResponse,
+)
+from services.gig_service import baseline_income, generate_data, income_history, today_income, weekly_summary
 
 router = APIRouter(prefix='/gig')
 
 
-@router.post('/generate-data')
+@router.post('/generate-data', response_model=GenerateGigDataResponse)
 def generate_data_endpoint(payload: GenerateGigDataRequest):
     try:
         data = generate_data(user_id=payload.user_id, days=payload.days)
-        return success_response({'generated': len(data), 'data': data})
+        return GenerateGigDataResponse(generated=len(data), data=data).model_dump(mode='json')
     except ValueError as exc:
-        return error_response('INVALID_INPUT', str(exc))
-    except Exception as exc:
-        return error_response('GIG_GENERATE_FAILED', str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@router.get('/income-history')
+@router.get('/income-history', response_model=list[GigIncomeHistoryItem])
 def income_history_endpoint(user_id: int = Query(..., gt=0)):
-    try:
-        return success_response(income_history(user_id=user_id))
-    except Exception as exc:
-        return error_response('GIG_INCOME_HISTORY_FAILED', str(exc))
+    return income_history(user_id=user_id)
 
 
-@router.get('/baseline-income')
+@router.get('/baseline-income', response_model=BaselineIncomeResponse)
 def baseline_income_endpoint(user_id: int = Query(..., gt=0)):
-    try:
-        return success_response(baseline_income(user_id=user_id))
-    except Exception as exc:
-        return error_response('GIG_BASELINE_FAILED', str(exc))
+    return baseline_income(user_id=user_id)
 
 
-@router.get('/today-income')
+@router.get('/today-income', response_model=TodayIncomeResponse)
 def today_income_endpoint(user_id: int = Query(..., gt=0)):
-    try:
-        return success_response(today_income(user_id=user_id))
-    except Exception as exc:
-        return error_response('GIG_TODAY_FAILED', str(exc))
+    return today_income(user_id=user_id)
 
 
-@router.get('/weekly-summary')
+@router.get('/weekly-summary', response_model=WeeklySummaryResponse)
 def weekly_summary_endpoint(user_id: int = Query(..., gt=0)):
-    try:
-        return success_response(weekly_summary(user_id=user_id))
-    except Exception as exc:
-        return error_response('GIG_WEEKLY_SUMMARY_FAILED', str(exc))
+    return weekly_summary(user_id=user_id)
