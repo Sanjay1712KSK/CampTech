@@ -109,6 +109,29 @@ class ApiService {
     }
   }
 
+  // ── 🛡️ Risk Data ────────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> getRiskData(int userId, double lat, double lon) async {
+    try {
+      final uri = Uri.parse('${Config.baseUrl}/risk?user_id=$userId&lat=$lat&lon=$lon');
+      final response = await http.get(uri, headers: _headers).timeout(_timeout);
+      
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body.containsKey('error') && body['error'] == true) {
+           throw Exception(body['message'] ?? 'Error assessing risk');
+        }
+        return body;
+      }
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load risk data (${response.statusCode})');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Risk Data error: $e');
+    }
+  }
+
   // ─── SIGNUP ─────────────────────────────────────────────────────────────────
   /// Returns [AuthResult] with the userId on success, throws on failure.
   static Future<AuthResult> signup({
@@ -246,6 +269,26 @@ class ApiService {
 
       final errorBody = _tryDecodeError(response.body);
       throw Exception(errorBody ?? 'Verification failed (${response.statusCode})');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    }
+  }
+
+  // ─── DIGILOCKER STATUS ───────────────────────────────────────────────────────
+  /// Step 3: Check DigiLocker verification status.
+  static Future<String> getDigiLockerStatus(String requestId) async {
+    final uri = Uri.parse('${Config.baseUrl}/digilocker/status?request_id=$requestId');
+    try {
+      final response = await http.get(uri, headers: _headers).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body.containsKey('error') && body['error'] == true) {
+           throw Exception(body['message'] ?? 'Error fetching status');
+        }
+        return body['status'] as String? ?? 'PENDING';
+      }
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to get status (${response.statusCode})');
     } on SocketException {
       throw Exception('Server not reachable');
     }
