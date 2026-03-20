@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
-class ConnectGigScreen extends StatefulWidget {
-  final int userId;
-
-  const ConnectGigScreen({Key? key, required this.userId}) : super(key: key);
+class ConnectGigScreen extends ConsumerStatefulWidget {
+  const ConnectGigScreen({Key? key}) : super(key: key);
 
   @override
-  State<ConnectGigScreen> createState() => _ConnectGigScreenState();
+  ConsumerState<ConnectGigScreen> createState() => _ConnectGigScreenState();
 }
 
-class _ConnectGigScreenState extends State<ConnectGigScreen> {
+class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
   final _idController = TextEditingController();
   String _selectedPlatform = 'Swiggy';
   bool _isLoading = false;
@@ -25,7 +25,10 @@ class _ConnectGigScreenState extends State<ConnectGigScreen> {
     });
 
     try {
-      final success = await ApiService.generateGigData(widget.userId);
+      final user = ref.read(userProvider);
+      if (user == null) throw Exception('User not logged in');
+      
+      final success = await ApiService.generateGigData(user.userId);
       if (success && mounted) {
         Navigator.pop(context, true); // Return success to InsightsTab
       } else {

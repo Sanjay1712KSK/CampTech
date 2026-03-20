@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_intelligence_screen.dart';
 
-class InsightsTab extends StatefulWidget {
-  final int userId;
-
-  const InsightsTab({Key? key, required this.userId}) : super(key: key);
+class InsightsTab extends ConsumerStatefulWidget {
+  const InsightsTab({Key? key}) : super(key: key);
 
   @override
-  State<InsightsTab> createState() => _InsightsTabState();
+  ConsumerState<InsightsTab> createState() => _InsightsTabState();
 }
 
-class _InsightsTabState extends State<InsightsTab> {
+class _InsightsTabState extends ConsumerState<InsightsTab> {
   bool _isConnected = false;
 
   void _connectAccount() async {
     final connected = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ConnectGigScreen(userId: widget.userId)),
+      MaterialPageRoute(builder: (_) => const ConnectGigScreen()),
     );
     if (connected == true) {
       setState(() => _isConnected = true);
@@ -28,8 +28,10 @@ class _InsightsTabState extends State<InsightsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isConnected) {
-      return IncomeIntelligenceScreen(userId: widget.userId);
+    final user = ref.watch(userProvider);
+
+    if (_isConnected && user != null) {
+      return IncomeIntelligenceScreen(userId: user.userId);
     }
 
     final l10n = AppLocalizations.of(context);
