@@ -5,7 +5,9 @@ import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 
 class IncomeIntelligenceScreen extends StatefulWidget {
-  const IncomeIntelligenceScreen({Key? key}) : super(key: key);
+  final int userId;
+
+  const IncomeIntelligenceScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<IncomeIntelligenceScreen> createState() => _IncomeIntelligenceScreenState();
@@ -29,9 +31,9 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen> wit
   void _fetchData() {
     setState(() {
       _dataFuture = Future.wait([
-        ApiService.getBaselineIncome(),
-        ApiService.getTodayIncome(),
-        ApiService.getIncomeHistory(),
+        ApiService.getBaselineIncome(widget.userId),
+        ApiService.getTodayIncome(widget.userId),
+        ApiService.getIncomeHistory(widget.userId),
       ]);
     });
   }

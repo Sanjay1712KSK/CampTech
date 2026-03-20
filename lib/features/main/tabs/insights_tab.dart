@@ -5,7 +5,9 @@ import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_intelligence_screen.dart';
 
 class InsightsTab extends StatefulWidget {
-  const InsightsTab({Key? key}) : super(key: key);
+  final int userId;
+
+  const InsightsTab({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<InsightsTab> createState() => _InsightsTabState();
@@ -17,7 +19,7 @@ class _InsightsTabState extends State<InsightsTab> {
   void _connectAccount() async {
     final connected = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ConnectGigScreen()),
+      MaterialPageRoute(builder: (_) => ConnectGigScreen(userId: widget.userId)),
     );
     if (connected == true) {
       setState(() => _isConnected = true);
@@ -27,7 +29,7 @@ class _InsightsTabState extends State<InsightsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isConnected) {
-      return const IncomeIntelligenceScreen();
+      return IncomeIntelligenceScreen(userId: widget.userId);
     }
 
     final l10n = AppLocalizations.of(context);

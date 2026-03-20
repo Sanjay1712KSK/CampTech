@@ -46,12 +46,12 @@ class ApiService {
 
   // ── 📊 Gig Income Data ────────────────────────────────────────────────────
 
-  static Future<bool> generateGigData(String platform, String identifier) async {
+  static Future<bool> generateGigData(int userId, {int days = 30}) async {
     try {
       final response = await http
           .post(Uri.parse('${Config.baseUrl}$_gigGenerateDataPath'),
               headers: _headers,
-              body: jsonEncode({'platform': platform, 'identifier': identifier}))
+              body: jsonEncode({'user_id': userId, 'days': days}))
           .timeout(_timeout);
       
       return response.statusCode == 200 || response.statusCode == 201;
@@ -60,9 +60,9 @@ class ApiService {
     }
   }
 
-  static Future<BaselineIncomeModel> getBaselineIncome() async {
+  static Future<BaselineIncomeModel> getBaselineIncome(int userId) async {
     try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigBaselinePath')).timeout(_timeout);
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigBaselinePath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return BaselineIncomeModel.fromJson(jsonDecode(response.body));
       throw Exception('Failed to load baseline income');
     } catch (e) {
@@ -70,9 +70,9 @@ class ApiService {
     }
   }
 
-  static Future<TodayIncomeModel> getTodayIncome() async {
+  static Future<TodayIncomeModel> getTodayIncome(int userId) async {
     try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigTodayPath')).timeout(_timeout);
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigTodayPath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return TodayIncomeModel.fromJson(jsonDecode(response.body));
       throw Exception('Failed to load today income');
     } catch (e) {
@@ -80,9 +80,9 @@ class ApiService {
     }
   }
 
-  static Future<IncomeHistoryModel> getIncomeHistory() async {
+  static Future<IncomeHistoryModel> getIncomeHistory(int userId) async {
     try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath')).timeout(_timeout);
+      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return IncomeHistoryModel.fromJson(jsonDecode(response.body));
       throw Exception('Failed to load income history');
     } catch (e) {

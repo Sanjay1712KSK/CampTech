@@ -45,7 +45,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      const InsightsTab(),
+      InsightsTab(userId: widget.userId),
       const ClaimsTab(),
       HomeTab(userId: widget.userId, isVerified: widget.isVerified, userName: widget.userName),
       const PolicyTab(),

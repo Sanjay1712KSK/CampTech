@@ -4,7 +4,9 @@ import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class ConnectGigScreen extends StatefulWidget {
-  const ConnectGigScreen({Key? key}) : super(key: key);
+  final int userId;
+
+  const ConnectGigScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<ConnectGigScreen> createState() => _ConnectGigScreenState();
@@ -17,18 +19,13 @@ class _ConnectGigScreenState extends State<ConnectGigScreen> {
   String? _error;
 
   Future<void> _handleConnect() async {
-    if (_idController.text.trim().isEmpty) {
-      setState(() => _error = 'Please enter ID or phone');
-      return;
-    }
-    
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final success = await ApiService.generateGigData(_selectedPlatform.toLowerCase(), _idController.text.trim());
+      final success = await ApiService.generateGigData(widget.userId);
       if (success && mounted) {
         Navigator.pop(context, true); // Return success to InsightsTab
       } else {
@@ -62,6 +59,11 @@ class _ConnectGigScreenState extends State<ConnectGigScreen> {
                 l10n?.connectGigAccount ?? 'Connect Gig Account',
                 style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Using backend user ID: ${widget.userId}',
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              ),
               const SizedBox(height: 32),
               
               Text(l10n?.selectPlatform ?? 'Select Platform', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
@@ -93,11 +95,12 @@ class _ConnectGigScreenState extends State<ConnectGigScreen> {
               const SizedBox(height: 8),
               TextField(
                 controller: _idController,
+                enabled: false,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppTheme.surfaceColor,
-                  hintText: 'e.g. 9876543210',
+                  hintText: 'Linked to logged-in account',
                   hintStyle: const TextStyle(color: Colors.white24),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   errorText: _error,
