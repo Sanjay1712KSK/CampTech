@@ -8,6 +8,7 @@ import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/glass_card.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
+import 'package:local_auth/local_auth.dart';
 
 class AIEngineTab extends ConsumerStatefulWidget {
   const AIEngineTab({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class AIEngineTab extends ConsumerStatefulWidget {
 
 class _AIEngineTabState extends ConsumerState<AIEngineTab>
     with TickerProviderStateMixin {
+  final LocalAuthentication _localAuth = LocalAuthentication();
   late final AnimationController _pulseController;
   Future<BankSummary>? _bankFuture;
   Future<InsuranceSummaryModel?>? _insuranceFuture;
@@ -122,6 +124,21 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
         false;
     if (!confirmed) return;
 
+    final didAuthenticate = await _localAuth.authenticate(
+      localizedReason: 'Confirm premium payment with fingerprint',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
+      ),
+    );
+    if (!didAuthenticate) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Biometric confirmation failed')),
+      );
+      return;
+    }
+
     setState(() => _isPayingPremium = true);
     try {
       await ApiService.payPremium(userId, amount);
@@ -183,6 +200,20 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     if (!claimReady) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Claim is available only after the policy period ends')),
+      );
+      return;
+    }
+    final didAuthenticate = await _localAuth.authenticate(
+      localizedReason: 'Confirm your claim with fingerprint',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
+      ),
+    );
+    if (!didAuthenticate) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Biometric confirmation failed')),
       );
       return;
     }
