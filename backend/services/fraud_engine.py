@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
+from services.policy_service import get_claimable_policy
 from services.premium_engine import baseline_value
 
 
@@ -8,14 +9,15 @@ def _round(value: float) -> float:
     return float(round(float(value), 3))
 
 
-def _recent_week_records(user_id: int, db: Session) -> list[GigIncome]:
-    return (
-        db.query(GigIncome)
-        .filter(GigIncome.user_id == int(user_id))
-        .order_by(GigIncome.date.desc(), GigIncome.created_at.desc())
-        .limit(7)
-        .all()
-    )
+def _claim_week_records(user_id: int, db: Session) -> list[GigIncome]:
+    policy = get_claimable_policy(int(user_id), db)
+    query = db.query(GigIncome).filter(GigIncome.user_id == int(user_id))
+    if policy is not None:
+        query = query.filter(
+            GigIncome.date >= policy.start_date,
+            GigIncome.date <= policy.end_date,
+        )
+    return query.order_by(GigIncome.date.asc(), GigIncome.created_at.asc()).all()
 
 
 def _majority_city(records: list[GigIncome]) -> tuple[str | None, float]:
@@ -33,6 +35,18 @@ def _majority_city(records: list[GigIncome]) -> tuple[str | None, float]:
     return city, count / len(records)
 
 
+def _dominant_disruption(records: list[GigIncome], fallback: str) -> str:
+    counts: dict[str, int] = {}
+    for record in records:
+        disruption = str(record.disruption_type or 'none').lower()
+        if disruption == 'none':
+            continue
+        counts[disruption] = counts.get(disruption, 0) + 1
+    if not counts:
+        return fallback
+    return max(counts.items(), key=lambda item: item[1])[0]
+
+
 def validate_claim(user_id: int, db: Session, environment_data: dict, today_income: dict) -> dict:
     baseline = baseline_value(user_id, db)
     weather = (environment_data or {}).get('weather') or {}
@@ -43,15 +57,24 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
         or ''
     )
 
-    earnings = float(today_income.get('earnings', 0.0) or 0.0)
-    orders_completed = int(today_income.get('orders_completed', 0) or 0)
-    disruption = str(today_income.get('disruption_type', 'none') or 'none').lower()
-    week_records = _recent_week_records(user_id, db)
-    avg_week_income = (
-        sum(record.earnings for record in week_records) / len(week_records)
-        if week_records
-        else earnings
+    week_records = _claim_week_records(user_id, db)
+    claim_day = week_records[-1] if week_records else None
+    earnings = (
+        float(claim_day.earnings)
+        if claim_day is not None
+        else float(today_income.get('earnings', 0.0) or 0.0)
     )
+    orders_completed = (
+        int(claim_day.orders_completed)
+        if claim_day is not None
+        else int(today_income.get('orders_completed', 0) or 0)
+    )
+    disruption = _dominant_disruption(
+        week_records,
+        str(today_income.get('disruption_type', 'none') or 'none').lower(),
+    )
+    actual_week_income = sum(float(record.earnings) for record in week_records)
+    avg_week_income = actual_week_income / len(week_records) if week_records else earnings
     disruption_days = sum(1 for record in week_records if record.disruption_type != 'none')
     majority_city, city_ratio = _majority_city(week_records)
 
@@ -73,9 +96,10 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
         reasons.append('User work history is not city-consistent enough for this policy')
         location_check = 0.8
 
-    weekly_loss = max(0.0, (baseline * 7) - avg_week_income)
-    if baseline <= 0 or weekly_loss <= baseline:
-        reasons.append('Weekly income drop is too small for a payout event')
+    expected_week_income = baseline * 7
+    weekly_loss = max(0.0, expected_week_income - actual_week_income)
+    if baseline <= 0 or weekly_loss <= baseline * 0.5:
+        reasons.append('Weekly income drop is too small for a valid claim')
         income_check = 1.0
 
     traffic_level = str(traffic.get('traffic_level', 'LOW') or 'LOW').upper()
@@ -83,7 +107,7 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
         reasons.append('Traffic data does not support a traffic-related claim')
         weather_check = max(weather_check, 1.0)
 
-    if disruption_days >= 5 and avg_week_income >= baseline * 0.9:
+    if disruption_days >= 5 and actual_week_income >= expected_week_income * 0.9:
         reasons.append('Weekly disruption pattern does not match the reported loss')
         activity_check = max(activity_check, 0.8)
 
@@ -117,6 +141,7 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
             'majority_city': majority_city,
             'environment_city': environment_city or None,
             'weekly_loss': _round(weekly_loss),
+            'actual_week_income': _round(actual_week_income),
             'disruption_days': disruption_days,
         },
     }
