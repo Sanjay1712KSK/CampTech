@@ -219,7 +219,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     final baselineAsync = ref.watch(baselineIncomeProvider);
     final premiumAsync = ref.watch(premiumProvider);
     final location = ref.watch(locationProvider);
-    _insuranceFuture ??= ApiService.getInsuranceSummary(user.userId);
+    _insuranceFuture ??= ApiService.getInsuranceSummary(user!.userId);
 
     if (user == null) return const Center(child: CircularProgressIndicator());
 
