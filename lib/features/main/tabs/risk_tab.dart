@@ -51,9 +51,15 @@ class RiskTab extends ConsumerWidget {
                 const Text('Recommendation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 riskAsync.when(
+                  // Backend risk API available
                   data: (data) => _buildRecommendationCard(data),
                   loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
-                  error: (e, _) => Text('Error: $e', style: const TextStyle(color: AppTheme.errorColor)),
+                  // Backend offline → derive from live environment
+                  error: (_, __) => envAsync.when(
+                    data: (env) => _buildRecommendationCard(_deriveRiskFromEnv(env)),
+                    loading: () => const SizedBox(),
+                    error: (e, _) => Text('Error: $e', style: const TextStyle(color: AppTheme.errorColor)),
+                  ),
                 ),
 
                 const SizedBox(height: 40),
@@ -64,7 +70,12 @@ class RiskTab extends ConsumerWidget {
                 riskAsync.when(
                   data: (data) => _buildRiskProgressBars(data),
                   loading: () => const SizedBox(),
-                  error: (e, _) => const SizedBox(),
+                  // Backend offline → derive breakdown from environment
+                  error: (_, __) => envAsync.when(
+                    data: (env) => _buildRiskProgressBars(_deriveRiskFromEnv(env)),
+                    loading: () => const SizedBox(),
+                    error: (_, __) => const SizedBox(),
+                  ),
                 ),
 
                 const SizedBox(height: 80), // bottom padding
@@ -74,6 +85,47 @@ class RiskTab extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Derives a risk map from live environment data (used when backend is offline)
+  Map<String, dynamic> _deriveRiskFromEnv(EnvironmentModel env) {
+    // AQI: OWM scale 1-5 → risk weight 0-25
+    final aqiScore = ((env.aqi.aqi - 1) / 4.0) * 25;
+
+    // Rain: >5mm = high risk, 0 = no risk
+    final rainScore = (env.weather.rainfall / 5.0).clamp(0.0, 1.0) * 25;
+
+    // Wind: >40 km/h dangerous, normalized to 25
+    final windScore = (env.weather.windSpeed / 40.0).clamp(0.0, 1.0) * 25;
+
+    // Traffic: HIGH=25, MEDIUM=12, LOW=0
+    final trafficScore = env.traffic.trafficLevel == 'HIGH'
+        ? 25.0
+        : env.traffic.trafficLevel == 'MEDIUM'
+            ? 12.0
+            : 0.0;
+
+    final totalScore = aqiScore + rainScore + windScore + trafficScore;
+
+    String riskLevel;
+    String recommendation;
+    if (totalScore >= 55) {
+      riskLevel = 'HIGH';
+      recommendation =
+          'High pollution and traffic — avoid delivery if possible. Wear mask.';
+    } else if (totalScore >= 30) {
+      riskLevel = 'MEDIUM';
+      recommendation = 'Moderate conditions. Take breaks and stay hydrated.';
+    } else {
+      riskLevel = 'LOW';
+      recommendation = 'Conditions are favourable. Good time to deliver!';
+    }
+
+    return {
+      'risk_score': totalScore,
+      'risk_level': riskLevel,
+      'recommendation': recommendation,
+    };
   }
 
   Widget _buildEnvironmentRow(EnvironmentModel env) {
