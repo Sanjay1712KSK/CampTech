@@ -18,8 +18,9 @@ class UserState {
   }
 }
 
-class UserNotifier extends StateNotifier<UserState?> {
-  UserNotifier() : super(null);
+class UserNotifier extends Notifier<UserState?> {
+  @override
+  UserState? build() => null;
 
   void setUser(int id, String name, bool verified) {
     state = UserState(userId: id, userName: name, isVerified: verified);
@@ -36,7 +37,7 @@ class UserNotifier extends StateNotifier<UserState?> {
   }
 }
 
-final userProvider = StateNotifierProvider<UserNotifier, UserState?>((ref) => UserNotifier());
+final userProvider = NotifierProvider<UserNotifier, UserState?>(UserNotifier.new);
 
 // Location State (For demo purposes, we can hardcode Chennai or let it be updated)
 class LocationState {
@@ -50,7 +51,7 @@ final locationProvider = StateProvider<LocationState>((ref) => LocationState(lat
 // API Providers (Caches)
 
 // Environment Data Provider
-final environmentProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final environmentProvider = FutureProvider<EnvironmentModel>((ref) async {
   final loc = ref.watch(locationProvider);
   return await ApiService.getEnvironment(loc.lat, loc.lon);
 });
@@ -60,19 +61,24 @@ final riskProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final user = ref.watch(userProvider);
   final loc = ref.watch(locationProvider);
   if (user == null) throw Exception("User not logged in");
-  // Assuming ApiService.getRiskData exists, we will implement it shortly
   return await ApiService.getRiskData(user.userId, loc.lat, loc.lon);
 });
 
 // Gig Income Providers
 final baselineIncomeProvider = FutureProvider<BaselineIncomeModel>((ref) async {
-  return await ApiService.getBaselineIncome();
+  final user = ref.watch(userProvider);
+  if (user == null) throw Exception("User not logged in");
+  return await ApiService.getBaselineIncome(user.userId);
 });
 
 final todayIncomeProvider = FutureProvider<TodayIncomeModel>((ref) async {
-  return await ApiService.getTodayIncome();
+  final user = ref.watch(userProvider);
+  if (user == null) throw Exception("User not logged in");
+  return await ApiService.getTodayIncome(user.userId);
 });
 
 final incomeHistoryProvider = FutureProvider<IncomeHistoryModel>((ref) async {
-  return await ApiService.getIncomeHistory();
+  final user = ref.watch(userProvider);
+  if (user == null) throw Exception("User not logged in");
+  return await ApiService.getIncomeHistory(user.userId);
 });

@@ -78,16 +78,6 @@ class ProfileTab extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVerified ? l10n.verified.replaceAll(' ✔','') : l10n.notVerified,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: isVerified ? AppTheme.successColor : AppTheme.errorColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                      Text(
                         isVerified ? 'DigiLocker • Blockchain Secured' : 'Complete DigiLocker verification',
                         style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
                       ),
