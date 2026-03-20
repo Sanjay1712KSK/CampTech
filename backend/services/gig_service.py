@@ -2,6 +2,7 @@ import logging
 import random
 from datetime import date, timedelta
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from database.db import SessionLocal, engine
@@ -245,7 +246,7 @@ def _generate_day_record(user_id: int, day: date, expected_baseline: float = Non
 def _ensure_user_exists(session: Session, user_id: int):
     user = session.query(User).filter(User.id == user_id).first()
     if not user:
-        raise ValueError('USER_NOT_FOUND')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
 
 def generate_data(user_id: int, days: int = 30):
@@ -369,6 +370,7 @@ def debug_all_records():
 
 
 def baseline_income(user_id: int):
+    user_id = int(user_id)
     session: Session = SessionLocal()
     try:
         _ensure_user_exists(session, user_id)
@@ -389,6 +391,7 @@ def baseline_income(user_id: int):
 
 
 def today_income(user_id: int):
+    user_id = int(user_id)
     session: Session = SessionLocal()
     try:
         _ensure_user_exists(session, user_id)
@@ -420,6 +423,7 @@ def today_income(user_id: int):
 
 
 def weekly_summary(user_id: int):
+    user_id = int(user_id)
     session: Session = SessionLocal()
     try:
         _ensure_user_exists(session, user_id)
