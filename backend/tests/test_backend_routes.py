@@ -16,6 +16,7 @@ from routes import digilocker as digilocker_routes
 from routes import environment as environment_routes
 from routes import gig as gig_routes
 from routes import risk as risk_routes
+from services.digilocker_service import MOCK_DOCUMENTS
 from schemas.environment_schema import CoordinatesQuery
 from schemas.digilocker_schema import DigiLockerConsentSchema, DigiLockerRequestSchema
 from schemas.gig_schema import GenerateGigDataRequest
@@ -140,13 +141,24 @@ class BackendRouteTests(unittest.TestCase):
             )
         self.assertEqual(generate_result["generated"], 3)
 
-        with patch("services.gig_service.SessionLocal", self.SessionLocal):
-            today_result = gig_routes.today_income_endpoint(user_id=user_id)
-        self.assertIn("earnings", today_result)
-        self.assertIn("orders_completed", today_result)
+        history_result = gig_routes.income_history_endpoint(user_id=user_id, db=self.db)
+        self.assertGreaterEqual(len(history_result), 1)
+        self.assertEqual(history_result[0].user_id, user_id)
+
+        today_result = gig_routes.today_income_endpoint(user_id=user_id, db=self.db)
+        self.assertEqual(today_result.user_id, user_id)
+        self.assertTrue(hasattr(today_result, "earnings"))
 
     def test_digilocker_request_consent_and_status(self):
-        signup_result = self._signup_user(email="dl@example.com", phone="9234567890")
+        document = MOCK_DOCUMENTS[0]
+        signup_result = self._signup_user(
+            email="dl@example.com",
+            phone="9234567890",
+        )
+        self.db.query(user_model_module.User).filter(user_model_module.User.id == signup_result["id"]).update(
+            {"name": document["name"]}
+        )
+        self.db.commit()
         user_id = signup_result["id"]
 
         request_result = digilocker_routes.digilocker_request(
@@ -159,9 +171,9 @@ class BackendRouteTests(unittest.TestCase):
             consent_result = digilocker_routes.digilocker_consent(
                 DigiLockerConsentSchema(
                     request_id=request_id,
-                    document_type="aadhaar",
-                    document_number="123456789012",
-                    name="Sanju",
+                    document_type=document["document_type"],
+                    document_number=document["document_number"],
+                    name=document["name"],
                 ),
                 db=self.db,
             )
