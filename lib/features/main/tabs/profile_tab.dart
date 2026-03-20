@@ -4,7 +4,6 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
-import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/main.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
@@ -91,7 +90,6 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    AppLocalizations.of(context)!;
     final user = ref.watch(userProvider);
 
     if (user == null) {
