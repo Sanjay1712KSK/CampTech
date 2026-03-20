@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -59,3 +60,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get('/')
 def home():
     return {'message': 'Backend is running!!!'}
+
+
+if __name__ == '__main__':
+    import uvicorn
+
+    host = os.getenv('API_HOST', '0.0.0.0')
+    port = int(os.getenv('API_PORT', '8000'))
+    uvicorn.run('main:app', host=host, port=port, reload=False)
