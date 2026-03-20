@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:guidewire_gig_ins/services/environment_service.dart';
 
 // User State
 class UserState {
@@ -56,10 +55,10 @@ final locationProvider = NotifierProvider<LocationNotifier, LocationState>(Locat
 
 // API Providers (Caches)
 
-// Environment Data Provider — calls Open-Meteo, OpenWeatherMap, ORS directly
+// Environment Data Provider
 final environmentProvider = FutureProvider<EnvironmentModel>((ref) async {
   final loc = ref.watch(locationProvider);
-  return await EnvironmentService.getEnvironment(loc.lat, loc.lon);
+  return await ApiService.getEnvironment(loc.lat, loc.lon);
 });
 
 // Risk Provider  (Requires user_id, lat, lon)

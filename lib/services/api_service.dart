@@ -100,7 +100,16 @@ class ApiService {
   static Future<IncomeHistoryModel> getIncomeHistory(int userId) async {
     try {
       final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath?user_id=$userId')).timeout(_timeout);
-      if (response.statusCode == 200) return IncomeHistoryModel.fromJson(jsonDecode(response.body));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return IncomeHistoryModel.fromList(decoded);
+        }
+        if (decoded is Map<String, dynamic>) {
+          return IncomeHistoryModel.fromJson(decoded);
+        }
+        throw Exception('Unexpected income history response format');
+      }
       final errorBody = _tryDecodeError(response.body);
       throw Exception(errorBody ?? 'Failed to load income history');
     } catch (e) {
@@ -462,7 +471,11 @@ class IncomeHistoryModel {
   IncomeHistoryModel({required this.records, this.bestDay, this.worstDay});
 
   factory IncomeHistoryModel.fromJson(Map<String, dynamic> json) {
-    final rawRecords = json['records'] as List? ?? (json is List ? json : const []);
+    final rawRecords = json['records'] as List? ?? const [];
+    return IncomeHistoryModel.fromList(rawRecords);
+  }
+
+  factory IncomeHistoryModel.fromList(List<dynamic> rawRecords) {
     final parsed = rawRecords
         .whereType<Map<String, dynamic>>()
         .map((e) => DailyRecord.fromJson(e))

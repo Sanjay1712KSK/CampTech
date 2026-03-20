@@ -98,6 +98,9 @@ class _DigilockerVerificationScreenState extends ConsumerState<DigilockerVerific
     setState(() => _status = VerificationStatus.verifying);
 
     try {
+      final user = ref.read(userProvider);
+      if (user == null) throw Exception("User not logged in");
+
       final result = await ApiService.submitDigiLockerConsent(
         requestId: _requestId!,
         documentType: isAadhaar ? 'aadhaar' : 'license',
@@ -108,16 +111,17 @@ class _DigilockerVerificationScreenState extends ConsumerState<DigilockerVerific
       if (!mounted) return;
 
       if (result.verified) {
-        // Step 3: Poll status
-        final status = await ApiService.getDigiLockerStatus(_requestId!);
+        final status = await ApiService.getDigiLockerStatusByUserId(user.userId);
         if (!mounted) return;
-        
-        if (status.toUpperCase() == 'VERIFIED' || status.toUpperCase() == 'APPROVED' || result.verified) {
+
+        if (status.isVerified || status.status.toUpperCase() == 'VERIFIED') {
            ref.read(userProvider.notifier).updateVerification(true);
            setState(() => _status = VerificationStatus.verified);
         } else {
            setState(() => _status = VerificationStatus.inputRequired);
-           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('DigiLocker Status: $status')));
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text('DigiLocker Status: ${status.status}')),
+           );
         }
       } else {
         setState(() => _status = VerificationStatus.inputRequired);
