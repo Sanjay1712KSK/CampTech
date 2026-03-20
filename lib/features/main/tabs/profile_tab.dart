@@ -420,23 +420,29 @@ class _PolicyCard extends StatelessWidget {
                 color: AppTheme.primaryColor,
                 size: 28,
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppTheme.successColor.withOpacity(0.18)
-                      : AppTheme.warningColor.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  policyStatus,
-                  style: TextStyle(
-                    color: isActive
-                        ? AppTheme.successColor
-                        : AppTheme.warningColor,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppTheme.successColor.withOpacity(0.18)
+                          : AppTheme.warningColor.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      policyStatus,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isActive
+                            ? AppTheme.successColor
+                            : AppTheme.warningColor,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -465,6 +471,7 @@ class _PolicyCard extends StatelessWidget {
               Expanded(
                 child: _CardFact(label: 'User ID', value: '#$userId'),
               ),
+              const SizedBox(width: 12),
               Expanded(
                 child: _CardFact(
                   label: 'Verification',
@@ -504,6 +511,8 @@ class _CardFact extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -577,6 +586,8 @@ class _InfoTile extends StatelessWidget {
       ),
       subtitle: Text(
         value,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: AppTheme.textPrimary,
           fontSize: 15,

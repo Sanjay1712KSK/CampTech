@@ -339,12 +339,19 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
               ],
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(child: _metric('Total Paid', 'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}')),
-                const SizedBox(width: 12),
-                Expanded(child: _metric('Total Claimed', 'Rs ${(bank?.totalClaimed ?? 0).toStringAsFixed(0)}')),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 360;
+                final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(width: cardWidth, child: _metric('Total Paid', 'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}')),
+                    SizedBox(width: cardWidth, child: _metric('Total Claimed', 'Rs ${(bank?.totalClaimed ?? 0).toStringAsFixed(0)}')),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -374,29 +381,37 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
           const SizedBox(height: 14),
           _flowLine(),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: _coreNode()),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _riskColor(level).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 420;
+              final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(width: cardWidth, child: _coreNode()),
+                  SizedBox(
+                    width: cardWidth,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _riskColor(level).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(level, style: TextStyle(color: _riskColor(level), fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(score.toStringAsFixed(2), style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 28)),
+                          const Text('risk_score', style: TextStyle(color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(level, style: TextStyle(color: _riskColor(level), fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Text(score.toStringAsFixed(2), style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 28)),
-                      const Text('risk_score', style: TextStyle(color: AppTheme.textSecondary)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -415,20 +430,34 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
         children: [
           const _Title('02', 'Your Weekly Premium', 'Baseline, risk, and premium from the backend'),
           const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(child: _metric('Baseline Income', 'Rs ${baseline.toStringAsFixed(0)}')),
-              const SizedBox(width: 12),
-              Expanded(child: _metric('Weekly Income', 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(width: cardWidth, child: _metric('Baseline Income', 'Rs ${baseline.toStringAsFixed(0)}')),
+                  SizedBox(width: cardWidth, child: _metric('Weekly Income', 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _metric('Risk Score', riskScore.toStringAsFixed(2))),
-              const SizedBox(width: 12),
-              Expanded(child: _metric('Weekly Premium', 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(width: cardWidth, child: _metric('Risk Score', riskScore.toStringAsFixed(2))),
+                  SizedBox(width: cardWidth, child: _metric('Weekly Premium', 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -461,12 +490,19 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
         children: [
           const _Title('03', 'Claim Engine', 'Verify claim signals and trigger payout'),
           const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(child: _metric('Disruption', today.disruptionType.toUpperCase())),
-              const SizedBox(width: 12),
-              Expanded(child: _metric('Estimated Payout', 'Rs ${estimatedPayout.toStringAsFixed(0)}')),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(width: cardWidth, child: _metric('Disruption', today.disruptionType.toUpperCase())),
+                  SizedBox(width: cardWidth, child: _metric('Estimated Payout', 'Rs ${estimatedPayout.toStringAsFixed(0)}')),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 14),
           FutureBuilder<bool>(
@@ -512,7 +548,12 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
           children: [
             Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(
+              value,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+            ),
           ],
         ),
       );
@@ -531,7 +572,12 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 children: [
                   Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
                   const SizedBox(height: 4),
-                  Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(
+                    value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
                 ],
               ),
             ),

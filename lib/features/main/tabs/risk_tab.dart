@@ -334,7 +334,11 @@ class _TodayCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -344,7 +348,6 @@ class _TodayCard extends StatelessWidget {
                 ),
                 child: Text(level, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
               ),
-              const Spacer(),
               Text(
                 score.toStringAsFixed(2),
                 style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 30),
@@ -379,12 +382,20 @@ class _YesterdayCard extends StatelessWidget {
 
     return _CardBlock(
       title: 'Yesterday',
-      child: Row(
-        children: [
-          Expanded(child: _MiniStat(label: 'Predicted risk', value: predicted.toStringAsFixed(2))),
-          Expanded(child: _MiniStat(label: 'Actual outcome', value: actual)),
-          Expanded(child: _MiniStat(label: 'Income impact', value: 'Rs ${impact.toStringAsFixed(0)}')),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+          final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 16) / 3;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Predicted risk', value: predicted.toStringAsFixed(2))),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Actual outcome', value: actual)),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Income impact', value: 'Rs ${impact.toStringAsFixed(0)}')),
+            ],
+          );
+        },
       ),
     );
   }
@@ -416,12 +427,20 @@ class _PastWeekCard extends StatelessWidget {
 
     return _CardBlock(
       title: 'Past Week',
-      child: Row(
-        children: [
-          Expanded(child: _MiniStat(label: 'Avg risk', value: avgRisk.toStringAsFixed(2))),
-          Expanded(child: _MiniStat(label: 'Disruptions', value: '$disruptions')),
-          Expanded(child: _MiniStat(label: 'Total loss', value: 'Rs ${totalLoss.toStringAsFixed(0)}')),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+          final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 16) / 3;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Avg risk', value: avgRisk.toStringAsFixed(2))),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Disruptions', value: '$disruptions')),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Total loss', value: 'Rs ${totalLoss.toStringAsFixed(0)}')),
+            ],
+          );
+        },
       ),
     );
   }
@@ -453,12 +472,20 @@ class _FutureCard extends StatelessWidget {
 
     return _CardBlock(
       title: 'Future',
-      child: Row(
-        children: [
-          Expanded(child: _MiniStat(label: 'Today prediction', value: todayPrediction.toStringAsFixed(2))),
-          Expanded(child: _MiniStat(label: 'Tomorrow', value: tomorrowPrediction.toStringAsFixed(2))),
-          Expanded(child: _MiniStat(label: 'Weekly outlook', value: outlook)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+          final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 16) / 3;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Today prediction', value: todayPrediction.toStringAsFixed(2))),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Tomorrow', value: tomorrowPrediction.toStringAsFixed(2))),
+              SizedBox(width: cardWidth, child: _MiniStat(label: 'Weekly outlook', value: outlook)),
+            ],
+          );
+        },
       ),
     );
   }
@@ -515,6 +542,8 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
           ),
         ],

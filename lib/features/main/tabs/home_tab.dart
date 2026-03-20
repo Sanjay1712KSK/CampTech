@@ -220,24 +220,46 @@ class _HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           environmentAsync.when(
-            data: (env) => Row(
-              children: [
-                Expanded(
-                  child: _HeaderChip(
-                    label: 'Weather',
-                    value: '${env.weather.temperature.toStringAsFixed(1)} C',
-                    icon: Icons.wb_sunny_outlined,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HeaderChip(
-                    label: 'AQI',
-                    value: '${env.aqi.aqi}',
-                    icon: Icons.air_rounded,
-                  ),
-                ),
-              ],
+            data: (env) => LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 360;
+                if (compact) {
+                  return Column(
+                    children: [
+                      _HeaderChip(
+                        label: 'Weather',
+                        value: '${env.weather.temperature.toStringAsFixed(1)} C',
+                        icon: Icons.wb_sunny_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      _HeaderChip(
+                        label: 'AQI',
+                        value: '${env.aqi.aqi}',
+                        icon: Icons.air_rounded,
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _HeaderChip(
+                        label: 'Weather',
+                        value: '${env.weather.temperature.toStringAsFixed(1)} C',
+                        icon: Icons.wb_sunny_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _HeaderChip(
+                        label: 'AQI',
+                        value: '${env.aqi.aqi}',
+                        icon: Icons.air_rounded,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             loading: () => const _SkeletonCard(height: 64),
             error: (_, __) => const Text(
@@ -274,13 +296,20 @@ class _HeaderChip extends StatelessWidget {
         children: [
           Icon(icon, color: AppTheme.primaryColor),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-              const SizedBox(height: 2),
-              Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -317,7 +346,11 @@ class _PolicyStatusCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -330,9 +363,9 @@ class _PolicyStatusCard extends StatelessWidget {
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
                 ),
               ),
-              const Spacer(),
               Text(
                 bank?.claimReady == true ? 'Ready to claim' : (bank?.claimMessage ?? 'Not purchased'),
+                softWrap: true,
                 style: TextStyle(
                   color: bank?.claimReady == true
                       ? AppTheme.successColor
@@ -376,14 +409,29 @@ class _TodaySnapshotCard extends StatelessWidget {
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
-        children: [
-          Expanded(child: _MetricTile('Earnings today', 'Rs ${today.earnings.toInt()}', Icons.currency_rupee_rounded)),
-          const SizedBox(width: 12),
-          Expanded(child: _MetricTile('Orders completed', '${today.ordersCompleted}', Icons.inventory_2_outlined)),
-          const SizedBox(width: 12),
-          Expanded(child: _MetricTile('Hours worked', today.hoursWorked.toStringAsFixed(1), Icons.schedule_rounded)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+          final tileWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: tileWidth,
+                child: _MetricTile('Earnings today', 'Rs ${today.earnings.toInt()}', Icons.currency_rupee_rounded),
+              ),
+              SizedBox(
+                width: tileWidth,
+                child: _MetricTile('Orders completed', '${today.ordersCompleted}', Icons.inventory_2_outlined),
+              ),
+              SizedBox(
+                width: tileWidth,
+                child: _MetricTile('Hours worked', today.hoursWorked.toStringAsFixed(1), Icons.schedule_rounded),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -416,7 +464,11 @@ class _RiskSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -429,7 +481,6 @@ class _RiskSummaryCard extends StatelessWidget {
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
                 ),
               ),
-              const Spacer(),
               Text(
                 score.toStringAsFixed(2),
                 style: const TextStyle(
@@ -558,9 +609,19 @@ class _ActionCard extends StatelessWidget {
           children: [
             Icon(icon, color: AppTheme.primaryColor),
             const Spacer(),
-            Text(title, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            Text(
+              subtitle,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            ),
           ],
         ),
       ),
