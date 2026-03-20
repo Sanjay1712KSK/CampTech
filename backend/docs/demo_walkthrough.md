@@ -19,6 +19,30 @@ python scripts/seed_demo_data.py
 
 3. Start the Flutter app and point it to your backend base URL.
 
+4. Optional sanity check:
+
+```text
+GET /health -> {"status":"ok"}
+```
+
+## Seeded Demo State
+
+The seeded demo users already include the setup needed for end-to-end claim demos:
+
+- DigiLocker-verifiable identity records
+- linked bank accounts
+- a paid 7-day policy that has already completed
+- scenario-specific gig history used by risk, premium, and claim logic
+
+That means claim demos should work immediately after login.
+
+Important claim-window note:
+
+- If you buy a new premium during the demo, the newest policy becomes `ACTIVE`
+- An active policy cannot be claimed yet
+- The app summary will show `Claim available after the insured week completes`
+- For judge demos, use the seeded state first when you want to show an immediate claim outcome
+
 ## Common App Inputs
 
 These values are reused across most flows.
@@ -77,6 +101,7 @@ Purpose:
 - Strong weekly income drop
 - Same city work pattern
 - Rain disruption week
+- Best account for showing the full happy path across Home, Risk, AI Engine, Claim, Profile, and Support
 
 Login:
 
@@ -97,8 +122,9 @@ Expected outcome:
 
 - DigiLocker verification succeeds
 - Risk shows meaningful disruption
-- Premium can be viewed and paid
+- Premium can be viewed
 - Claim should be approved after policy-window checks
+- Payment summary should show bank linked, expired policy, and claim-ready state before claim
 - Support chatbot can explain approved status
 
 Recommended walkthrough:
@@ -127,10 +153,27 @@ Account Number: 123456789012
 IFSC: HDFC0001234
 ```
 
-6. View Risk tab with GPS enabled
-7. Go to AI Engine / Premium and pay premium
-8. Go to Claim flow
+6. View `Risk` with GPS enabled
+7. Open `Home` or `Profile` and confirm:
+
+```text
+Policy Status: EXPIRED
+Claim state: Ready to claim previous completed week
+```
+
+8. Open `AI Engine`:
+
+- review weekly premium
+- review bank summary
+- trigger claim from the claim card
+
 9. Expected result: `APPROVED` with payout
+10. Open `Profile` and confirm bank balance / total claimed updated
+11. Open support chat and ask:
+
+```text
+Was my payout credited?
+```
 
 ### 2. Fraud User
 
@@ -160,6 +203,7 @@ Expected outcome:
 - DigiLocker succeeds
 - Claim gets rejected
 - Fraud reasons should mention weather mismatch / healthy activity
+- Payment summary still shows claim-ready state because the week is complete
 - Support chatbot should explain rejection
 
 Recommended walkthrough:
@@ -181,9 +225,10 @@ Partner ID: ZMT-FRAUD-002
 ```
 
 4. Link bank
-5. Open Claim flow after viewing risk
-6. Expected result: `REJECTED`
-7. Open support chat and ask:
+5. Open `Risk` and confirm the live context does not look severely disrupted
+6. Open Claim flow after viewing risk
+7. Expected result: `REJECTED`
+8. Open support chat and ask:
 
 ```text
 Why was my claim rejected?
@@ -221,6 +266,7 @@ Expected outcome:
 - Only a few gig records exist
 - Eligibility checks should fail
 - Premium / claim flow should not look healthy
+- Summary may still show a completed policy, but the actual claim should fail due to eligibility rules
 
 Recommended walkthrough:
 
@@ -240,7 +286,7 @@ Platform: Swiggy
 Partner ID: SWG-INSUFF-003
 ```
 
-4. Open Earnings / Risk tabs
+4. Open `Home`, `Risk`, or `AI Engine` and note that the account looks incomplete from a data perspective
 5. Open Claim flow
 6. Expected result:
 
@@ -275,6 +321,7 @@ Expected outcome:
 - Risk data works
 - Premium can be viewed
 - Claim should be rejected because there is no eligible weekly loss
+- Best account to show "everything is connected, but no payout event happened"
 
 Recommended walkthrough:
 
@@ -294,7 +341,7 @@ Platform: Zomato
 Partner ID: ZMT-NORMAL-004
 ```
 
-4. Link bank
+4. Open `AI Engine` and note that premium and claim tools are available
 5. Open Claim flow
 6. Expected result: `REJECTED`
 7. Likely reason:
@@ -329,6 +376,7 @@ Expected outcome:
 - Mixed city / disruption signals
 - Claim may go to `NEEDS_REVIEW`
 - Support chatbot becomes important here
+- Best account to show the review and escalation branch
 
 Recommended walkthrough:
 
@@ -348,7 +396,7 @@ Platform: Swiggy
 Partner ID: SWG-EDGE-005
 ```
 
-4. Link bank
+4. Open `Risk` or `AI Engine` and highlight the mixed signals
 5. Open Claim flow
 6. Expected result:
 
@@ -369,7 +417,7 @@ Expected chatbot behavior:
 
 If you need a polished demo flow, use this order:
 
-### Flow A — Complete Happy Path
+### Flow A - Complete Happy Path
 
 Use `perfect_user@test.com`
 
@@ -377,12 +425,12 @@ Use `perfect_user@test.com`
 2. Verify identity
 3. Connect gig account
 4. View Home, Risk, and Earnings
-5. Link bank
-6. Pay premium
-7. Trigger claim
-8. Show approved payout
+5. Confirm claim-ready policy state
+6. Trigger claim
+7. Show approved payout
+8. Show updated bank / profile summary
 
-### Flow B — Fraud Rejection
+### Flow B - Fraud Rejection
 
 Use `fraud_user@test.com`
 
@@ -392,7 +440,7 @@ Use `fraud_user@test.com`
 4. Open support chat
 5. Ask why claim was rejected
 
-### Flow C — Insufficient Data
+### Flow C - Insufficient Data
 
 Use `insufficient_user@test.com`
 
@@ -400,7 +448,7 @@ Use `insufficient_user@test.com`
 2. Open Earnings / Claim
 3. Show eligibility failure
 
-### Flow D — No Loss, No Claim
+### Flow D - No Loss, No Claim
 
 Use `normal_week_user@test.com`
 
@@ -409,7 +457,7 @@ Use `normal_week_user@test.com`
 3. Trigger claim
 4. Show rejection because there is no valid weekly loss
 
-### Flow E — Escalation / Review
+### Flow E - Escalation / Review
 
 Use `escalation_user@test.com`
 
@@ -424,4 +472,6 @@ Use `escalation_user@test.com`
 - All demo users share the same password: `securePass123`
 - If you rerun `seed_demo_data.py`, the same accounts will be refreshed.
 - Connecting the gig account in the app will also trigger fresh mock gig data generation through the backend.
+- `Home`, `AI Engine`, and `Profile` all use the payment summary and are useful proof points during the demo.
+- `Support` is strongest after a claim outcome exists, because it explains the latest claim status.
 - The cleanest demo city remains `Chennai`.
