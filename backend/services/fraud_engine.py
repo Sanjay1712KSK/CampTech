@@ -47,6 +47,16 @@ def _dominant_disruption(records: list[GigIncome], fallback: str) -> str:
     return max(counts.items(), key=lambda item: item[1])[0]
 
 
+def _disruption_counts(records: list[GigIncome]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for record in records:
+        disruption = str(record.disruption_type or 'none').lower()
+        if disruption == 'none':
+            continue
+        counts[disruption] = counts.get(disruption, 0) + 1
+    return counts
+
+
 def validate_claim(user_id: int, db: Session, environment_data: dict, today_income: dict) -> dict:
     baseline = baseline_value(user_id, db)
     weather = (environment_data or {}).get('weather') or {}
@@ -73,6 +83,7 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
         week_records,
         str(today_income.get('disruption_type', 'none') or 'none').lower(),
     )
+    disruption_counts = _disruption_counts(week_records)
     actual_week_income = sum(float(record.earnings) for record in week_records)
     avg_week_income = actual_week_income / len(week_records) if week_records else earnings
     disruption_days = sum(1 for record in week_records if record.disruption_type != 'none')
@@ -92,6 +103,9 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
     if majority_city and environment_city and majority_city.lower() != str(environment_city).lower():
         reasons.append('Current claim location does not match the worker city pattern')
         location_check = 1.0
+        if city_ratio < 0.8:
+            reasons.append('Claim-week city pattern is inconsistent and needs manual review')
+            location_check = 1.0
     elif city_ratio < 0.8:
         reasons.append('User work history is not city-consistent enough for this policy')
         location_check = 0.8
@@ -109,6 +123,10 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
 
     if disruption_days >= 5 and actual_week_income >= expected_week_income * 0.9:
         reasons.append('Weekly disruption pattern does not match the reported loss')
+        activity_check = max(activity_check, 0.8)
+
+    if len(disruption_counts) > 1:
+        reasons.append('Claim-week disruption pattern is inconsistent across multiple causes')
         activity_check = max(activity_check, 0.8)
 
     if orders_completed > 0 and baseline > 0 and earnings >= baseline * 0.85:
@@ -130,7 +148,7 @@ def validate_claim(user_id: int, db: Session, environment_data: dict, today_inco
     )
 
     return {
-        'is_valid': fraud_score < 0.6,
+        'is_valid': fraud_score < 0.45,
         'fraud_score': fraud_score,
         'reasons': reasons,
         'signals': {
