@@ -84,21 +84,6 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
 
   Future<void> _payPremium(int userId, double amount) async {
     if (_isPayingPremium) return;
-    final summary = await ApiService.getInsuranceSummary(userId);
-    if (summary.claimReady) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Claim window is already ready. No need to buy again.')),
-      );
-      return;
-    }
-    if (summary.policyStatus == 'ACTIVE') {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(summary.claimMessage)),
-      );
-      return;
-    }
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -142,7 +127,6 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     setState(() => _isPayingPremium = true);
     try {
       await ApiService.payPremium(userId, amount);
-      await BankService.payPremium(amount);
       setState(() {
         _bankFuture = BankService.getSummary();
         _insuranceFuture = ApiService.getInsuranceSummary(userId);
@@ -231,10 +215,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 lat: location.lat,
                 lon: location.lon,
               );
-          if ((result['status'] as String? ?? '').toUpperCase() == 'APPROVED') {
-            await BankService.payoutClaim((result['payout'] as num?)?.toDouble() ?? 0);
-            setState(() => _bankFuture = BankService.getSummary());
-          }
+          setState(() => _bankFuture = BankService.getSummary());
           return result;
         },
       ),

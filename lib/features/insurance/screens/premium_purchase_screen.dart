@@ -46,7 +46,7 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
               style: TextStyle(color: AppTheme.textPrimary),
             ),
             content: Text(
-              'Confirm payment of Rs ${amount.toStringAsFixed(2)} for 7-day income protection.',
+              'Confirm payment of Rs ${amount.toStringAsFixed(2)} for next week\'s income protection.',
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
             actions: [
@@ -89,11 +89,11 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
         builder: (context) => AlertDialog(
           backgroundColor: AppTheme.surfaceColor,
           title: const Text(
-            'Coverage Activated',
+            'Coverage Scheduled',
             style: TextStyle(color: AppTheme.textPrimary),
           ),
           content: const Text(
-            'Weekly policy purchased successfully. Your claim will be available after the policy period ends.',
+            'Weekly policy purchased successfully. This payment covers your upcoming insured week.',
             style: TextStyle(color: AppTheme.textSecondary),
           ),
           actions: [
@@ -139,8 +139,14 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
               future: ApiService.getInsuranceSummary(user.userId),
               builder: (context, snapshot) {
                 final summary = snapshot.data;
-                final activePolicy = summary?.policyStatus == 'ACTIVE';
-                final claimReady = summary?.claimReady == true;
+                final helperText = summary == null
+                    ? 'This policy protects weekly income drops caused by real delivery disruptions.'
+                    : summary.claimReady
+                        ? 'You can claim the last completed week, and this payment will still cover the upcoming week.'
+                        : summary.policyStatus == 'ACTIVE'
+                            ? 'Your current policy remains active, and this payment secures the next upcoming week.'
+                            : 'This policy protects weekly income drops caused by real delivery disruptions.';
+
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -174,24 +180,44 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                             const SizedBox(height: 18),
                             Row(
                               children: [
-                                Expanded(child: _MetricCard(label: 'Baseline Income', value: 'Rs ${baseline.toStringAsFixed(0)}')),
+                                Expanded(
+                                  child: _MetricCard(
+                                    label: 'Baseline Income',
+                                    value: 'Rs ${baseline.toStringAsFixed(0)}',
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
-                                Expanded(child: _MetricCard(label: 'Weekly Income', value: 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
+                                Expanded(
+                                  child: _MetricCard(
+                                    label: 'Weekly Income',
+                                    value: 'Rs ${weeklyIncome.toStringAsFixed(0)}',
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Expanded(child: _MetricCard(label: 'Risk Score', value: riskScore.toStringAsFixed(2))),
+                                Expanded(
+                                  child: _MetricCard(
+                                    label: 'Risk Score',
+                                    value: riskScore.toStringAsFixed(2),
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
-                                Expanded(child: _MetricCard(label: 'Premium', value: 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+                                Expanded(
+                                  child: _MetricCard(
+                                    label: 'Premium',
+                                    value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
+                                  ),
+                                ),
                               ],
                             ),
                             if (summary != null) ...[
                               const SizedBox(height: 14),
                               _MetricCard(
                                 label: 'Policy Status',
-                                value: '${summary.policyStatus} • ${summary.claimMessage}',
+                                value: '${summary.policyStatus} | ${summary.claimMessage}',
                               ),
                             ],
                           ],
@@ -204,16 +230,17 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.08 + (_controller.value * 0.08)),
+                            color: AppTheme.primaryColor.withOpacity(
+                              0.08 + (_controller.value * 0.08),
+                            ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            claimReady
-                                ? 'This account already has an expired policy window. Go to Claim Flow instead of paying again.'
-                                : activePolicy
-                                    ? 'Your weekly policy is already active. Claiming will unlock after the policy period ends.'
-                                    : 'This policy protects weekly income drops caused by real delivery disruptions.',
-                            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+                            helperText,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              height: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -221,13 +248,11 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isPaying || activePolicy || claimReady ? null : () => _pay(premiumData),
+                          onPressed: _isPaying ? null : () => _pay(premiumData),
                           child: Text(
-                            claimReady
-                                ? 'Claim Window Ready'
-                                : activePolicy
-                                    ? 'Policy Already Active'
-                                    : (_isPaying ? 'Processing...' : 'Pay Premium'),
+                            _isPaying
+                                ? 'Processing...'
+                                : 'Pay Premium For Upcoming Week',
                           ),
                         ),
                       ),
@@ -271,9 +296,19 @@ class _MetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+          ),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
         ],
       ),
     );

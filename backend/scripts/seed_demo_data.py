@@ -177,7 +177,7 @@ def _scenario_records(user_id: int, scenario: str) -> list[dict]:
 
     for offset in range(30):
         day = start_date + timedelta(days=offset)
-        in_claim_week = offset >= 22
+        in_claim_week = 22 <= offset <= 28
 
         if scenario == 'approved_claim':
             if in_claim_week:
@@ -416,7 +416,17 @@ def _seed_verified_request(session, user: User, document_number: str) -> None:
 
 
 def _seed_policy_and_claims(session, user: User, scenario: str) -> None:
-    return
+    policy_start = date.today() - timedelta(days=7)
+    policy_end = date.today() - timedelta(days=1)
+    session.add(
+        Policy(
+            user_id=user.id,
+            start_date=policy_start,
+            end_date=policy_end,
+            premium_paid=True,
+            status='EXPIRED',
+        )
+    )
 
 
 def _seed_financials(session, user: User, scenario: str) -> None:

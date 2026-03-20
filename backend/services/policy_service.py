@@ -56,7 +56,7 @@ def create_policy(user_id: int, db: Session, start_date: date | None = None) -> 
             start_date = latest_policy.end_date + timedelta(days=1)
         else:
             start_date = date.today()
-    end_date = start_date + timedelta(days=7)
+    end_date = start_date + timedelta(days=6)
 
     policy = Policy(
         user_id=int(user_id),
