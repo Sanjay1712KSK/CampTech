@@ -178,40 +178,58 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                               style: TextStyle(color: AppTheme.textSecondary),
                             ),
                             const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _MetricCard(
-                                    label: 'Baseline Income',
-                                    value: 'Rs ${baseline.toStringAsFixed(0)}',
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _MetricCard(
-                                    label: 'Weekly Income',
-                                    value: 'Rs ${weeklyIncome.toStringAsFixed(0)}',
-                                  ),
-                                ),
-                              ],
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compact = constraints.maxWidth < 360;
+                                final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+                                return Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _MetricCard(
+                                        label: 'Baseline Income',
+                                        value: 'Rs ${baseline.toStringAsFixed(0)}',
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _MetricCard(
+                                        label: 'Weekly Income',
+                                        value: 'Rs ${weeklyIncome.toStringAsFixed(0)}',
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _MetricCard(
-                                    label: 'Risk Score',
-                                    value: riskScore.toStringAsFixed(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _MetricCard(
-                                    label: 'Premium',
-                                    value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
-                                  ),
-                                ),
-                              ],
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compact = constraints.maxWidth < 360;
+                                final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+                                return Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _MetricCard(
+                                        label: 'Risk Score',
+                                        value: riskScore.toStringAsFixed(2),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _MetricCard(
+                                        label: 'Premium',
+                                        value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                             if (summary != null) ...[
                               const SizedBox(height: 14),
@@ -303,6 +321,8 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.bold,

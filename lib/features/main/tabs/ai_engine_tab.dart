@@ -526,7 +526,12 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 today: today,
                 baseline: baseline,
               ),
-              child: Text(claimReady ? 'Claim Insurance' : claimMessage),
+              child: Text(
+                claimReady ? 'Claim Insurance' : claimMessage,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],

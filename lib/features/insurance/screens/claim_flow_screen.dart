@@ -205,13 +205,19 @@ class _ClaimLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
         ),
-        Text(
-          value,
-          style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            softWrap: true,
+            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
