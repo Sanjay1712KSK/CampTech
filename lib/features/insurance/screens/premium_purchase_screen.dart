@@ -104,6 +104,8 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
   @override
   Widget build(BuildContext context) {
     final premiumAsync = ref.watch(premiumProvider);
+    final user = ref.watch(userProvider);
+    if (user == null) return const Center(child: CircularProgressIndicator());
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -118,81 +120,106 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
             final weeklyIncome = (premiumData['weekly_income'] as num?)?.toDouble() ?? 0.0;
             final riskScore = (premiumData['risk_score'] as num?)?.toDouble() ?? 0.0;
             final weeklyPremium = (premiumData['weekly_premium'] as num?)?.toDouble() ?? 0.0;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1F291B), Color(0xFF161A16)],
+            return FutureBuilder<InsuranceSummaryModel>(
+              future: ApiService.getInsuranceSummary(user.userId),
+              builder: (context, snapshot) {
+                final summary = snapshot.data;
+                final activePolicy = summary?.policyStatus == 'ACTIVE';
+                final claimReady = summary?.claimReady == true;
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1F291B), Color(0xFF161A16)],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Premium Purchase Flow',
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Income -> Risk -> Premium',
+                              style: TextStyle(color: AppTheme.textSecondary),
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                Expanded(child: _MetricCard(label: 'Baseline Income', value: 'Rs ${baseline.toStringAsFixed(0)}')),
+                                const SizedBox(width: 12),
+                                Expanded(child: _MetricCard(label: 'Weekly Income', value: 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(child: _MetricCard(label: 'Risk Score', value: riskScore.toStringAsFixed(2))),
+                                const SizedBox(width: 12),
+                                Expanded(child: _MetricCard(label: 'Premium', value: 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+                              ],
+                            ),
+                            if (summary != null) ...[
+                              const SizedBox(height: 14),
+                              _MetricCard(
+                                label: 'Policy Status',
+                                value: '${summary.policyStatus} • ${summary.claimMessage}',
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Premium Purchase Flow',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
+                      const SizedBox(height: 20),
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) => Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.08 + (_controller.value * 0.08)),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            claimReady
+                                ? 'This account already has an expired policy window. Go to Claim Flow instead of paying again.'
+                                : activePolicy
+                                    ? 'Your weekly policy is already active. Claiming will unlock after the policy period ends.'
+                                    : 'This policy protects weekly income drops caused by real delivery disruptions.',
+                            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Income -> Risk -> Premium',
-                          style: TextStyle(color: AppTheme.textSecondary),
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
-                          children: [
-                            Expanded(child: _MetricCard(label: 'Baseline Income', value: 'Rs ${baseline.toStringAsFixed(0)}')),
-                            const SizedBox(width: 12),
-                            Expanded(child: _MetricCard(label: 'Weekly Income', value: 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: _MetricCard(label: 'Risk Score', value: riskScore.toStringAsFixed(2))),
-                            const SizedBox(width: 12),
-                            Expanded(child: _MetricCard(label: 'Premium', value: 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) => Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.08 + (_controller.value * 0.08)),
-                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'This policy protects weekly income drops caused by real delivery disruptions.',
-                        style: TextStyle(color: AppTheme.textPrimary, height: 1.5),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isPaying || activePolicy || claimReady ? null : () => _pay(premiumData),
+                          child: Text(
+                            claimReady
+                                ? 'Claim Window Ready'
+                                : activePolicy
+                                    ? 'Policy Already Active'
+                                    : (_isPaying ? 'Processing...' : 'Pay Premium'),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isPaying ? null : () => _pay(premiumData),
-                      child: Text(_isPaying ? 'Processing...' : 'Pay Premium'),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
@@ -27,10 +28,6 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
 
     if (!user.isVerified) {
       setState(() => _error = 'Eligibility failed: identity verification is required');
-      return;
-    }
-    if (!await BankService.hasPaidPremium()) {
-      setState(() => _error = 'Premium must be paid before a claim can be processed');
       return;
     }
     if (await AuthStorageService.isBiometricEnabled()) {
@@ -92,7 +89,6 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
     final claimState = ref.watch(claimProvider);
-    final bankFuture = BankService.getSummary();
 
     if (user == null) return const Center(child: CircularProgressIndicator());
 
@@ -104,11 +100,11 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
         title: const Text('Claim Flow'),
       ),
       body: SafeArea(
-        child: FutureBuilder<BankSummary>(
-          future: bankFuture,
+        child: FutureBuilder<InsuranceSummaryModel>(
+          future: ApiService.getInsuranceSummary(user.userId),
           builder: (context, snapshot) {
-            final bank = snapshot.data;
-            final canClaim = user.isVerified && (bank?.claimReady ?? false);
+            final summary = snapshot.data;
+            final canClaim = user.isVerified && (summary?.claimReady ?? false);
             return SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -120,9 +116,9 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
                       children: [
                         _ClaimLine(label: 'Eligibility verified', value: user.isVerified ? 'YES' : 'NO'),
                         const SizedBox(height: 10),
-                        _ClaimLine(label: 'Policy status', value: bank?.policyStatus ?? 'NOT PURCHASED'),
+                        _ClaimLine(label: 'Policy status', value: summary?.policyStatus ?? 'NOT PURCHASED'),
                         const SizedBox(height: 10),
-                        _ClaimLine(label: 'Claim window', value: bank?.claimMessage ?? 'Unavailable'),
+                        _ClaimLine(label: 'Claim window', value: summary?.claimMessage ?? 'Unavailable'),
                       ],
                     ),
                   ),
@@ -154,7 +150,13 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isRunning || !canClaim ? null : _runClaim,
-                      child: Text(_isRunning ? 'Verifying...' : 'Claim Insurance'),
+                      child: Text(
+                        _isRunning
+                            ? 'Verifying...'
+                            : canClaim
+                                ? 'Claim Insurance'
+                                : (summary?.claimMessage ?? 'Claim Unavailable'),
+                      ),
                     ),
                   ),
                 ],

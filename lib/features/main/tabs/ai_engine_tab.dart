@@ -20,6 +20,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     with TickerProviderStateMixin {
   late final AnimationController _pulseController;
   Future<BankSummary>? _bankFuture;
+  Future<InsuranceSummaryModel?>? _insuranceFuture;
   bool _isLinkingBank = false;
   bool _isPayingPremium = false;
 
@@ -31,6 +32,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
     _bankFuture = BankService.getSummary();
+    _insuranceFuture = Future<InsuranceSummaryModel?>.value(null);
   }
 
   @override
@@ -46,7 +48,12 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     ref.invalidate(baselineIncomeProvider);
     ref.invalidate(premiumProvider);
     ref.read(claimProvider.notifier).reset();
-    setState(() => _bankFuture = BankService.getSummary());
+    final user = ref.read(userProvider);
+    setState(() {
+      _bankFuture = BankService.getSummary();
+      _insuranceFuture =
+          user == null ? Future.value(null) : ApiService.getInsuranceSummary(user.userId);
+    });
   }
 
   Future<void> _linkBank(int userId) async {
@@ -55,7 +62,10 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     try {
       await ApiService.linkBankAccount(userId);
       await BankService.linkBank();
-      setState(() => _bankFuture = BankService.getSummary());
+      setState(() {
+        _bankFuture = BankService.getSummary();
+        _insuranceFuture = ApiService.getInsuranceSummary(userId);
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bank linked successfully')),
@@ -72,6 +82,21 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
 
   Future<void> _payPremium(int userId, double amount) async {
     if (_isPayingPremium) return;
+    final summary = await ApiService.getInsuranceSummary(userId);
+    if (summary.claimReady) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Claim window is already ready. No need to buy again.')),
+      );
+      return;
+    }
+    if (summary.policyStatus == 'ACTIVE') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(summary.claimMessage)),
+      );
+      return;
+    }
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -101,7 +126,10 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     try {
       await ApiService.payPremium(userId, amount);
       await BankService.payPremium(amount);
-      setState(() => _bankFuture = BankService.getSummary());
+      setState(() {
+        _bankFuture = BankService.getSummary();
+        _insuranceFuture = ApiService.getInsuranceSummary(userId);
+      });
       ref.invalidate(premiumProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +162,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
   Future<void> _claim({
     required int userId,
     required bool isVerified,
+    required bool claimReady,
     required LocationState location,
     required EnvironmentModel environment,
     required TodayIncomeModel today,
@@ -151,9 +180,9 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
       );
       return;
     }
-    if (!await BankService.hasPaidPremium()) {
+    if (!claimReady) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pay premium before claiming insurance')),
+        const SnackBar(content: Text('Claim is available only after the policy period ends')),
       );
       return;
     }
@@ -190,6 +219,7 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
     final baselineAsync = ref.watch(baselineIncomeProvider);
     final premiumAsync = ref.watch(premiumProvider);
     final location = ref.watch(locationProvider);
+    _insuranceFuture ??= ApiService.getInsuranceSummary(user.userId);
 
     if (user == null) return const Center(child: CircularProgressIndicator());
 
@@ -230,13 +260,18 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 environmentAsync.when(
                   data: (environment) => todayAsync.when(
                     data: (today) => baselineAsync.when(
-                      data: (baseline) => _claimCard(
-                        userId: user.userId,
-                        isVerified: user.isVerified,
-                        location: location,
-                        environment: environment,
-                        today: today,
-                        baseline: baseline,
+                      data: (baseline) => FutureBuilder<InsuranceSummaryModel?>(
+                        future: _insuranceFuture,
+                        builder: (context, snapshot) => _claimCard(
+                          userId: user.userId,
+                          isVerified: user.isVerified,
+                          claimReady: snapshot.data?.claimReady ?? false,
+                          claimMessage: snapshot.data?.claimMessage ?? 'Claim unavailable',
+                          location: location,
+                          environment: environment,
+                          today: today,
+                          baseline: baseline,
+                        ),
                       ),
                       loading: () => const _LoadingCard(),
                       error: (_, __) => const _ErrorCard('Claim inputs unavailable'),
@@ -399,6 +434,8 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
   Widget _claimCard({
     required int userId,
     required bool isVerified,
+    required bool claimReady,
+    required String claimMessage,
     required LocationState location,
     required EnvironmentModel environment,
     required TodayIncomeModel today,
@@ -421,11 +458,11 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
           ),
           const SizedBox(height: 14),
           FutureBuilder<bool>(
-            future: BankService.hasPaidPremium(),
+            future: Future.value(claimReady),
             builder: (context, snapshot) => _checkWrap([
               _Check('Identity verified', isVerified),
               _Check('Location available', !location.lat.isNaN && !location.lon.isNaN),
-              _Check('Premium paid', snapshot.data ?? false),
+              _Check('Claim ready', snapshot.data ?? false),
             ]),
           ),
           const SizedBox(height: 14),
@@ -435,12 +472,13 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
               onPressed: () => _claim(
                 userId: userId,
                 isVerified: isVerified,
+                claimReady: claimReady,
                 location: location,
                 environment: environment,
                 today: today,
                 baseline: baseline,
               ),
-              child: const Text('Claim Insurance'),
+              child: Text(claimReady ? 'Claim Insurance' : claimMessage),
             ),
           ),
         ],

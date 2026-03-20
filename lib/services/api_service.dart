@@ -67,6 +67,7 @@ class ApiService {
   static const String _premiumCalculatePath = '/premium/calculate';
   static const String _paymentPayPremiumPath = '/payment/pay-premium';
   static const String _paymentLinkBankPath = '/payment/link-bank';
+  static const String _paymentSummaryPath = '/payment/summary';
   static const String _claimProcessPath = '/claim/process';
 
   static const Duration _timeout = Duration(seconds: 15);
@@ -241,6 +242,30 @@ class ApiService {
       throw Exception('Server not reachable');
     } catch (e) {
       throw Exception('Premium payment error: $e');
+    }
+  }
+
+  static Future<InsuranceSummaryModel> getInsuranceSummary(int userId) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('${Config.baseUrl}$_paymentSummaryPath?user_id=$userId'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return InsuranceSummaryModel.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load insurance summary');
+    } on SocketException {
+      throw Exception('Server not reachable');
+    } catch (e) {
+      throw Exception('Insurance summary error: $e');
     }
   }
 
@@ -699,6 +724,57 @@ class DailyRecord {
               trafficScore: (json['traffic_score'] as num?)?.toDouble() ?? 0.0,
               trafficLevel: json['traffic_level'] as String? ?? 'LOW',
             )
+          : null,
+    );
+  }
+}
+
+class InsuranceSummaryModel {
+  final int userId;
+  final bool bankLinked;
+  final double? balance;
+  final double totalPaid;
+  final double totalClaimed;
+  final String policyStatus;
+  final String claimMessage;
+  final bool claimReady;
+  final double lastPayout;
+  final String? latestClaimStatus;
+  final DateTime? policyStart;
+  final DateTime? policyEnd;
+
+  InsuranceSummaryModel({
+    required this.userId,
+    required this.bankLinked,
+    required this.balance,
+    required this.totalPaid,
+    required this.totalClaimed,
+    required this.policyStatus,
+    required this.claimMessage,
+    required this.claimReady,
+    required this.lastPayout,
+    required this.latestClaimStatus,
+    required this.policyStart,
+    required this.policyEnd,
+  });
+
+  factory InsuranceSummaryModel.fromJson(Map<String, dynamic> json) {
+    return InsuranceSummaryModel(
+      userId: json['user_id'] as int? ?? 0,
+      bankLinked: json['bank_linked'] as bool? ?? false,
+      balance: (json['balance'] as num?)?.toDouble(),
+      totalPaid: (json['total_paid'] as num?)?.toDouble() ?? 0.0,
+      totalClaimed: (json['total_claimed'] as num?)?.toDouble() ?? 0.0,
+      policyStatus: json['policy_status'] as String? ?? 'NOT_PURCHASED',
+      claimMessage: json['claim_message'] as String? ?? '',
+      claimReady: json['claim_ready'] as bool? ?? false,
+      lastPayout: (json['last_payout'] as num?)?.toDouble() ?? 0.0,
+      latestClaimStatus: json['latest_claim_status'] as String?,
+      policyStart: json['policy_start'] != null
+          ? DateTime.tryParse('${json['policy_start']}')
+          : null,
+      policyEnd: json['policy_end'] != null
+          ? DateTime.tryParse('${json['policy_end']}')
           : null,
     );
   }
