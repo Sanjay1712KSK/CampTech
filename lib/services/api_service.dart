@@ -28,6 +28,20 @@ class DigiLockerConsentResult {
   const DigiLockerConsentResult({required this.verified, this.reason});
 }
 
+class DigiLockerStatusResult {
+  final bool isVerified;
+  final String status;
+  final String? verifiedName;
+  final String? documentType;
+
+  const DigiLockerStatusResult({
+    required this.isVerified,
+    required this.status,
+    this.verifiedName,
+    this.documentType,
+  });
+}
+
 class ApiService {
   static const String _signupPath = '/auth/signup';
   static const String _loginPath = '/auth/login';
@@ -38,6 +52,7 @@ class ApiService {
   static const String _gigBaselinePath = '/gig/baseline-income';
   static const String _gigTodayPath = '/gig/today-income';
   static const String _gigHistoryPath = '/gig/income-history';
+  static const String _digilockerStatusPath = '/digilocker/status';
 
   static const Duration _timeout = Duration(seconds: 15);
 
@@ -64,7 +79,8 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('${Config.baseUrl}$_gigBaselinePath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return BaselineIncomeModel.fromJson(jsonDecode(response.body));
-      throw Exception('Failed to load baseline income');
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load baseline income');
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -74,7 +90,8 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('${Config.baseUrl}$_gigTodayPath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return TodayIncomeModel.fromJson(jsonDecode(response.body));
-      throw Exception('Failed to load today income');
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load today income');
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -84,7 +101,8 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath?user_id=$userId')).timeout(_timeout);
       if (response.statusCode == 200) return IncomeHistoryModel.fromJson(jsonDecode(response.body));
-      throw Exception('Failed to load income history');
+      final errorBody = _tryDecodeError(response.body);
+      throw Exception(errorBody ?? 'Failed to load income history');
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -277,7 +295,11 @@ class ApiService {
   // ─── DIGILOCKER STATUS ───────────────────────────────────────────────────────
   /// Step 3: Check DigiLocker verification status.
   static Future<String> getDigiLockerStatus(String requestId) async {
-    final uri = Uri.parse('${Config.baseUrl}/digilocker/status?request_id=$requestId');
+    throw UnimplementedError('Use getDigiLockerStatusByUserId instead.');
+  }
+
+  static Future<DigiLockerStatusResult> getDigiLockerStatusByUserId(int userId) async {
+    final uri = Uri.parse('${Config.baseUrl}$_digilockerStatusPath?user_id=$userId');
     try {
       final response = await http.get(uri, headers: _headers).timeout(_timeout);
       if (response.statusCode == 200) {
@@ -285,7 +307,12 @@ class ApiService {
         if (body.containsKey('error') && body['error'] == true) {
            throw Exception(body['message'] ?? 'Error fetching status');
         }
-        return body['status'] as String? ?? 'PENDING';
+        return DigiLockerStatusResult(
+          isVerified: body['is_verified'] as bool? ?? false,
+          status: body['status'] as String? ?? 'NONE',
+          verifiedName: body['verified_name'] as String?,
+          documentType: body['document_type'] as String?,
+        );
       }
       final errorBody = _tryDecodeError(response.body);
       throw Exception(errorBody ?? 'Failed to get status (${response.statusCode})');
@@ -390,35 +417,39 @@ class ContextData {
 // ── 📊 Gig Income Models ───────────────────────────────────────────────────
 
 class BaselineIncomeModel {
-  final double expectedEarnings;
-  final int expectedOrders;
-  final String date;
+  final double baselineDailyIncome;
 
-  BaselineIncomeModel({required this.expectedEarnings, required this.expectedOrders, required this.date});
+  BaselineIncomeModel({required this.baselineDailyIncome});
 
   factory BaselineIncomeModel.fromJson(Map<String, dynamic> json) {
     return BaselineIncomeModel(
-      expectedEarnings: (json['expected_earnings'] as num?)?.toDouble() ?? 0.0,
-      expectedOrders: json['expected_orders'] as int? ?? 0,
-      date: json['date'] as String? ?? '',
+      baselineDailyIncome: (json['baseline_daily_income'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
 
 class TodayIncomeModel {
-  final double actualEarnings;
-  final int actualOrders;
-  final double activeHours;
-  final double lossAmount;
+  final double earnings;
+  final int ordersCompleted;
+  final double hoursWorked;
+  final String disruptionType;
+  final String? platform;
 
-  TodayIncomeModel({required this.actualEarnings, required this.actualOrders, required this.activeHours, required this.lossAmount});
+  TodayIncomeModel({
+    required this.earnings,
+    required this.ordersCompleted,
+    required this.hoursWorked,
+    required this.disruptionType,
+    this.platform,
+  });
 
   factory TodayIncomeModel.fromJson(Map<String, dynamic> json) {
     return TodayIncomeModel(
-      actualEarnings: (json['actual_earnings'] as num?)?.toDouble() ?? 0.0,
-      actualOrders: json['actual_orders'] as int? ?? 0,
-      activeHours: (json['active_hours'] as num?)?.toDouble() ?? 0.0,
-      lossAmount: (json['loss_amount'] as num?)?.toDouble() ?? 0.0,
+      earnings: (json['earnings'] as num?)?.toDouble() ?? 0.0,
+      ordersCompleted: json['orders_completed'] as int? ?? 0,
+      hoursWorked: (json['hours_worked'] as num?)?.toDouble() ?? 0.0,
+      disruptionType: json['disruption_type'] as String? ?? 'none',
+      platform: json['platform'] as String?,
     );
   }
 }
@@ -431,12 +462,24 @@ class IncomeHistoryModel {
   IncomeHistoryModel({required this.records, this.bestDay, this.worstDay});
 
   factory IncomeHistoryModel.fromJson(Map<String, dynamic> json) {
-    var rawRecords = json['records'] as List? ?? [];
-    List<DailyRecord> parsed = rawRecords.map((e) => DailyRecord.fromJson(e)).toList();
+    final rawRecords = json['records'] as List? ?? (json is List ? json : const []);
+    final parsed = rawRecords
+        .whereType<Map<String, dynamic>>()
+        .map((e) => DailyRecord.fromJson(e))
+        .toList();
+
+    DailyRecord? bestDay;
+    DailyRecord? worstDay;
+    if (parsed.isNotEmpty) {
+      parsed.sort((a, b) => a.date.compareTo(b.date));
+      bestDay = parsed.reduce((a, b) => a.earnings >= b.earnings ? a : b);
+      worstDay = parsed.reduce((a, b) => a.earnings <= b.earnings ? a : b);
+    }
+
     return IncomeHistoryModel(
       records: parsed,
-      bestDay: json['best_day'] != null ? DailyRecord.fromJson(json['best_day']) : null,
-      worstDay: json['worst_day'] != null ? DailyRecord.fromJson(json['worst_day']) : null,
+      bestDay: bestDay,
+      worstDay: worstDay,
     );
   }
 }
@@ -445,6 +488,9 @@ class DailyRecord {
   final String date;
   final double earnings;
   final int orders;
+  final double? hoursWorked;
+  final String? platform;
+  final String? disruptionType;
   final WeatherData? weather;
   final AqiData? aqi;
   final TrafficData? traffic;
@@ -453,6 +499,9 @@ class DailyRecord {
     required this.date,
     required this.earnings,
     required this.orders,
+    this.hoursWorked,
+    this.platform,
+    this.disruptionType,
     this.weather,
     this.aqi,
     this.traffic,
@@ -462,10 +511,31 @@ class DailyRecord {
     return DailyRecord(
       date: json['date'] as String? ?? '',
       earnings: (json['earnings'] as num?)?.toDouble() ?? 0.0,
-      orders: json['orders'] as int? ?? 0,
-      weather: json['weather'] != null ? WeatherData.fromJson(json['weather']) : null,
-      aqi: json['aqi'] != null ? AqiData.fromJson(json['aqi']) : null,
-      traffic: json['traffic'] != null ? TrafficData.fromJson(json['traffic']) : null,
+      orders: json['orders_completed'] as int? ?? json['orders'] as int? ?? 0,
+      hoursWorked: (json['hours_worked'] as num?)?.toDouble(),
+      platform: json['platform'] as String?,
+      disruptionType: json['disruption_type'] as String?,
+      weather: (json['temperature'] != null || json['humidity'] != null || json['rainfall'] != null || json['wind_speed'] != null)
+          ? WeatherData(
+              temperature: (json['temperature'] as num?)?.toDouble() ?? 0.0,
+              humidity: (json['humidity'] as num?)?.toDouble() ?? 0.0,
+              windSpeed: (json['wind_speed'] as num?)?.toDouble() ?? 0.0,
+              rainfall: (json['rainfall'] as num?)?.toDouble() ?? 0.0,
+            )
+          : null,
+      aqi: (json['aqi_level'] != null || json['pm2_5'] != null || json['pm10'] != null)
+          ? AqiData(
+              aqi: json['aqi_level'] as int? ?? 0,
+              pm25: (json['pm2_5'] as num?)?.toDouble() ?? 0.0,
+              pm10: (json['pm10'] as num?)?.toDouble() ?? 0.0,
+            )
+          : null,
+      traffic: (json['traffic_score'] != null || json['traffic_level'] != null)
+          ? TrafficData(
+              trafficScore: (json['traffic_score'] as num?)?.toDouble() ?? 0.0,
+              trafficLevel: json['traffic_level'] as String? ?? 'LOW',
+            )
+          : null,
     );
   }
 }
