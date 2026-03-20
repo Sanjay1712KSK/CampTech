@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 from fastapi import HTTPException, status
@@ -156,15 +157,20 @@ def insurance_summary(db: Session, user_id: int) -> dict:
     policy = get_latest_policy(int(user_id), db)
 
     if policy is None:
-        policy_status = 'NOT_PURCHASED'
+        policy_status = 'NOT PURCHASED'
         claim_ready = False
         claim_message = 'Buy weekly insurance to activate claims'
         policy_start = None
         policy_end = None
     else:
+        demo_bypass = os.getenv('DEMO_ALLOW_INSTANT_CLAIM', 'true').lower() == 'true'
         policy_status = policy.status
-        claim_ready = policy.premium_paid and policy.status == 'EXPIRED'
-        claim_message = 'Ready to claim' if claim_ready else 'Claim available after policy period ends'
+        claim_ready = policy.premium_paid and (policy.status == 'EXPIRED' or demo_bypass)
+        claim_message = (
+            'Ready to claim now'
+            if claim_ready
+            else 'Claim available after policy period ends'
+        )
         policy_start = policy.start_date
         policy_end = policy.end_date
 
