@@ -1,7 +1,7 @@
 import json
 import random
 import sys
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -370,7 +370,7 @@ def _upsert_users(session) -> list[User]:
                 phone=payload['phone'],
                 password=hash_password(payload['password']),
                 is_verified=True,
-                verified_at=datetime.utcnow(),
+                verified_at=datetime.now(UTC),
             )
             session.add(user)
         else:
@@ -378,7 +378,7 @@ def _upsert_users(session) -> list[User]:
             user.phone = payload['phone']
             user.password = hash_password(payload['password'])
             user.is_verified = True
-            user.verified_at = datetime.utcnow()
+            user.verified_at = datetime.now(UTC)
         users.append(user)
     session.flush()
     return users
@@ -410,7 +410,7 @@ def _seed_verified_request(session, user: User, document_number: str) -> None:
             issued_by='UIDAI',
             issued_date='2023-01-01',
             blockchain_txn_id=f'MOCK_TXN_{user.id}',
-            verified_at=datetime.utcnow(),
+            verified_at=datetime.now(UTC),
         )
     )
 

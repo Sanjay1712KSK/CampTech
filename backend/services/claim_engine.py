@@ -140,6 +140,9 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
         today_income=today_income,
     )
     if not fraud_result['is_valid']:
+        borderline_review = 0.55 <= float(fraud_result['fraud_score']) < 0.65
+        status = 'NEEDS_REVIEW' if borderline_review else 'REJECTED'
+        reasons = fraud_result['reasons'] or ['Claim validation failed']
         claim = create_claim_record(
             user_id=user_id,
             db=db,
@@ -147,13 +150,13 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             loss=0.0,
             payout=0.0,
             fraud_score=fraud_result['fraud_score'],
-            status='REJECTED',
-            reasons=fraud_result['reasons'] or ['Claim validation failed'],
+            status=status,
+            reasons=reasons,
         )
         return {
-            'status': 'REJECTED',
+            'status': status,
             'claim_id': f'claim_{claim.id}',
-            'reasons': fraud_result['reasons'] or ['Claim validation failed'],
+            'reasons': reasons,
             'fraud_score': fraud_result['fraud_score'],
         }
 
