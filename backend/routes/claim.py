@@ -19,7 +19,20 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
         lon=payload.lon,
     )
 
+    request_chain_resp = log_to_blockchain(
+        event_type='claim_request',
+        payload={
+            'user_id': payload.user_id,
+            'claim_id': result.get('claim_id'),
+            'status': result['status'],
+            'fraud_score': result.get('fraud_score'),
+            'lat': payload.lat,
+            'lon': payload.lon,
+        },
+    )
+
     if result['status'] != 'APPROVED':
+        db.commit()
         return result
 
     account = credit(db=db, user_id=payload.user_id, amount=result['payout'])
@@ -29,15 +42,20 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
         transaction_type='CLAIM_PAYOUT',
         amount=result['payout'],
         reference_id=result.get('claim_id'),
-        metadata={'loss': result['loss'], 'fraud_score': result['fraud_score']},
+        metadata={
+            'weekly_loss': result['weekly_loss'],
+            'fraud_score': result['fraud_score'],
+            'claim_request_txn_id': request_chain_resp.get('transaction_id'),
+        },
     )
     chain_resp = log_to_blockchain(
         event_type='claim_payout',
         payload={
             'user_id': payload.user_id,
             'claim_id': result.get('claim_id'),
-            'loss': result['loss'],
+            'weekly_loss': result['weekly_loss'],
             'payout': result['payout'],
+            'fraud_score': result['fraud_score'],
             'transaction_id': txn.reference_id,
         },
     )
@@ -46,6 +64,7 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
 
     return {
         'status': 'APPROVED',
+        'weekly_loss': result['weekly_loss'],
         'loss': result['loss'],
         'payout': result['payout'],
         'fraud_score': result['fraud_score'],

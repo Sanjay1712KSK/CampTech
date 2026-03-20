@@ -12,6 +12,7 @@ from database.db import Base
 from models import bank_account as bank_account_model  # noqa: F401
 from models import digilocker_request as digilocker_request_model  # noqa: F401
 from models import gig_income as gig_income_model  # noqa: F401
+from models import insurance as insurance_model  # noqa: F401
 from models import user_model as user_model_module  # noqa: F401
 from routes import auth as auth_routes
 from routes import claim as claim_routes
@@ -27,6 +28,7 @@ from schemas.digilocker_schema import DigiLockerConsentSchema, DigiLockerRequest
 from schemas.gig_schema import GenerateGigDataRequest
 from schemas.insurance_schema import ClaimProcessRequest, LinkBankRequest, PayPremiumRequest
 from schemas.user_schema import UserCreate, UserLogin, VerificationRequest
+from services.policy_service import create_policy
 
 
 class BackendRouteTests(unittest.TestCase):
@@ -249,6 +251,9 @@ class BackendRouteTests(unittest.TestCase):
         self.assertEqual(payment_result["status"], "SUCCESS")
         self.assertEqual(payment_result["amount"], 200.0)
         self.assertLess(payment_result["balance"], link_result["balance"])
+        self.assertIsNotNone(
+            self.db.query(insurance_model.Policy).filter(insurance_model.Policy.user_id == user_id).first()
+        )
 
     def test_claim_process_approved(self):
         signup_result = self._signup_user(email="claim@example.com", phone="9033333333")
@@ -259,41 +264,46 @@ class BackendRouteTests(unittest.TestCase):
             db=self.db,
         )
 
-        self.db.add_all([
-            gig_income_model.GigIncome(
-                user_id=user_id,
-                date=date(2026, 3, 18),
-                orders_completed=20,
-                hours_worked=8.0,
-                earnings=1000.0,
-                earnings_per_order=50.0,
-                platform="swiggy",
-                disruption_type="none",
-            ),
-            gig_income_model.GigIncome(
-                user_id=user_id,
-                date=date(2026, 3, 17),
-                orders_completed=19,
-                hours_worked=7.8,
-                earnings=920.0,
-                earnings_per_order=48.5,
-                platform="zomato",
-                disruption_type="none",
-            ),
-            gig_income_model.GigIncome(
-                user_id=user_id,
-                date=date.today(),
-                orders_completed=6,
-                hours_worked=6.0,
-                earnings=300.0,
-                earnings_per_order=50.0,
-                platform="swiggy",
-                disruption_type="rain",
-                rainfall=7.0,
-                traffic_level="HIGH",
-                traffic_score=1.7,
-            ),
-        ])
+        policy_start = date.today() - timedelta(days=8)
+        create_policy(user_id=user_id, db=self.db, start_date=policy_start)
+
+        records = []
+        for offset in range(5):
+            records.append(
+                gig_income_model.GigIncome(
+                    user_id=user_id,
+                    date=policy_start - timedelta(days=offset + 1),
+                    orders_completed=19,
+                    hours_worked=8.0,
+                    earnings=1000.0 - (offset * 10),
+                    earnings_per_order=50.0,
+                    platform="swiggy",
+                    disruption_type="none",
+                    city="Chennai",
+                )
+            )
+
+        policy_dates = [policy_start + timedelta(days=day) for day in range(8)]
+        weekly_earnings = [420.0, 380.0, 410.0, 360.0, 390.0, 340.0, 370.0, 350.0]
+        for day, amount in zip(policy_dates, weekly_earnings):
+            records.append(
+                gig_income_model.GigIncome(
+                    user_id=user_id,
+                    date=day,
+                    orders_completed=6,
+                    hours_worked=6.0,
+                    earnings=amount,
+                    earnings_per_order=50.0,
+                    platform="swiggy",
+                    disruption_type="rain",
+                    rainfall=7.0,
+                    traffic_level="HIGH",
+                    traffic_score=1.7,
+                    city="Chennai",
+                )
+            )
+
+        self.db.add_all(records)
         self.db.commit()
 
         fake_environment = {
@@ -313,6 +323,7 @@ class BackendRouteTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "APPROVED")
         self.assertGreater(result["payout"], 0)
+        self.assertGreater(result["weekly_loss"], 0)
 
 
 if __name__ == "__main__":

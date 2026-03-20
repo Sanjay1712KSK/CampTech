@@ -48,6 +48,7 @@ class ClaimProcessRequest(BaseModel):
 
 class ClaimProcessResponse(BaseModel):
     status: str
+    weekly_loss: float | None = None
     loss: float | None = None
     payout: float | None = None
     fraud_score: float | None = Field(default=None, ge=0.0, le=1.0)

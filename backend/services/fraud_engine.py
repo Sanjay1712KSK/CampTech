@@ -1,67 +1,122 @@
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
+from services.premium_engine import baseline_value
 
 
 def _round(value: float) -> float:
     return float(round(float(value), 3))
 
 
-def _baseline_value(user_id: int, db: Session) -> float:
-    records = (
+def _recent_week_records(user_id: int, db: Session) -> list[GigIncome]:
+    return (
         db.query(GigIncome)
-        .filter(GigIncome.user_id == int(user_id), GigIncome.disruption_type == 'none')
-        .order_by(GigIncome.earnings.desc())
-        .limit(5)
+        .filter(GigIncome.user_id == int(user_id))
+        .order_by(GigIncome.date.desc(), GigIncome.created_at.desc())
+        .limit(7)
         .all()
     )
+
+
+def _majority_city(records: list[GigIncome]) -> tuple[str | None, float]:
     if not records:
-        return 0.0
-    return float(sum(record.earnings for record in records) / len(records))
+        return None, 0.0
+    counts: dict[str, int] = {}
+    for record in records:
+        city = (record.city or '').strip()
+        if not city:
+            continue
+        counts[city] = counts.get(city, 0) + 1
+    if not counts:
+        return None, 0.0
+    city, count = max(counts.items(), key=lambda item: item[1])
+    return city, count / len(records)
 
 
 def validate_claim(user_id: int, db: Session, environment_data: dict, today_income: dict) -> dict:
-    baseline = _baseline_value(user_id, db)
+    baseline = baseline_value(user_id, db)
     weather = (environment_data or {}).get('weather') or {}
     traffic = (environment_data or {}).get('traffic') or {}
+    environment_city = (
+        (environment_data or {}).get('city')
+        or ((environment_data or {}).get('context') or {}).get('city')
+        or ''
+    )
 
     earnings = float(today_income.get('earnings', 0.0) or 0.0)
     orders_completed = int(today_income.get('orders_completed', 0) or 0)
     disruption = str(today_income.get('disruption_type', 'none') or 'none').lower()
+    week_records = _recent_week_records(user_id, db)
+    avg_week_income = (
+        sum(record.earnings for record in week_records) / len(week_records)
+        if week_records
+        else earnings
+    )
+    disruption_days = sum(1 for record in week_records if record.disruption_type != 'none')
+    majority_city, city_ratio = _majority_city(week_records)
 
     reasons: list[str] = []
-    fraud_score = 0.0
-    hard_fail = False
+    location_check = 0.0
+    income_check = 0.0
+    weather_check = 0.0
+    activity_check = 0.0
 
     rainfall = float(weather.get('rainfall', 0.0) or 0.0)
     if rainfall < 1 and disruption == 'rain':
         reasons.append('Weather data does not support a rain-related claim')
-        fraud_score += 0.35
-        hard_fail = True
+        weather_check = 1.0
 
-    if baseline > 0 and earnings >= baseline * 0.8:
-        reasons.append('Income drop is not significant enough for a claim')
-        fraud_score += 0.25
-        hard_fail = True
+    if majority_city and environment_city and majority_city.lower() != str(environment_city).lower():
+        reasons.append('Current claim location does not match the worker city pattern')
+        location_check = 1.0
+    elif city_ratio < 0.8:
+        reasons.append('User work history is not city-consistent enough for this policy')
+        location_check = 0.8
 
-    if disruption != 'none' and orders_completed > 0 and baseline > 0 and earnings >= baseline * 0.9:
-        reasons.append('Activity looks too healthy for the reported disruption')
-        fraud_score += 0.2
+    weekly_loss = max(0.0, (baseline * 7) - avg_week_income)
+    if baseline <= 0 or weekly_loss <= baseline:
+        reasons.append('Weekly income drop is too small for a payout event')
+        income_check = 1.0
 
     traffic_level = str(traffic.get('traffic_level', 'LOW') or 'LOW').upper()
     if traffic_level == 'LOW' and disruption == 'traffic':
         reasons.append('Traffic data does not support a traffic-related claim')
-        fraud_score += 0.35
-        hard_fail = True
+        weather_check = max(weather_check, 1.0)
+
+    if disruption_days >= 5 and avg_week_income >= baseline * 0.9:
+        reasons.append('Weekly disruption pattern does not match the reported loss')
+        activity_check = max(activity_check, 0.8)
+
+    if orders_completed > 0 and baseline > 0 and earnings >= baseline * 0.85:
+        reasons.append('Daily activity looks too healthy for the reported disruption')
+        activity_check = max(activity_check, 1.0)
 
     if disruption == 'none':
-        reasons.append('No disruption detected for today')
-        fraud_score += 0.2
+        reasons.append('No disruption detected for the current claim window')
+        activity_check = max(activity_check, 0.8)
 
-    fraud_score = _round(min(fraud_score, 1.0))
+    fraud_score = _round(
+        min(
+            1.0,
+            (0.3 * location_check)
+            + (0.3 * income_check)
+            + (0.2 * weather_check)
+            + (0.2 * activity_check),
+        )
+    )
 
     return {
-        'is_valid': not hard_fail,
+        'is_valid': fraud_score < 0.6,
         'fraud_score': fraud_score,
         'reasons': reasons,
+        'signals': {
+            'location_check': location_check,
+            'income_check': income_check,
+            'weather_check': weather_check,
+            'activity_check': activity_check,
+            'majority_city': majority_city,
+            'environment_city': environment_city or None,
+            'weekly_loss': _round(weekly_loss),
+            'disruption_days': disruption_days,
+        },
     }

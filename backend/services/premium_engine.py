@@ -31,6 +31,10 @@ def _baseline_value(user_id: int, db: Session) -> float:
     return _round(sum(record.earnings for record in records) / len(records))
 
 
+def baseline_value(user_id: int, db: Session) -> float:
+    return _baseline_value(user_id, db)
+
+
 def _resolve_coordinates(user_id: int, db: Session) -> tuple[float, float]:
     latest = (
         db.query(GigIncome)
@@ -43,6 +47,17 @@ def _resolve_coordinates(user_id: int, db: Session) -> tuple[float, float]:
         if coords:
             return coords
     return CITY_COORDINATES['chennai']
+
+
+def resolve_city_from_coordinates(lat: float, lon: float) -> str:
+    closest_city = 'Chennai'
+    closest_distance = float('inf')
+    for city, (city_lat, city_lon) in CITY_COORDINATES.items():
+        distance = ((lat - city_lat) ** 2) + ((lon - city_lon) ** 2)
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_city = city.title()
+    return closest_city
 
 
 def calculate_weekly_premium(user_id: int, db: Session) -> dict:
