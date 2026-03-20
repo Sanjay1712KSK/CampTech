@@ -157,7 +157,7 @@ NBFLite Blockchain, DigiLocker (Mock), Biometrics
 - Fully automated parametric insurance  
 - Weekly pricing aligned with gig economy  
 - AI-driven risk + pricing + claims  
-- Blockchain-backed transparency  
+- Blockchain-backed transparency. 
 
 ---
 
