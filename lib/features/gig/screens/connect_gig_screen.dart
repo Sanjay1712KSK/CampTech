@@ -4,6 +4,7 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
+import 'package:guidewire_gig_ins/features/gig/screens/income_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
@@ -42,13 +43,13 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
 
   Future<void> _handleConnect() async {
     final userId = _resolvedUserId;
-    final partnerId = _idController.text.trim();
+    final workerId = _idController.text.trim();
     if (userId == null) {
       setState(() => _error = 'User session not found');
       return;
     }
-    if (partnerId.isEmpty) {
-      setState(() => _error = 'Partner ID is required');
+    if (workerId.isEmpty) {
+      setState(() => _error = 'Worker ID is required');
       return;
     }
 
@@ -58,10 +59,10 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
     });
 
     try {
-      await ApiService.connectGigAccount(
+      final result = await ApiService.connectGigAccount(
         userId: userId,
-        platform: _selectedPlatform.toLowerCase(),
-        partnerId: partnerId,
+        platform: _selectedPlatform,
+        workerId: workerId,
       );
 
       if (widget.isOnboardingFlow && widget.identifier != null && widget.password != null) {
@@ -95,9 +96,14 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$_selectedPlatform account connected successfully')),
+        SnackBar(content: Text(result.message)),
       );
-      Navigator.pop(context, true);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IncomeScreen(userId: userId),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
@@ -175,7 +181,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Partner ID',
+                      'Worker ID',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
@@ -183,7 +189,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                       controller: _idController,
                       style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: InputDecoration(
-                        hintText: 'Enter your platform partner ID',
+                        hintText: 'Enter your platform worker ID',
                         prefixIcon: const Icon(Icons.badge_outlined),
                         errorText: _error,
                       ),

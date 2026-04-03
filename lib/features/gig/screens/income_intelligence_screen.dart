@@ -65,10 +65,10 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
 
   Future<void> _connectAccount() async {
     FocusScope.of(context).unfocus();
-    final partnerId = _partnerIdController.text.trim();
+    final workerId = _partnerIdController.text.trim();
 
-    if (partnerId.isEmpty) {
-      setState(() => _connectionError = 'Partner ID cannot be empty');
+    if (workerId.isEmpty) {
+      setState(() => _connectionError = 'Worker ID cannot be empty');
       return;
     }
 
@@ -78,17 +78,19 @@ class _IncomeIntelligenceScreenState extends State<IncomeIntelligenceScreen>
     });
 
     try {
-      final success = await ApiService.generateGigData(widget.userId);
+      final result = await ApiService.connectGigAccount(
+        userId: widget.userId,
+        platform: _selectedPlatform,
+        workerId: workerId,
+      );
       if (!mounted) return;
 
-      if (success) {
+      if (result.incomeGenerated) {
         setState(() => _isConnected = true);
         _fetchData();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '$_selectedPlatform account connected successfully',
-            ),
+            content: Text(result.message),
           ),
         );
       } else {
@@ -434,7 +436,7 @@ class _ConnectAccountCard extends StatelessWidget {
             focusNode: focusNode,
             style: const TextStyle(color: AppTheme.textPrimary),
             decoration: InputDecoration(
-              hintText: 'Enter Partner ID',
+              hintText: 'Enter Worker ID',
               prefixIcon: const Icon(Icons.badge_outlined),
               errorText: errorText,
             ),

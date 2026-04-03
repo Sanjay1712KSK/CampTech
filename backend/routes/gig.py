@@ -62,6 +62,11 @@ def baseline_income_endpoint(user_id: int = Query(..., gt=0), db: Session = Depe
     return baseline_income(user_id=user_id, db=db)
 
 
+@router.get('/baseline', response_model=BaselineIncomeResponse)
+def baseline_income_alias_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
+    return baseline_income(user_id=user_id, db=db)
+
+
 @router.get('/today-income', response_model=TodayIncomeResponse)
 def today_income_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
     return today_income(user_id=user_id, db=db)

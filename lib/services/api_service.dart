@@ -357,6 +357,29 @@ class DigiLockerStatusResult {
   }
 }
 
+class GigConnectResult {
+  final String message;
+  final bool incomeGenerated;
+  final String platform;
+  final int generated;
+
+  const GigConnectResult({
+    required this.message,
+    required this.incomeGenerated,
+    required this.platform,
+    required this.generated,
+  });
+
+  factory GigConnectResult.fromJson(Map<String, dynamic> json) {
+    return GigConnectResult(
+      message: json['message'] as String? ?? 'Gig account connected successfully',
+      incomeGenerated: json['income_generated'] as bool? ?? false,
+      platform: json['platform'] as String? ?? '',
+      generated: json['generated'] as int? ?? 0,
+    );
+  }
+}
+
 class ApiService {
   static const Duration _timeout = Duration(seconds: 15);
 
@@ -609,24 +632,24 @@ class ApiService {
     return true;
   }
 
-  static Future<bool> connectGigAccount({
+  static Future<GigConnectResult> connectGigAccount({
     required int userId,
     required String platform,
-    required String partnerId,
+    required String workerId,
   }) async {
-    await _postJson(
+    final body = await _postJson(
       '/gig/connect',
       body: {
         'user_id': userId,
-        'platform': platform.toLowerCase(),
-        'partner_id': partnerId,
+        'platform': platform,
+        'worker_id': workerId,
       },
     );
-    return true;
+    return GigConnectResult.fromJson(body);
   }
 
   static Future<BaselineIncomeModel> getBaselineIncome(int userId) async {
-    final body = await _getJson('/gig/baseline-income?user_id=$userId');
+    final body = await _getJson('/gig/baseline?user_id=$userId');
     return BaselineIncomeModel.fromJson(body);
   }
 
