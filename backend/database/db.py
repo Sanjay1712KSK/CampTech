@@ -3,9 +3,8 @@ import time
 import logging
 from pathlib import Path
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, event, inspect, text
+from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import NullPool
 
@@ -82,10 +81,6 @@ def reset_database():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
-
-from sqlalchemy import text
-
-
 def _run_sqlite_with_retries(action, attempts: int = 5, delay_seconds: float = 0.25):
     last_error = None
     for attempt in range(1, attempts + 1):
@@ -117,7 +112,20 @@ def ensure_schema():
         return
 
     required_columns = {
-        'users': ['verified_at', 'is_verified'],
+        'users': [
+            'email',
+            'phone',
+            'username',
+            'name',
+            'password_hash',
+            'is_email_verified',
+            'is_phone_verified',
+            'is_account_confirmed',
+            'is_digilocker_verified',
+            'verified_at',
+        ],
+        'profiles': ['user_id', 'platform', 'city', 'avg_income'],
+        'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],
         'bank_accounts': ['user_id', 'account_number', 'ifsc', 'balance', 'created_at'],
         'bank_transactions': ['user_id', 'transaction_type', 'amount', 'status', 'reference_id', 'metadata_json'],
         'policies': ['user_id', 'start_date', 'end_date', 'premium_paid', 'status'],
@@ -149,11 +157,25 @@ def ensure_schema():
             'is_holiday',
             'city',
         ],
-        'digilocker_requests': ['verified_name', 'verified_dob', 'blockchain_txn_id'],
+        'digilocker_requests': [
+            'doc_type',
+            'status',
+            'document_number_masked',
+            'consent_granted',
+            'redirect_url',
+            'oauth_state',
+            'verified_name',
+            'verified_dob',
+            'blockchain_txn_id',
+        ],
     }
 
     schema_ok = True
+    inspector = inspect(engine)
     for table_name, columns in required_columns.items():
+        if not inspector.has_table(table_name):
+            schema_ok = False
+            break
         for column_name in columns:
             if not _sqlite_has_column(table_name, column_name):
                 schema_ok = False
