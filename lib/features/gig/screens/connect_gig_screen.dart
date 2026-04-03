@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 class ConnectGigScreen extends ConsumerStatefulWidget {
   final int? userId;
@@ -68,20 +69,27 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
           identifier: widget.identifier!,
           password: widget.password!,
         );
-        await AuthStorageService.saveSession(
-          accessToken: login.accessToken,
-          user: login.user,
-        );
         if (!mounted) return;
-        ref.read(userProvider.notifier).setAuthenticatedUser(
-              login.user,
-              accessToken: login.accessToken,
-            );
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const MainShell()),
-          (route) => false,
-        );
+        if (login.requiresTwoFactor && login.twoFactorToken != null) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FirstLoginVerificationScreen(
+                challengeToken: login.twoFactorToken!,
+                availableChannels: login.availableChannels,
+              ),
+            ),
+            (route) => false,
+          );
+        } else {
+          await AuthFlowHelper.finalizeAuthenticatedSession(context, ref, login);
+          if (!mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const MainShell()),
+            (route) => false,
+          );
+        }
         return;
       }
 

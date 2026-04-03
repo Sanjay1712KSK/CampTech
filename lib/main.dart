@@ -77,11 +77,23 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
   }
 
   Future<_BootstrapResult> _bootstrap() async {
-    final biometricEnabled = await AuthStorageService.isBiometricEnabled();
-    if (!biometricEnabled) return _BootstrapResult.login;
-
     final session = await AuthStorageService.getSession();
     if (session == null) return _BootstrapResult.login;
+
+    final biometricEnabled = await AuthStorageService.isBiometricEnabled();
+    if (!biometricEnabled) {
+      try {
+        final user = await ApiService.getCurrentUser(session.accessToken);
+        ref.read(userProvider.notifier).setAuthenticatedUser(
+              user,
+              accessToken: session.accessToken,
+            );
+        return _BootstrapResult.main;
+      } catch (_) {
+        await AuthStorageService.clearSession();
+        return _BootstrapResult.login;
+      }
+    }
 
     final auth = LocalAuthentication();
     final canCheck = await auth.canCheckBiometrics;

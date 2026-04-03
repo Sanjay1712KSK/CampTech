@@ -47,7 +47,6 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
   Future<void> _toggleBiometric(bool value) async {
     if (!value) {
       await AuthStorageService.setBiometricEnabled(false);
-      await AuthStorageService.clearSession();
       if (!mounted) return;
       setState(() => _biometricEnabled = false);
       return;
