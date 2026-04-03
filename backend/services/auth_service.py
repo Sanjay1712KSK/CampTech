@@ -273,7 +273,10 @@ def verify_signup_otp(db: Session, user_id: int, email_otp: str, phone_otp: str)
 
 
 def confirm_account(db: Session, token: str) -> dict:
-    payload = decode_token(token, expected_purpose='account_confirmation')
+    try:
+        payload = decode_token(token, expected_purpose='account_confirmation')
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     user = _user_or_404(db, int(payload['sub']))
     if not user.is_email_verified or not user.is_phone_verified:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='OTP verification is incomplete')
@@ -366,7 +369,10 @@ def reset_password(db: Session, reset_token: str, new_password: str) -> dict:
     if not validate_password_strength(new_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_RULES_MESSAGE)
 
-    payload = decode_token(reset_token, expected_purpose='password_reset')
+    try:
+        payload = decode_token(reset_token, expected_purpose='password_reset')
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     user = _user_or_404(db, int(payload['sub']))
     user.password_hash = hash_password(new_password)
     db.commit()
