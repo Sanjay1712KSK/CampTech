@@ -16,6 +16,7 @@ class StoredSession {
 
 class AuthStorageService {
   static const _biometricPrefKey = 'biometric_enabled';
+  static const _biometricPromptSeenKey = 'biometric_prompt_seen';
   static const _accessTokenKey = 'secure_access_token';
   static const _userKey = 'secure_user_profile';
 
@@ -61,6 +62,20 @@ class AuthStorageService {
       await prefs.setBool(_biometricPrefKey, true);
     } else {
       await prefs.remove(_biometricPrefKey);
+    }
+  }
+
+  static Future<bool> hasSeenBiometricPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_biometricPromptSeenKey) ?? false;
+  }
+
+  static Future<void> setBiometricPromptSeen(bool seen) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (seen) {
+      await prefs.setBool(_biometricPromptSeenKey, true);
+    } else {
+      await prefs.remove(_biometricPromptSeenKey);
     }
   }
 }

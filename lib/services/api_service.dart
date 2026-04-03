@@ -181,21 +181,37 @@ class AuthUser {
 }
 
 class LoginResult {
+  final bool requiresTwoFactor;
   final String accessToken;
-  final int expiresIn;
-  final AuthUser user;
+  final int? expiresIn;
+  final AuthUser? user;
+  final String? twoFactorToken;
+  final List<String> availableChannels;
+  final String? message;
 
   const LoginResult({
+    required this.requiresTwoFactor,
     required this.accessToken,
     required this.expiresIn,
     required this.user,
+    this.twoFactorToken,
+    this.availableChannels = const [],
+    this.message,
   });
+
+  bool get isAuthenticated => !requiresTwoFactor && accessToken.isNotEmpty && user != null;
 
   factory LoginResult.fromJson(Map<String, dynamic> json) {
     return LoginResult(
+      requiresTwoFactor: json['requires_two_factor'] as bool? ?? false,
       accessToken: json['access_token'] as String? ?? '',
-      expiresIn: json['expires_in'] as int? ?? 0,
-      user: AuthUser.fromJson(json['user'] as Map<String, dynamic>? ?? const {}),
+      expiresIn: json['expires_in'] as int?,
+      user: json['user'] is Map<String, dynamic>
+          ? AuthUser.fromJson(json['user'] as Map<String, dynamic>)
+          : null,
+      twoFactorToken: json['two_factor_token'] as String?,
+      availableChannels: (json['available_channels'] as List? ?? const []).map((e) => '$e').toList(),
+      message: json['message'] as String?,
     );
   }
 }
@@ -441,6 +457,36 @@ class ApiService {
       body: {
         'identifier': identifier,
         'password': password,
+      },
+    );
+    return LoginResult.fromJson(body);
+  }
+
+  static Future<SendOtpResult> sendFirstLoginOtp({
+    required String challengeToken,
+    required String channel,
+  }) async {
+    final body = await _postJson(
+      '/auth/send-first-login-otp',
+      body: {
+        'challenge_token': challengeToken,
+        'channel': channel,
+      },
+    );
+    return SendOtpResult.fromJson(body);
+  }
+
+  static Future<LoginResult> verifyFirstLoginOtp({
+    required String challengeToken,
+    required String channel,
+    required String otp,
+  }) async {
+    final body = await _postJson(
+      '/auth/verify-first-login-otp',
+      body: {
+        'challenge_token': challengeToken,
+        'channel': channel,
+        'otp': otp,
       },
     );
     return LoginResult.fromJson(body);

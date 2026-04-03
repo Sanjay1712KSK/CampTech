@@ -122,6 +122,7 @@ def ensure_schema():
             'is_phone_verified',
             'is_account_confirmed',
             'is_digilocker_verified',
+            'has_completed_first_login_2fa',
             'verified_at',
         ],
         'profiles': ['user_id', 'platform', 'city', 'avg_income'],

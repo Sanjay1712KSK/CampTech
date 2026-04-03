@@ -8,6 +8,8 @@ from schemas.user_schema import (
     ConfirmAccountResponse,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
+    FirstLoginOtpRequest,
+    FirstLoginOtpVerifyRequest,
     LoginRequest,
     LoginResponse,
     MessageResponse,
@@ -83,6 +85,16 @@ def confirm_account(token: str = Query(..., min_length=16), db: Session = Depend
 @router.post('/login', response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     return auth_service.authenticate_user(db, payload.identifier or '', payload.password)
+
+
+@router.post('/send-first-login-otp', response_model=SendOtpResponse)
+def send_first_login_otp(payload: FirstLoginOtpRequest, db: Session = Depends(get_db)):
+    return auth_service.send_first_login_otp(db, payload.challenge_token, payload.channel)
+
+
+@router.post('/verify-first-login-otp', response_model=LoginResponse)
+def verify_first_login_otp(payload: FirstLoginOtpVerifyRequest, db: Session = Depends(get_db)):
+    return auth_service.verify_first_login_otp(db, payload.challenge_token, payload.channel, payload.otp)
 
 
 @router.get('/me', response_model=UserSessionResponse)

@@ -4,11 +4,12 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
+import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -44,19 +45,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final result = await ApiService.login(identifier: identifier, password: password);
-      await AuthStorageService.saveSession(
-        accessToken: result.accessToken,
-        user: result.user,
-      );
       if (!mounted) return;
-      ref.read(userProvider.notifier).setAuthenticatedUser(
-            result.user,
-            accessToken: result.accessToken,
-          );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainShell()),
-      );
+      if (result.requiresTwoFactor && result.twoFactorToken != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FirstLoginVerificationScreen(
+              challengeToken: result.twoFactorToken!,
+              availableChannels: result.availableChannels,
+            ),
+          ),
+        );
+      } else {
+        await AuthFlowHelper.finalizeAuthenticatedSession(context, ref, result);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainShell()),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

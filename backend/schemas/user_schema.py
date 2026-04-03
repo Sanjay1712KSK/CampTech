@@ -68,7 +68,7 @@ class OtpDeliveryPreview(BaseModel):
 
 class SendOtpResponse(BaseModel):
     message: str
-    purpose: Literal['signup', 'reset']
+    purpose: Literal['signup', 'reset', 'first_login']
     expires_in_seconds: int
     retry_limit: int
     deliveries: list[OtpDeliveryPreview]
@@ -112,6 +112,21 @@ class LoginRequest(BaseModel):
         return self
 
 
+class FirstLoginOtpRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    challenge_token: str = Field(..., min_length=16)
+    channel: Literal['email', 'phone']
+
+
+class FirstLoginOtpVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    challenge_token: str = Field(..., min_length=16)
+    channel: Literal['email', 'phone']
+    otp: str = Field(..., pattern=OTP_PATTERN)
+
+
 class UserSessionResponse(BaseModel):
     id: int
     email: EmailStr
@@ -122,16 +137,21 @@ class UserSessionResponse(BaseModel):
     is_phone_verified: bool
     is_account_confirmed: bool
     is_digilocker_verified: bool
+    has_completed_first_login_2fa: bool
     created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class LoginResponse(BaseModel):
-    access_token: str
-    token_type: Literal['bearer']
-    expires_in: int
-    user: UserSessionResponse
+    requires_two_factor: bool = False
+    access_token: str | None = None
+    token_type: Literal['bearer'] | None = None
+    expires_in: int | None = None
+    user: UserSessionResponse | None = None
+    two_factor_token: str | None = None
+    available_channels: list[Literal['email', 'phone']] = []
+    message: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):

@@ -64,6 +64,15 @@ def send_email_otp(email: str, otp: str, purpose: str) -> dict:
             'If you did not start this signup, please ignore this email.'
         )
         category = 'Registration OTP'
+    elif purpose == 'first_login':
+        subject = 'GigShield first login verification OTP'
+        text = (
+            'We noticed a first-time sign in to your GigShield account.\n\n'
+            f'Your verification OTP is: {otp}\n'
+            'This OTP is valid for 5 minutes.\n\n'
+            'If this was not you, please secure your account immediately.'
+        )
+        category = 'First Login OTP'
     else:
         subject = 'GigShield login recovery OTP'
         text = (

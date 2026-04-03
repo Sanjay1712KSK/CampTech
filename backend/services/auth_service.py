@@ -124,7 +124,25 @@ def build_user_session(user: User) -> dict:
         'is_phone_verified': bool(user.is_phone_verified),
         'is_account_confirmed': bool(user.is_account_confirmed),
         'is_digilocker_verified': bool(user.is_digilocker_verified),
+        'has_completed_first_login_2fa': bool(user.has_completed_first_login_2fa),
         'created_at': user.created_at,
+    }
+
+
+def _issue_access_session(user: User) -> dict:
+    token = encode_token(
+        {'sub': str(user.id), 'purpose': 'access', 'username': user.username},
+        expires_in_seconds=ACCESS_TOKEN_EXPIRY_SECONDS,
+    )
+    return {
+        'requires_two_factor': False,
+        'access_token': token,
+        'token_type': 'bearer',
+        'expires_in': ACCESS_TOKEN_EXPIRY_SECONDS,
+        'user': build_user_session(user),
+        'two_factor_token': None,
+        'available_channels': [],
+        'message': 'Login successful',
     }
 
 
@@ -327,17 +345,93 @@ def authenticate_user(db: Session, identifier: str, password: str) -> dict:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Account confirmation is still pending')
     if not user.is_digilocker_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Complete DigiLocker verification before login')
+    if not user.has_completed_first_login_2fa:
+        challenge_token = encode_token(
+            {'sub': str(user.id), 'purpose': 'first_login_challenge'},
+            expires_in_seconds=OTP_EXPIRY_SECONDS,
+        )
+        return {
+            'requires_two_factor': True,
+            'access_token': None,
+            'token_type': None,
+            'expires_in': None,
+            'user': None,
+            'two_factor_token': challenge_token,
+            'available_channels': ['email', 'phone'],
+            'message': 'Choose email or phone for first-time login verification',
+        }
 
-    token = encode_token(
-        {'sub': str(user.id), 'purpose': 'access', 'username': user.username},
-        expires_in_seconds=ACCESS_TOKEN_EXPIRY_SECONDS,
+    return _issue_access_session(user)
+
+
+def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dict:
+    try:
+        payload = decode_token(challenge_token, expected_purpose='first_login_challenge')
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    user = _user_or_404(db, int(payload['sub']))
+    if user.has_completed_first_login_2fa:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='First-login verification is already complete')
+    if channel not in {'email', 'phone'}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Unsupported verification channel')
+
+    enforce_rate_limit(f'otp-send:first_login:{channel}:{user.id}', limit=3, window_seconds=10 * 60)
+    (
+        db.query(Verification)
+        .filter(
+            Verification.user_id == int(user.id),
+            Verification.type == 'first_login',
+            Verification.channel == channel,
+            Verification.is_consumed.is_(False),
+        )
+        .update({'is_consumed': True}, synchronize_session=False)
+    )
+
+    otp = _generate_otp()
+    record = Verification(
+        user_id=user.id,
+        otp_code=hash_otp(otp),
+        type='first_login',
+        channel=channel,
+        destination=user.email if channel == 'email' else user.phone,
+        expires_at=_utcnow() + timedelta(seconds=OTP_EXPIRY_SECONDS),
+        attempts=0,
+        max_attempts=OTP_RETRY_LIMIT,
+    )
+    db.add(record)
+    db.commit()
+
+    delivery = (
+        send_email_otp(user.email, otp, 'first_login')
+        if channel == 'email'
+        else send_sms_otp(user.phone, otp, 'first_login')
     )
     return {
-        'access_token': token,
-        'token_type': 'bearer',
-        'expires_in': ACCESS_TOKEN_EXPIRY_SECONDS,
-        'user': build_user_session(user),
+        'message': 'First-login OTP sent',
+        'purpose': 'signup',
+        'expires_in_seconds': OTP_EXPIRY_SECONDS,
+        'retry_limit': OTP_RETRY_LIMIT,
+        'deliveries': [delivery],
     }
+
+
+def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp: str) -> dict:
+    try:
+        payload = decode_token(challenge_token, expected_purpose='first_login_challenge')
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    user = _user_or_404(db, int(payload['sub']))
+    if user.has_completed_first_login_2fa:
+        return _issue_access_session(user)
+
+    enforce_rate_limit(f'otp-verify:first_login:{channel}:{user.id}', limit=6, window_seconds=10 * 60)
+    record = _active_verification(db, user.id, 'first_login', channel)
+    _validate_otp_record(db, record, otp, channel)
+    user.has_completed_first_login_2fa = True
+    db.commit()
+    return _issue_access_session(user)
 
 
 def forgot_password(db: Session, identifier: str) -> dict:
