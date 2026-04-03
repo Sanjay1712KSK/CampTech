@@ -1,5 +1,5 @@
 git add .
 git pull origin main
 git commit -m main
-git commit -m "Major Remodelling Fellas: Registration Process update with more structured workflow along with OTP verification and also a more robust login and sign up process with pre-Digilocker verification"
+git commit -m "Risk Engine UI update"
 git push origin main
