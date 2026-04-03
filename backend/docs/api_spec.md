@@ -1,31 +1,40 @@
 # Gig Insurance Backend API Specification
 
-This document describes the FastAPI backend that powers the gig worker insurance demo. It reflects the routes currently registered in `backend/main.py` and the validation enforced by the schemas in `backend/schemas`.
+This document reflects the FastAPI routes currently mounted in `backend/main.py` and the current onboarding, DigiLocker, gig-income, premium, payment, claim, and support flows.
 
 ## Base URL
 
-Local development:
+Local backend:
 
 ```text
 http://127.0.0.1:8000
 ```
+
+Real device on the same Wi-Fi:
+
+```text
+http://<your-laptop-ip>:8000
+```
+
+Examples:
+
+- `http://192.168.0.6:8000`
+- Android emulator: use `http://10.0.2.2:8000`
 
 Health routes:
 
 - `GET /`
 - `GET /health`
 
-## Validation And Error Shape
+## Runtime Notes
 
-The backend validates request bodies, query parameters, and most responses with Pydantic.
+- CORS is enabled for all origins so the Flutter app can connect during development.
+- SQLite is used by default in development.
+- Email OTP and account-confirmation emails are sent through Mailtrap.
+- SMS OTP is mocked and returned in the API response for demo use.
+- DigiLocker is simulated. The app uses the generated `oauth_state` as the consent code in the mock flow.
 
-Common validation rules:
-
-- `user_id` must be an integer greater than `0`
-- `lat` must be between `-90` and `90`
-- `lon` must be between `-180` and `180`
-- `amount` must be greater than `0`
-- request bodies reject undocumented extra fields where `extra='forbid'` is set
+## Error Shape
 
 Handled errors use this shape:
 
@@ -36,14 +45,7 @@ Handled errors use this shape:
 }
 ```
 
-Examples:
-
-```json
-{
-  "error": true,
-  "message": "email: value is not a valid email address"
-}
-```
+Typical examples:
 
 ```json
 {
@@ -52,152 +54,401 @@ Examples:
 }
 ```
 
+```json
+{
+  "error": true,
+  "message": "Account confirmation is still pending"
+}
+```
+
 ## API Summary
 
-Current route groups:
+Route groups:
 
-- Auth
+- Auth and onboarding
 - DigiLocker
+- Gig account and income
 - Environment and risk
-- Gig data
 - Premium and payment
 - Claims
-- Support chat
+- Support
 
-## 1. Auth APIs
+## 1. Auth And Onboarding APIs
 
-### `POST /auth/signup`
+### `GET /auth/check-username?username=worker.one`
 
-Creates a new user.
+Checks live username availability.
 
-Request body:
+Response:
 
 ```json
 {
-  "name": "Sanju",
-  "email": "sanju@gmail.com",
-  "phone": "9876543210",
-  "password": "password123"
+  "available": true,
+  "suggestion": null,
+  "message": "Username is available"
+}
+```
+
+### `GET /auth/check-email?email=worker@example.com`
+
+Checks live email availability.
+
+### `GET /auth/suggest-usernames?username=worker`
+
+Returns generated alternatives.
+
+Response:
+
+```json
+{
+  "suggestions": ["worker123", "worker781", "worker4421"]
+}
+```
+
+### `POST /auth/signup`
+
+Creates a new user in `pending_otp` state.
+
+Request:
+
+```json
+{
+  "email": "worker@example.com",
+  "country_code": "+91",
+  "phone_number": "9876543210",
+  "username": "worker.one",
+  "password": "Secure@123"
+}
+```
+
+Validation rules:
+
+- `email` must be unique
+- `username` must be unique
+- `phone` must be unique after `country_code + phone_number` normalization
+- password must satisfy:
+  - minimum 8 characters
+  - at least 1 uppercase
+  - at least 1 lowercase
+  - at least 1 number
+  - at least 1 special character
+
+Response:
+
+```json
+{
+  "user_id": 1,
+  "email": "worker@example.com",
+  "phone": "+919876543210",
+  "username": "worker.one",
+  "next_step": "otp_verification",
+  "onboarding_status": "pending_otp"
+}
+```
+
+### `POST /auth/send-otp`
+
+Sends signup or reset OTP to both email and phone.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "purpose": "signup"
 }
 ```
 
 Notes:
 
-- `name` minimum length: `2`
-- `phone` must be exactly `10` digits
-- duplicate email returns an error
+- OTP expiry: 5 minutes
+- retry limit: 5
+- email OTP is sent by Mailtrap
+- phone OTP is mocked and included in the response
 
-Success response: `201 Created`
+Response:
 
 ```json
 {
-  "id": 1,
-  "name": "Sanju",
-  "email": "sanju@gmail.com",
-  "phone": "9876543210",
-  "is_verified": false
+  "message": "OTP sent for signup",
+  "purpose": "signup",
+  "expires_in_seconds": 300,
+  "retry_limit": 5,
+  "deliveries": [
+    {
+      "channel": "email",
+      "destination": "wo***@example.com",
+      "mock_otp": null
+    },
+    {
+      "channel": "phone",
+      "destination": "+91***210",
+      "mock_otp": "222222"
+    }
+  ]
+}
+```
+
+### `POST /auth/verify-otp`
+
+Verifies both signup OTPs and triggers the account-confirmation email.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "email_otp": "111111",
+  "phone_otp": "222222"
+}
+```
+
+Response:
+
+```json
+{
+  "email_verified": true,
+  "phone_verified": true,
+  "confirmation_token": "<jwt>",
+  "confirmation_link": "http://192.168.0.6:8000/auth/confirm?token=<jwt>",
+  "next_step": "account_confirmation"
+}
+```
+
+### `GET /auth/confirm?token=...`
+
+Confirms the account after the user clicks the link from their email.
+
+Response:
+
+```json
+{
+  "account_confirmed": true,
+  "next_step": "digilocker_verification",
+  "message": "Account confirmed successfully"
+}
+```
+
+### `GET /auth/onboarding-status?user_id=1`
+
+Returns the current onboarding state for the user.
+
+Response:
+
+```json
+{
+  "user_id": 1,
+  "is_email_verified": true,
+  "is_phone_verified": true,
+  "is_account_confirmed": true,
+  "is_digilocker_verified": false,
+  "next_step": "digilocker_verification"
 }
 ```
 
 ### `POST /auth/login`
 
-Authenticates an existing user.
+Logs in using email, username, or phone.
 
-Request body:
+Request:
 
 ```json
 {
-  "email": "sanju@gmail.com",
-  "password": "password123"
+  "identifier": "worker.one",
+  "password": "Secure@123"
 }
 ```
 
-Success response: `200 OK`
+Login rules:
+
+- blocked if account confirmation is incomplete
+- blocked if DigiLocker is not verified
+- first successful password login requires one-time second-step verification by either email or phone
+
+Possible response for first login:
 
 ```json
 {
-  "id": 1,
-  "name": "Sanju",
-  "email": "sanju@gmail.com",
-  "phone": "9876543210",
-  "is_verified": false
+  "requires_two_factor": true,
+  "access_token": null,
+  "token_type": null,
+  "expires_in": null,
+  "user": null,
+  "two_factor_token": "<jwt>",
+  "available_channels": ["email", "phone"],
+  "message": "Choose email or phone for first-time login verification"
+}
+```
+
+Possible response after the first-login challenge has already been completed:
+
+```json
+{
+  "requires_two_factor": false,
+  "access_token": "<jwt>",
+  "token_type": "bearer",
+  "expires_in": 43200,
+  "user": {
+    "id": 1,
+    "email": "worker@example.com",
+    "phone": "+919876543210",
+    "username": "worker.one",
+    "name": "worker.one",
+    "is_email_verified": true,
+    "is_phone_verified": true,
+    "is_account_confirmed": true,
+    "is_digilocker_verified": true,
+    "has_completed_first_login_2fa": true,
+    "created_at": "2026-04-03T09:30:00"
+  },
+  "two_factor_token": null,
+  "available_channels": [],
+  "message": "Login successful"
+}
+```
+
+### `POST /auth/send-first-login-otp`
+
+Sends the one-time first-login OTP to only one selected channel.
+
+Request:
+
+```json
+{
+  "challenge_token": "<jwt>",
+  "channel": "email"
+}
+```
+
+### `POST /auth/verify-first-login-otp`
+
+Verifies the first-login OTP and returns the access token.
+
+Request:
+
+```json
+{
+  "challenge_token": "<jwt>",
+  "channel": "email",
+  "otp": "555555"
+}
+```
+
+### `GET /auth/me`
+
+Returns the authenticated user session.
+
+Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+### `POST /auth/forgot-password`
+
+Starts reset flow by sending OTP to both email and phone.
+
+Request:
+
+```json
+{
+  "identifier": "worker.one"
+}
+```
+
+### `POST /auth/verify-reset-otp`
+
+Verifies both reset OTPs.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "email_otp": "333333",
+  "phone_otp": "444444"
+}
+```
+
+Response:
+
+```json
+{
+  "reset_token": "<jwt>",
+  "next_step": "reset_password",
+  "message": "OTP verified. You can set a new password now."
+}
+```
+
+### `POST /auth/reset-password`
+
+Sets the new password.
+
+Request:
+
+```json
+{
+  "reset_token": "<jwt>",
+  "new_password": "NewSecure@123"
 }
 ```
 
 ### `POST /auth/verify-identity`
 
-Runs the lightweight identity verification flow used by the older auth path.
+Legacy lightweight verification route used by the older flow. The main onboarding path now uses `/digilocker/*`.
 
-Request body:
+## 2. DigiLocker APIs
+
+DigiLocker is mandatory before normal login succeeds.
+
+### `POST /digilocker/request`
+
+Creates a mock DigiLocker authorization request.
+
+Request:
 
 ```json
 {
   "user_id": 1,
-  "document_type": "aadhaar"
+  "doc_type": "aadhaar"
 }
 ```
 
-Typical success response:
+Response:
 
 ```json
 {
-  "status": "verified",
-  "document_type": "aadhaar"
+  "request_id": "6edb0a2e-88f2-4e1e-a9cc-6f6f7b0f38ab",
+  "status": "PENDING",
+  "provider_name": "DigiLocker",
+  "redirect_url": "https://mock.digilocker.local/authorize?request_id=...",
+  "oauth_state": "DL-123456"
 }
 ```
 
-## 2. DigiLocker APIs
+### `POST /digilocker/verify`
 
-### `POST /digilocker/request`
+Completes the mock DigiLocker verification.
 
-Creates a DigiLocker request record.
-
-Request body:
+Request:
 
 ```json
 {
-  "user_id": 1
+  "request_id": "6edb0a2e-88f2-4e1e-a9cc-6f6f7b0f38ab",
+  "consent_code": "DL-123456"
 }
 ```
-
-Success response: `201 Created`
-
-```json
-{
-  "request_id": "11111111-1111-1111-1111-111111111111",
-  "status": "PENDING"
-}
-```
-
-### `POST /digilocker/consent`
-
-Submits consent details and verifies the document.
-
-Request body:
-
-```json
-{
-  "request_id": "11111111-1111-1111-1111-111111111111",
-  "document_type": "aadhaar",
-  "document_number": "123456789012",
-  "name": "Sanju"
-}
-```
-
-Validation notes:
-
-- Aadhaar must contain exactly `12` digits
-- License must contain `8` to `15` alphanumeric characters
-- `name` must be at least 2 characters
-- name matching is case-insensitive
 
 Success response:
 
 ```json
 {
   "status": "VERIFIED",
-  "name": "Sanju",
-  "document_type": "aadhaar"
+  "provider_name": "DigiLocker",
+  "verified_name": "Perfect User",
+  "doc_type": "aadhaar",
+  "verified_at": "2026-04-03T11:12:13",
+  "blockchain_txn_id": "MOCK-TXN-123"
 }
 ```
 
@@ -206,123 +457,80 @@ Failure response:
 ```json
 {
   "status": "FAILED",
-  "reason": "Invalid document or mismatch"
+  "reason": "Invalid DigiLocker consent code"
 }
 ```
 
+### `POST /digilocker/consent`
+
+Alias of `/digilocker/verify` kept for compatibility.
+
 ### `GET /digilocker/status?user_id=1`
 
-Returns the latest verification state for the user.
+Returns the latest DigiLocker state.
 
-Success response:
+Response:
 
 ```json
 {
   "is_verified": true,
   "provider_name": "DigiLocker",
   "status": "VERIFIED",
-  "verified_name": "Sanju",
-  "document_type": "aadhaar",
-  "document_number_masked": "********9012",
-  "verified_at": "2026-03-20T12:34:56Z",
+  "verified_name": "Perfect User",
+  "doc_type": "aadhaar",
+  "verified_at": "2026-04-03T11:12:13",
   "verification_score": 0.98,
-  "blockchain_txn_id": "MOCK_TXN_1"
+  "blockchain_txn_id": "MOCK-TXN-123"
 }
 ```
 
-## 3. Environment API
+## 3. Gig Account And Income APIs
 
-### `GET /environment?lat=13.0827&lon=80.2707`
+### `POST /gig/connect`
 
-Returns live environmental context used by risk and claim logic.
+Connects a gig platform and generates 30 days of simulated income history.
 
-Success response:
-
-```json
-{
-  "weather": {
-    "temperature": 31.2,
-    "humidity": 72.4,
-    "wind_speed": 6.8,
-    "rainfall": 1.4
-  },
-  "aqi": {
-    "aqi": 2,
-    "pm2_5": 18.5,
-    "pm10": 26.1
-  },
-  "traffic": {
-    "traffic_score": 1.3,
-    "traffic_level": "MEDIUM"
-  },
-  "context": {
-    "hour": 18,
-    "day_type": "weekday"
-  }
-}
-```
-
-## 4. Risk API
-
-### `GET /risk?lat=13.0827&lon=80.2707&user_id=1`
-
-Calculates delivery risk for the provided coordinates. If `user_id` is supplied, the response also includes today's gig context.
-
-Success response:
+Request:
 
 ```json
 {
-  "environment": {
-    "weather": {
-      "temperature": 31.2,
-      "humidity": 72.4,
-      "wind_speed": 6.8,
-      "rainfall": 1.4
-    },
-    "aqi": {
-      "aqi": 2,
-      "pm2_5": 18.5,
-      "pm10": 26.1
-    },
-    "traffic": {
-      "traffic_score": 1.3,
-      "traffic_level": "MEDIUM"
-    },
-    "context": {
-      "hour": 18,
-      "day_type": "weekday"
-    }
-  },
-  "risk": {
-    "risk_score": 0.72,
-    "risk_level": "HIGH",
-    "risk_factors": {
-      "weather_risk": 0.8,
-      "aqi_risk": 0.6,
-      "traffic_risk": 0.8,
-      "time_risk": 0.5
-    },
-    "recommendation": "Avoid delivery if possible"
-  },
-  "gig_context": {
-    "earnings_today": 320.0,
-    "orders_completed": 9
-  }
+  "user_id": 1,
+  "platform": "Swiggy",
+  "worker_id": "SWG123"
 }
 ```
 
 Notes:
 
-- `gig_context` is `null` when `user_id` is omitted or gig data is unavailable
-- `risk_score` is normalized to `0.0` through `1.0`
+- duplicate connection for the same `user_id + platform` is blocked
+- `partner_id` is still accepted as a backward-compatible alias of `worker_id`
+- generated rules:
+  - base income `500-1200`
+  - weekend boost `+100 to +300`
+  - 20% chance of disruption
+  - disruption reduces income by `30-70%`
+  - hours between `6-10`
 
-## 5. Gig APIs
+Response:
+
+```json
+{
+  "message": "Swiggy account connected successfully",
+  "income_generated": true,
+  "status": "CONNECTED",
+  "user_id": 1,
+  "platform": "swiggy",
+  "worker_id": "SWG123",
+  "partner_id": "SWG123",
+  "generated": 30
+}
+```
 
 ### `POST /gig/generate-data`
 
-Generates mock gig history.
+Utility route that generates synthetic gig data without creating a `GigAccount`.
 
-Request body:
+Request:
 
 ```json
 {
@@ -331,81 +539,94 @@ Request body:
 }
 ```
 
-Rules:
-
-- `days` must be between `1` and `90`
-
-### `POST /gig/connect`
-
-Connects a partner account and generates fresh 30-day history.
-
-Request body:
-
-```json
-{
-  "user_id": 1,
-  "platform": "swiggy",
-  "partner_id": "SWG-PERFECT-001"
-}
-```
-
-Rules:
-
-- platform must be `swiggy` or `zomato`
-
-Success response:
-
-```json
-{
-  "status": "CONNECTED",
-  "user_id": 1,
-  "platform": "swiggy",
-  "partner_id": "SWG-PERFECT-001",
-  "generated": 30
-}
-```
-
 ### `GET /gig/income-history?user_id=1`
 
-Returns stored gig records, newest first.
+Returns stored gig-income history in reverse chronological order.
 
-### `GET /gig/today-income?user_id=1`
+Response:
 
-Returns the newest stored record for the user, or a generated fallback payload if none exists yet.
+```json
+[
+  {
+    "date": "2026-04-01",
+    "income": 850.0,
+    "hours": 8.0,
+    "earnings": 850.0,
+    "orders_completed": 16,
+    "hours_worked": 8.0,
+    "platform": "swiggy",
+    "disruption_type": "none"
+  }
+]
+```
+
+### `GET /gig/baseline?user_id=1`
+
+Primary baseline endpoint.
+
+Logic:
+
+- take the most recent 30 days
+- sort by highest `earnings`
+- average the top 10 days
+
+Response:
+
+```json
+{
+  "baseline_income": 920.0,
+  "baseline_daily_income": 920.0
+}
+```
 
 ### `GET /gig/baseline-income?user_id=1`
 
-Example response:
+Alias of `/gig/baseline` kept for older clients.
+
+### `GET /gig/today-income?user_id=1`
+
+Returns today’s gig income.
+
+Response:
 
 ```json
 {
-  "baseline_daily_income": 850.0
+  "date": "2026-04-03",
+  "income": 780.0,
+  "hours": 7.5,
+  "earnings": 780.0,
+  "orders_completed": 14,
+  "hours_worked": 7.5,
+  "disruption_type": "rain",
+  "platform": "swiggy"
 }
 ```
 
 ### `GET /gig/weekly-summary?user_id=1`
 
-Returns aggregate performance for the latest week.
+Returns the recent 7-day summary.
 
-Example response:
+Response:
 
 ```json
 {
-  "avg_daily_earnings": 512.4,
-  "total_orders": 68,
-  "total_hours": 42.5,
-  "total_loss_amount": 940.0,
-  "avg_risk_score": 0.49,
+  "total_income": 5200.0,
+  "average_daily": 742.86,
+  "avg_daily_earnings": 742.86,
+  "total_orders": 95,
+  "total_hours": 54.2,
+  "total_loss_amount": 930.0,
+  "avg_risk_score": 0.28,
   "best_day": {
-    "date": "2026-03-16",
-    "earnings": 780.0,
+    "date": "2026-04-01",
+    "earnings": 980.0,
     "weather_condition": "clear",
-    "traffic_level": "LOW",
+    "traffic_level": "MEDIUM",
     "disruption_type": "none"
   },
   "worst_day": {
-    "date": "2026-03-19",
-    "earnings": 260.0,
+    "date": "2026-03-29",
+    "earnings": 410.0,
     "weather_condition": "rain",
     "traffic_level": "HIGH",
     "disruption_type": "rain"
@@ -415,299 +636,83 @@ Example response:
 
 ### `GET /gig/debug-all`
 
-Debug-only helper that returns all stored gig rows.
+Development helper that dumps all stored gig-income records.
 
-## 6. Premium API
+## 4. Environment And Risk APIs
+
+### `GET /environment?lat=13.0827&lon=80.2707`
+
+Returns weather, AQI, traffic, and time-of-day context.
+
+### `GET /risk?lat=13.0827&lon=80.2707&user_id=1`
+
+Returns calculated risk plus optional gig context for the user.
+
+## 5. Premium And Payment APIs
 
 ### `GET /premium?user_id=1`
 
+Primary premium endpoint.
+
 ### `GET /premium/calculate?user_id=1`
 
-Both routes return the same premium calculation response:
+Alias of the premium calculation endpoint.
 
-```json
-{
-  "baseline": 850.0,
-  "weekly_income": 5950.0,
-  "risk_score": 0.34,
-  "weekly_premium": 200.0
-}
-```
+Premium logic uses:
 
-## 7. Payment And Bank APIs
-
-### `GET /payment/summary?user_id=1`
-
-Returns the bank, policy, and claim summary used by the Home, AI Engine, and Profile screens.
-
-Success response:
-
-```json
-{
-  "user_id": 1,
-  "bank_linked": true,
-  "account_number_masked": "****9012",
-  "ifsc": "HDFC0001234",
-  "balance": 9800.0,
-  "total_paid": 200.0,
-  "total_claimed": 640.0,
-  "policy_status": "EXPIRED",
-  "policy_start": "2026-03-13",
-  "policy_end": "2026-03-19",
-  "claim_ready": true,
-  "claim_message": "Ready to claim previous completed week",
-  "last_payout": 640.0,
-  "latest_claim_status": "APPROVED",
-  "recent_remarks": [
-    "Claim payout credited for claim_12",
-    "Weekly premium paid for policy #9"
-  ]
-}
-```
+- gig baseline income
+- city-resolved environmental context
+- current risk score
 
 ### `POST /payment/link-bank`
 
-Links or updates the user's bank account.
+Links a bank account for premium payments and claim payouts.
 
-Request body:
+### `GET /payment/summary?user_id=1`
 
-```json
-{
-  "user_id": 1,
-  "account_number": "123456789012",
-  "ifsc": "HDFC0001234"
-}
-```
-
-Success response:
-
-```json
-{
-  "status": "LINKED",
-  "user_id": 1,
-  "balance": 10000.0
-}
-```
+Returns insurance, bank, policy, and claim summary details for the user.
 
 ### `POST /payment/pay-premium`
 
-Debits the linked bank account and creates a 7-day policy.
+Debits premium and creates a policy.
 
-Request body:
+## 6. Bank API
 
-```json
-{
-  "user_id": 1,
-  "amount": 200.0
-}
-```
+### `POST /bank/link-account`
 
-Success response:
+Compatibility route for linking a bank account.
 
-```json
-{
-  "status": "SUCCESS",
-  "user_id": 1,
-  "amount": 200.0,
-  "balance": 9800.0,
-  "transaction_id": "8e95b0e8-f8fd-4f4b-8db7-79b1f9f8f24a",
-  "blockchain_txn_id": "MOCK-TXN"
-}
-```
-
-Related legacy route:
-
-- `POST /bank/link-account`
-
-New integrations should prefer `POST /payment/link-bank`.
-
-## 8. Claim APIs
+## 7. Claim APIs
 
 ### `POST /claim/process`
 
-Processes a claim for the user's latest completed policy week.
-
-Request body:
-
-```json
-{
-  "user_id": 1,
-  "lat": 13.0827,
-  "lon": 80.2707
-}
-```
-
-Important behavior:
-
-- the user must have at least 7 days of gig history
-- the user must work at least 80% of the time in one city
-- a completed paid policy week must exist
-- approved claims are automatically credited to the linked bank account
-- rejected and review outcomes still create claim records
-
-Approved response:
-
-```json
-{
-  "status": "APPROVED",
-  "weekly_loss": 800.0,
-  "loss": 800.0,
-  "payout": 640.0,
-  "fraud_score": 0.18,
-  "reasons": null
-}
-```
-
-Rejected response:
-
-```json
-{
-  "status": "REJECTED",
-  "weekly_loss": null,
-  "loss": null,
-  "payout": null,
-  "fraud_score": 1.0,
-  "reasons": [
-    "No completed policy week is available to claim yet"
-  ]
-}
-```
-
-Review response:
-
-```json
-{
-  "status": "NEEDS_REVIEW",
-  "weekly_loss": null,
-  "loss": null,
-  "payout": null,
-  "fraud_score": 0.51,
-  "reasons": [
-    "Claim validation failed"
-  ]
-}
-```
+Runs the claim engine and returns `APPROVED`, `REJECTED`, or `NEEDS_REVIEW`.
 
 ### `POST /claim/payout`
 
-Manual payout helper for review or admin-assisted flows.
+Processes payout for an approved claim.
 
-Request body:
-
-```json
-{
-  "user_id": 1,
-  "amount": 500.0,
-  "claim_id": "claim_17"
-}
-```
-
-Success response:
-
-```json
-{
-  "status": "SUCCESS",
-  "user_id": 1,
-  "amount": 500.0,
-  "balance": 10500.0,
-  "transaction_id": "claim_17",
-  "blockchain_txn_id": "MOCK-TXN"
-}
-```
-
-## 9. Support API
+## 8. Support API
 
 ### `POST /support/chat`
 
-Returns a support response based on the latest claim status.
+Rule-based support assistant that replies using the user’s latest claim and policy state.
 
-Request body:
+## Current Main Flow
 
-```json
-{
-  "user_id": 1,
-  "query": "Why was my claim rejected?"
-}
-```
+The current happy path in the mobile app is:
 
-Success response:
+1. Signup
+2. Send OTP to both email and phone
+3. Verify both OTPs
+4. Open the account-confirmation link from email
+5. Complete DigiLocker verification
+6. Connect gig account and generate 30 days of income history
+7. First password login triggers one-time 2-step verification by either email or phone
+8. App stores the session and can optionally enable biometric unlock
+9. View premium, pay premium, and later submit a claim
 
-```json
-{
-  "response": "Your latest claim was rejected because no eligible weekly loss detected. Please review your disruption evidence, keep city-consistent work history, and wait until the policy period ends before claiming again."
-}
-```
+## Notes
 
-Behavior summary:
-
-- no claim yet: explains policy and claim prerequisites
-- rejected claim: explains likely reason and next steps
-- approved claim: confirms payout
-- `NEEDS_REVIEW`: asks the user to keep location and proof ready for manual review
-
-## cURL Examples
-
-### Health
-
-```bash
-curl "http://127.0.0.1:8000/health"
-```
-
-### Connect Gig Account
-
-```bash
-curl -X POST "http://127.0.0.1:8000/gig/connect" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 1,
-    "platform": "swiggy",
-    "partner_id": "SWG-PERFECT-001"
-  }'
-```
-
-### Payment Summary
-
-```bash
-curl "http://127.0.0.1:8000/payment/summary?user_id=1"
-```
-
-### Pay Premium
-
-```bash
-curl -X POST "http://127.0.0.1:8000/payment/pay-premium" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 1,
-    "amount": 200.0
-  }'
-```
-
-### Process Claim
-
-```bash
-curl -X POST "http://127.0.0.1:8000/claim/process" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 1,
-    "lat": 13.0827,
-    "lon": 80.2707
-  }'
-```
-
-### Support Chat
-
-```bash
-curl -X POST "http://127.0.0.1:8000/support/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": 1,
-    "query": "What should I do next?"
-  }'
-```
-
-## Developer Notes
-
-- `backend/main.py` currently mounts auth, bank, claim, digilocker, environment, gig, payment, premium, risk, and support routers
-- `POST /payment/pay-premium` creates a 7-day policy window
-- `POST /claim/process` only allows claiming against a completed paid week, not the currently active week
-- seeded demo users from `backend/scripts/seed_demo_data.py` already have expired paid policies, linked banks, and DigiLocker-ready profiles for walkthroughs
+- `backend/routes/verification.py` exists but is not mounted in `backend/main.py`.
+- The Flutter app currently uses the live backend routes above and expects the onboarding and gig APIs documented here.

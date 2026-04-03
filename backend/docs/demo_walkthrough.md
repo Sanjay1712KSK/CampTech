@@ -1,6 +1,13 @@
 # Gig Insurance Demo Walkthrough
 
-This guide explains the demo users seeded by `backend/scripts/seed_demo_data.py`, what each user scenario represents, and what values to enter in the app to trigger the intended flows.
+This walkthrough is updated for the current app flow:
+
+- signup with dual OTP
+- account confirmation by email link
+- mandatory DigiLocker verification
+- gig account connection
+- first-login one-time second-step verification
+- premium, claim, payout, and support flows
 
 ## Before You Start
 
@@ -11,50 +18,205 @@ cd backend
 python main.py
 ```
 
-2. Seed the demo users:
+2. Seed demo users if you want the prebuilt claim scenarios:
 
 ```bash
 python scripts/seed_demo_data.py
 ```
 
-3. Start the Flutter app and point it to your backend base URL.
+3. Point the Flutter app to the backend base URL:
 
-4. Optional sanity check:
+```text
+Real device: http://<your-laptop-ip>:8000
+Android emulator: http://10.0.2.2:8000
+```
+
+4. Verify the backend is up:
 
 ```text
 GET /health -> {"status":"ok"}
 ```
 
-## Seeded Demo State
+## Two Demo Paths
 
-The seeded demo users already include the setup needed for end-to-end claim demos:
+Use one of these depending on what you want to show.
 
-- DigiLocker-verifiable identity records
-- linked bank accounts
-- a paid 7-day policy that has already completed
-- scenario-specific gig history used by risk, premium, and claim logic
+### Path A: Fresh User Onboarding
 
-That means claim demos should work immediately after login.
+Best when you want to show:
 
-Important claim-window note:
+- realistic fintech onboarding
+- email OTP + phone OTP
+- email confirmation link
+- mandatory DigiLocker
+- gig account connection
+- first-login verification and biometric prompt
 
-- If you buy a new premium during the demo, the newest policy becomes `ACTIVE`
-- An active policy cannot be claimed yet
-- The app summary will show `Claim available after the insured week completes`
-- For judge demos, use the seeded state first when you want to show an immediate claim outcome
+### Path B: Seeded Claim Scenarios
 
-## Common App Inputs
+Best when you want to show:
 
-These values are reused across most flows.
+- premium and claim decisions quickly
+- approved / rejected / review paths
+- support explanations after a claim result
+
+## Path A: Fresh User Onboarding Walkthrough
+
+### 1. Sign Up
+
+In the app, enter:
+
+```text
+Email: your demo email
+Country code: +91
+Phone: your phone number
+Username: any available username
+Password: Secure@123
+```
+
+Expected result:
+
+- account is created in `pending_otp`
+- username and email checks work live
+
+### 2. OTP Verification
+
+Tap continue and wait for OTP delivery.
+
+What happens:
+
+- email OTP is sent through Mailtrap to the user email
+- phone OTP is mocked and shown in the app for demo use
+
+Expected result:
+
+- enter both OTPs
+- app moves to account confirmation
+
+### 3. Account Confirmation
+
+What happens:
+
+- backend sends a confirmation email to the user email address
+- the email contains a link to `GET /auth/confirm?token=...`
+
+Demo options:
+
+- Preferred: open the email on the phone and tap the confirmation link
+- Fallback in app: use the demo confirmation button if needed
+
+Expected result:
+
+- account becomes confirmed
+- next required step is DigiLocker
+
+### 4. Mandatory DigiLocker Verification
+
+Choose one:
+
+- `aadhaar`
+- `passport`
+
+What happens:
+
+- app calls `/digilocker/request`
+- app uses the returned `oauth_state` as the mock consent code
+- app calls `/digilocker/verify`
+
+Expected result:
+
+- user is marked DigiLocker verified
+- app continues directly to gig account connection
+
+Important note:
+
+- this step is mandatory
+- normal login is blocked until DigiLocker is verified
+
+### 5. Connect Gig Account
+
+Use:
+
+```text
+Platform: Swiggy or Zomato
+Worker ID: SWG123 or ZMT123
+```
+
+What happens:
+
+- backend stores the gig account
+- 30 days of income data are generated automatically
+
+Generated rules:
+
+- base income `500-1200`
+- weekend boost `+100 to +300`
+- 20% disruption chance
+- disruption reduces income by `30-70%`
+- hours between `6-10`
+
+Expected result:
+
+- account connected successfully
+- income history becomes available immediately
+
+### 6. First Login Verification
+
+On the first password login after onboarding:
+
+- backend returns a first-login challenge
+- user chooses only one channel:
+  - email
+  - phone
+- OTP is sent only to that selected channel
+
+Expected result:
+
+- after OTP verification, the access token is returned
+- later logins skip this first-login challenge
+
+### 7. Session And Biometric
+
+After the first successful authenticated entry:
+
+- app stores the session
+- app can prompt once to enable biometric unlock
+
+Expected result:
+
+- reopening the app keeps the user logged in
+- if biometric is enabled, the app can require biometric unlock on reopen
+
+## Path B: Seeded Claim Scenarios
+
+All seeded users share the same password:
+
+```text
+securePass123
+```
+
+The seeded demo users already include:
+
+- DigiLocker-verifiable identity data
+- bank accounts
+- scenario-specific gig records
+- claim-ready policy state for walkthroughs
+
+If you buy a new premium during the demo:
+
+- the newest policy becomes active
+- that active policy is not immediately claimable
+
+## Common Demo Inputs
 
 ### Gig Account Connection
 
-Use either of these platforms:
+Use one of these:
 
 - `Swiggy`
 - `Zomato`
 
-Sample partner IDs you can type:
+Sample worker IDs:
 
 - `SWG-PERFECT-001`
 - `ZMT-FRAUD-002`
@@ -64,16 +226,12 @@ Sample partner IDs you can type:
 
 ### Bank Linking
 
-Sample bank values to type in the app:
-
 ```text
 Account Number: 123456789012
 IFSC: HDFC0001234
 ```
 
-The backend mock bank accepts demo-format values like the above.
-
-### Location for Risk / Claim
+### Location
 
 Use Chennai for the cleanest demo:
 
@@ -83,25 +241,9 @@ Longitude: 80.2707
 City: Chennai
 ```
 
-If GPS is enabled on the device and you are elsewhere, the app will use the live location instead.
-
-## Demo Users
-
-All seeded users use the same password:
-
-```text
-securePass123
-```
+## Seeded User Scenarios
 
 ### 1. Perfect User
-
-Purpose:
-
-- Approved claim
-- Strong weekly income drop
-- Same city work pattern
-- Rain disruption week
-- Best account for showing the full happy path across Home, Risk, AI Engine, Claim, Profile, and Support
 
 Login:
 
@@ -110,78 +252,34 @@ Email: perfect_user@test.com
 Password: securePass123
 ```
 
-DigiLocker:
+Best for:
 
-```text
-Name: Perfect User
-Document Type: aadhaar
-Document Number: 013456789012
-```
+- happy-path claim approval
+- payout demo
+- support explanation after approval
 
-Expected outcome:
-
-- DigiLocker verification succeeds
-- Risk shows meaningful disruption
-- Premium can be viewed
-- Claim should be approved after policy-window checks
-- Payment summary should show bank linked, expired policy, and claim-ready state before claim
-- Support chatbot can explain approved status
-
-Recommended walkthrough:
+Recommended flow:
 
 1. Log in as `perfect_user@test.com`
-2. Open `Verify Identity`
-3. Enter:
-
-```text
-Document Type: aadhaar
-Document Number: 013456789012
-Name: Perfect User
-```
-
-4. Connect gig account:
+2. Open `Home`, `Risk`, and `AI Engine`
+3. Connect gig account if you want to refresh income:
 
 ```text
 Platform: Swiggy
-Partner ID: SWG-PERFECT-001
+Worker ID: SWG-PERFECT-001
 ```
 
-5. Link bank:
-
-```text
-Account Number: 123456789012
-IFSC: HDFC0001234
-```
-
-6. View `Risk` with GPS enabled
-7. Open `Home` or `Profile` and confirm:
-
-```text
-Policy Status: EXPIRED
-Claim state: Ready to claim previous completed week
-```
-
-8. Open `AI Engine`:
-
-- review weekly premium
-- review bank summary
-- trigger claim from the claim card
-
-9. Expected result: `APPROVED` with payout
-10. Open `Profile` and confirm bank balance / total claimed updated
-11. Open support chat and ask:
+4. Confirm policy state is claim-ready
+5. Trigger claim
+6. Expected result: `APPROVED`
+7. Open `Profile` or payment summary and confirm payout details
+8. Open support and ask:
 
 ```text
 Was my payout credited?
 ```
 
 ### 2. Fraud User
-
-Purpose:
-
-- Fraud rejection scenario
-- Claims rain while weather pattern does not support it
-- Income remains too healthy
 
 Login:
 
@@ -190,61 +288,31 @@ Email: fraud_user@test.com
 Password: securePass123
 ```
 
-DigiLocker:
+Best for:
 
-```text
-Name: Fraud User
-Document Type: aadhaar
-Document Number: 023456789012
-```
+- fraud rejection
+- support explanation for a denied claim
 
-Expected outcome:
-
-- DigiLocker succeeds
-- Claim gets rejected
-- Fraud reasons should mention weather mismatch / healthy activity
-- Payment summary still shows claim-ready state because the week is complete
-- Support chatbot should explain rejection
-
-Recommended walkthrough:
+Recommended flow:
 
 1. Log in as `fraud_user@test.com`
-2. Verify identity with:
-
-```text
-Document Type: aadhaar
-Document Number: 023456789012
-Name: Fraud User
-```
-
-3. Connect gig account:
+2. Optionally refresh gig history:
 
 ```text
 Platform: Zomato
-Partner ID: ZMT-FRAUD-002
+Worker ID: ZMT-FRAUD-002
 ```
 
-4. Link bank
-5. Open `Risk` and confirm the live context does not look severely disrupted
-6. Open Claim flow after viewing risk
-7. Expected result: `REJECTED`
-8. Open support chat and ask:
+3. Open `Risk`
+4. Trigger claim
+5. Expected result: `REJECTED`
+6. Open support and ask:
 
 ```text
 Why was my claim rejected?
 ```
 
-Expected chatbot behavior:
-
-- explains that the claim does not match weather / loss signals
-
 ### 3. Insufficient Data User
-
-Purpose:
-
-- Too little gig history
-- No valid claim eligibility
-- Demonstrates incomplete profile / early-stage user
 
 Login:
 
@@ -253,53 +321,28 @@ Email: insufficient_user@test.com
 Password: securePass123
 ```
 
-DigiLocker:
+Best for:
 
-```text
-Name: Insufficient Data User
-Document Type: aadhaar
-Document Number: 033456789012
-```
+- early-stage user
+- insufficient eligibility data
 
-Expected outcome:
-
-- Only a few gig records exist
-- Eligibility checks should fail
-- Premium / claim flow should not look healthy
-- Summary may still show a completed policy, but the actual claim should fail due to eligibility rules
-
-Recommended walkthrough:
+Recommended flow:
 
 1. Log in as `insufficient_user@test.com`
-2. Verify identity with:
-
-```text
-Document Type: aadhaar
-Document Number: 033456789012
-Name: Insufficient Data User
-```
-
-3. Connect gig account:
+2. Optionally connect:
 
 ```text
 Platform: Swiggy
-Partner ID: SWG-INSUFF-003
+Worker ID: SWG-INSUFF-003
 ```
 
-4. Open `Home`, `Risk`, or `AI Engine` and note that the account looks incomplete from a data perspective
-5. Open Claim flow
-6. Expected result:
-
-- claim blocked or rejected
-- reason should mention insufficient data / eligibility failure
+3. Open `Home`, `Risk`, or `AI Engine`
+4. Trigger claim
+5. Expected result:
+   - blocked or rejected
+   - reason mentions insufficient data or eligibility failure
 
 ### 4. Normal Week User
-
-Purpose:
-
-- Stable earnings
-- No real disruption
-- No valid payout event
 
 Login:
 
@@ -308,53 +351,30 @@ Email: normal_week_user@test.com
 Password: securePass123
 ```
 
-DigiLocker:
+Best for:
 
-```text
-Name: Normal Week User
-Document Type: aadhaar
-Document Number: 043456789012
-```
+- stable earnings
+- no valid payout event
 
-Expected outcome:
-
-- Risk data works
-- Premium can be viewed
-- Claim should be rejected because there is no eligible weekly loss
-- Best account to show "everything is connected, but no payout event happened"
-
-Recommended walkthrough:
+Recommended flow:
 
 1. Log in as `normal_week_user@test.com`
-2. Verify identity:
-
-```text
-Document Type: aadhaar
-Document Number: 043456789012
-Name: Normal Week User
-```
-
-3. Connect gig account:
+2. Optionally connect:
 
 ```text
 Platform: Zomato
-Partner ID: ZMT-NORMAL-004
+Worker ID: ZMT-NORMAL-004
 ```
 
-4. Open `AI Engine` and note that premium and claim tools are available
-5. Open Claim flow
-6. Expected result: `REJECTED`
-7. Likely reason:
+3. Open `AI Engine` or `Claim`
+4. Expected result: `REJECTED`
+5. Typical reason:
 
-- `No eligible weekly loss detected`
+```text
+No eligible weekly loss detected
+```
 
 ### 5. Escalation User
-
-Purpose:
-
-- Borderline fraud / inconsistent signals
-- Partial disruption
-- Manual review scenario
 
 Login:
 
@@ -363,115 +383,71 @@ Email: escalation_user@test.com
 Password: securePass123
 ```
 
-DigiLocker:
+Best for:
 
-```text
-Name: Escalation User
-Document Type: aadhaar
-Document Number: 053456789012
-```
+- borderline signals
+- review / escalation branch
 
-Expected outcome:
-
-- Mixed city / disruption signals
-- Claim may go to `NEEDS_REVIEW`
-- Support chatbot becomes important here
-- Best account to show the review and escalation branch
-
-Recommended walkthrough:
+Recommended flow:
 
 1. Log in as `escalation_user@test.com`
-2. Verify identity:
-
-```text
-Document Type: aadhaar
-Document Number: 053456789012
-Name: Escalation User
-```
-
-3. Connect gig account:
+2. Optionally connect:
 
 ```text
 Platform: Swiggy
-Partner ID: SWG-EDGE-005
+Worker ID: SWG-EDGE-005
 ```
 
-4. Open `Risk` or `AI Engine` and highlight the mixed signals
-5. Open Claim flow
-6. Expected result:
-
-- `NEEDS_REVIEW` or a borderline fraud outcome
-
-7. Open support chat and ask:
+3. Open `Risk` or `AI Engine`
+4. Trigger claim
+5. Expected result:
+   - `NEEDS_REVIEW` or another borderline outcome
+6. Open support and ask:
 
 ```text
 What should I do next?
 ```
 
-Expected chatbot behavior:
+## Suggested Judge Sequence
 
-- explains that the claim needs manual review
-- suggests checking location consistency and disruption proof
+Use this order for a clean live demo.
 
-## Suggested Judge Demo Sequence
+### Flow 1: Real Onboarding
 
-If you need a polished demo flow, use this order:
+1. Signup
+2. OTP verification
+3. Show confirmation email
+4. Complete DigiLocker
+5. Connect gig account
+6. Show income history screen
+7. Log in and show first-login OTP challenge
+8. Show biometric prompt / persistent session
 
-### Flow A - Complete Happy Path
+### Flow 2: Approved Claim
 
 Use `perfect_user@test.com`
 
 1. Log in
-2. Verify identity
-3. Connect gig account
-4. View Home, Risk, and Earnings
-5. Confirm claim-ready policy state
-6. Trigger claim
-7. Show approved payout
-8. Show updated bank / profile summary
+2. Show risk and premium
+3. Trigger claim
+4. Show approved payout
+5. Show updated summary
 
-### Flow B - Fraud Rejection
+### Flow 3: Rejected Claim
 
 Use `fraud_user@test.com`
 
 1. Log in
-2. Open Claim flow
+2. Trigger claim
 3. Show rejection
-4. Open support chat
-5. Ask why claim was rejected
-
-### Flow C - Insufficient Data
-
-Use `insufficient_user@test.com`
-
-1. Log in
-2. Open Earnings / Claim
-3. Show eligibility failure
-
-### Flow D - No Loss, No Claim
-
-Use `normal_week_user@test.com`
-
-1. Log in
-2. Show stable earnings
-3. Trigger claim
-4. Show rejection because there is no valid weekly loss
-
-### Flow E - Escalation / Review
-
-Use `escalation_user@test.com`
-
-1. Log in
-2. Open AI Engine / Claim
-3. Show borderline or review outcome
-4. Open support chat for escalation guidance
+4. Ask support why it failed
 
 ## Notes
 
-- All users are seeded as DigiLocker-verifiable users.
-- All demo users share the same password: `securePass123`
-- If you rerun `seed_demo_data.py`, the same accounts will be refreshed.
-- Connecting the gig account in the app will also trigger fresh mock gig data generation through the backend.
-- `Home`, `AI Engine`, and `Profile` all use the payment summary and are useful proof points during the demo.
-- `Support` is strongest after a claim outcome exists, because it explains the latest claim status.
-- The cleanest demo city remains `Chennai`.
+- The app’s current onboarding flow is stricter than the old docs:
+  - email confirmation is expected
+  - DigiLocker is mandatory
+  - first login uses a one-time second-step verification
+- Connecting a gig account generates fresh mock income history.
+- The cleanest risk and claim demo location remains `Chennai`.
+- If you reseed demo data, the same seeded users are refreshed.
