@@ -69,7 +69,6 @@ def income_history_endpoint(user_id: int = Query(..., gt=0), db: Session = Depen
         .order_by(GigIncome.date.desc())
         .all()
     )
-    print(f"[DEBUG] Found {len(records)} records for user_id={user_id}")
     return records
 
 

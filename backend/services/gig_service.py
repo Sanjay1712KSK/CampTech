@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from database.db import SessionLocal, engine
+from database.db import SessionLocal
 from models.gig_income import GigIncome
 from models.user_model import User
 
@@ -258,7 +258,6 @@ def generate_data(user_id: int, days: int = 30, platform: str | None = None):
     user_id = int(user_id)
     session: Session = SessionLocal()
     try:
-        print(engine.url)
         _ensure_user_exists(session, user_id)
         start_date = date.today() - timedelta(days=days - 1)
 
@@ -282,7 +281,7 @@ def generate_data(user_id: int, days: int = 30, platform: str | None = None):
         if new_records:
             session.add_all(new_records)
         session.commit()
-        print(f"Inserted {len(generated)} records for user_id={user_id}")
+        logger.info('generated %s gig records for user_id=%s on platform=%s', len(generated), user_id, platform)
         return generated
 
     finally:
@@ -293,8 +292,6 @@ def income_history(user_id: int):
     user_id = int(user_id)
     session: Session = SessionLocal()
     try:
-        print(engine.url)
-        print(f"Fetching records for user_id={user_id}")
         _ensure_user_exists(session, user_id)
         records = (
             session.query(GigIncome)
@@ -302,7 +299,6 @@ def income_history(user_id: int):
             .order_by(GigIncome.date.desc())
             .all()
         )
-        print(f"Found records: {len(records)}")
         if not records:
             return []
         return [
@@ -349,7 +345,6 @@ def income_history(user_id: int):
 def debug_all_records():
     session: Session = SessionLocal()
     try:
-        print(engine.url)
         records = session.query(GigIncome).order_by(GigIncome.user_id, GigIncome.date.desc()).all()
         return [
             {

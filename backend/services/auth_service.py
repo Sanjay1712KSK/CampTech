@@ -31,7 +31,7 @@ PUBLIC_BASE_URL = os.getenv('API_PUBLIC_BASE_URL', 'http://127.0.0.1:8000')
 
 
 def _utcnow() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def _normalize_email(email: str) -> str:
