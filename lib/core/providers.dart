@@ -9,6 +9,10 @@ class UserState {
   final String email;
   final String phone;
   final bool isVerified;
+  final bool isAccountConfirmed;
+  final bool isEmailVerified;
+  final bool isPhoneVerified;
+  final String accessToken;
   
   UserState({
     required this.userId,
@@ -16,6 +20,10 @@ class UserState {
     required this.email,
     required this.phone,
     required this.isVerified,
+    required this.isAccountConfirmed,
+    required this.isEmailVerified,
+    required this.isPhoneVerified,
+    required this.accessToken,
   });
   
   UserState copyWith({
@@ -24,6 +32,10 @@ class UserState {
     String? email,
     String? phone,
     bool? isVerified,
+    bool? isAccountConfirmed,
+    bool? isEmailVerified,
+    bool? isPhoneVerified,
+    String? accessToken,
   }) {
     return UserState(
       userId: userId ?? this.userId,
@@ -31,6 +43,10 @@ class UserState {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       isVerified: isVerified ?? this.isVerified,
+      isAccountConfirmed: isAccountConfirmed ?? this.isAccountConfirmed,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
+      accessToken: accessToken ?? this.accessToken,
     );
   }
 }
@@ -39,12 +55,30 @@ class UserNotifier extends Notifier<UserState?> {
   @override
   UserState? build() => null;
 
+  void setAuthenticatedUser(AuthUser user, {required String accessToken}) {
+    setUser(
+      user.id,
+      user.name.isNotEmpty ? user.name : user.username,
+      user.isVerified,
+      email: user.email,
+      phone: user.phone,
+      isAccountConfirmed: user.isAccountConfirmed,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      accessToken: accessToken,
+    );
+  }
+
   void setUser(
     int id,
     String name,
     bool verified, {
     String email = '',
     String phone = '',
+    bool isAccountConfirmed = false,
+    bool isEmailVerified = false,
+    bool isPhoneVerified = false,
+    String accessToken = '',
   }) {
     state = UserState(
       userId: id,
@@ -52,6 +86,10 @@ class UserNotifier extends Notifier<UserState?> {
       email: email,
       phone: phone,
       isVerified: verified,
+      isAccountConfirmed: isAccountConfirmed,
+      isEmailVerified: isEmailVerified,
+      isPhoneVerified: isPhoneVerified,
+      accessToken: accessToken,
     );
   }
 

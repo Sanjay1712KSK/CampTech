@@ -2,11 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
-import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
+import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 class ConnectGigScreen extends ConsumerStatefulWidget {
-  const ConnectGigScreen({Key? key}) : super(key: key);
+  final int? userId;
+  final String? identifier;
+  final String? password;
+  final bool isOnboardingFlow;
+
+  const ConnectGigScreen({
+    super.key,
+    this.userId,
+    this.identifier,
+    this.password,
+    this.isOnboardingFlow = false,
+  });
 
   @override
   ConsumerState<ConnectGigScreen> createState() => _ConnectGigScreenState();
@@ -14,24 +26,26 @@ class ConnectGigScreen extends ConsumerStatefulWidget {
 
 class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
   final TextEditingController _idController = TextEditingController();
-  final FocusNode _idFocusNode = FocusNode();
 
   String _selectedPlatform = 'Swiggy';
   bool _isLoading = false;
-  bool _isConnected = false;
   String? _error;
+
+  int? get _resolvedUserId => widget.userId ?? ref.read(userProvider)?.userId;
 
   @override
   void dispose() {
     _idController.dispose();
-    _idFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleConnect() async {
-    FocusScope.of(context).unfocus();
+    final userId = _resolvedUserId;
     final partnerId = _idController.text.trim();
-
+    if (userId == null) {
+      setState(() => _error = 'User session not found');
+      return;
+    }
     if (partnerId.isEmpty) {
       setState(() => _error = 'Partner ID is required');
       return;
@@ -43,34 +57,42 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
     });
 
     try {
-      final user = ref.read(userProvider);
-      if (user == null) throw Exception('User not logged in');
-
-      final success = await ApiService.connectGigAccount(
-        userId: user.userId,
+      await ApiService.connectGigAccount(
+        userId: userId,
         platform: _selectedPlatform.toLowerCase(),
         partnerId: partnerId,
       );
-      if (!mounted) return;
 
-      if (success) {
-        setState(() => _isConnected = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '$_selectedPlatform account connected successfully',
-            ),
-          ),
+      if (widget.isOnboardingFlow && widget.identifier != null && widget.password != null) {
+        final login = await ApiService.login(
+          identifier: widget.identifier!,
+          password: widget.password!,
         );
-        Navigator.pop(context, true);
-      } else {
-        setState(() => _error = 'Unable to connect account right now');
+        await AuthStorageService.saveSession(
+          accessToken: login.accessToken,
+          user: login.user,
+        );
+        if (!mounted) return;
+        ref.read(userProvider.notifier).setAuthenticatedUser(
+              login.user,
+              accessToken: login.accessToken,
+            );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainShell()),
+          (route) => false,
+        );
+        return;
       }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$_selectedPlatform account connected successfully')),
+      );
+      Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _error = error.toString().replaceFirst('Exception: ', '');
-      });
+      setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -80,10 +102,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -97,7 +116,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Link your earnings source',
+                'Connect your income source',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -105,9 +124,11 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Use your partner ID to connect your delivery account and unlock insights.',
-                style: TextStyle(
+              Text(
+                widget.isOnboardingFlow
+                    ? 'Final onboarding step: link a gig platform and we will generate 30 days of earnings history.'
+                    : 'Link your delivery partner account to refresh your earnings data.',
+                style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
                 ),
@@ -124,10 +145,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                   children: [
                     const Text(
                       'Platform',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -138,6 +156,8 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                       items: const [
                         DropdownMenuItem(value: 'Swiggy', child: Text('Swiggy')),
                         DropdownMenuItem(value: 'Zomato', child: Text('Zomato')),
+                        DropdownMenuItem(value: 'Blinkit', child: Text('Blinkit')),
+                        DropdownMenuItem(value: 'Porter', child: Text('Porter')),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -148,41 +168,19 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                     const SizedBox(height: 16),
                     const Text(
                       'Partner ID',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _idController,
-                      keyboardType: TextInputType.text,
-                      focusNode: _idFocusNode,
                       style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: InputDecoration(
-                        hintText: l10n?.enterIdOrPhone ?? 'Enter Partner ID',
+                        hintText: 'Enter your platform partner ID',
                         prefixIcon: const Icon(Icons.badge_outlined),
                         errorText: _error,
                       ),
                     ),
                     const SizedBox(height: 18),
-                    if (_isConnected)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppTheme.successColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Text(
-                          'Account connected. Earnings data is now ready.',
-                          style: TextStyle(
-                            color: AppTheme.successColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    if (_isConnected) const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -201,7 +199,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                                   color: Colors.black,
                                 ),
                               )
-                            : const Text('Connect Account'),
+                            : Text(widget.isOnboardingFlow ? 'Finish onboarding' : 'Connect account'),
                       ),
                     ),
                   ],

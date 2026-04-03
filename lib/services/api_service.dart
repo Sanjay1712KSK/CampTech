@@ -1,94 +1,532 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
 import 'package:guidewire_gig_ins/config.dart';
+import 'package:http/http.dart' as http;
 
-/// Response model for signup / login
-class AuthResult {
-  final int userId;
-  final String name;
-  final String email;
-  final String phone;
-  final bool isVerified;
+class AvailabilityResult {
+  final bool available;
+  final String? suggestion;
+  final String message;
 
-  const AuthResult({
-    required this.userId,
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.isVerified,
+  const AvailabilityResult({
+    required this.available,
+    required this.message,
+    this.suggestion,
   });
+
+  factory AvailabilityResult.fromJson(Map<String, dynamic> json) {
+    return AvailabilityResult(
+      available: json['available'] as bool? ?? false,
+      suggestion: json['suggestion'] as String?,
+      message: json['message'] as String? ?? '',
+    );
+  }
 }
 
-/// Response model for DigiLocker request
+class DeliveryPreview {
+  final String channel;
+  final String destination;
+  final String mockOtp;
+
+  const DeliveryPreview({
+    required this.channel,
+    required this.destination,
+    required this.mockOtp,
+  });
+
+  factory DeliveryPreview.fromJson(Map<String, dynamic> json) {
+    return DeliveryPreview(
+      channel: json['channel'] as String? ?? '',
+      destination: json['destination'] as String? ?? '',
+      mockOtp: json['mock_otp'] as String? ?? '',
+    );
+  }
+}
+
+class PendingRegistration {
+  final int userId;
+  final String email;
+  final String phone;
+  final String username;
+  final String nextStep;
+  final String onboardingStatus;
+
+  const PendingRegistration({
+    required this.userId,
+    required this.email,
+    required this.phone,
+    required this.username,
+    required this.nextStep,
+    required this.onboardingStatus,
+  });
+
+  factory PendingRegistration.fromJson(Map<String, dynamic> json) {
+    return PendingRegistration(
+      userId: json['user_id'] as int? ?? 0,
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      username: json['username'] as String? ?? '',
+      nextStep: json['next_step'] as String? ?? '',
+      onboardingStatus: json['onboarding_status'] as String? ?? '',
+    );
+  }
+}
+
+class SendOtpResult {
+  final String message;
+  final String purpose;
+  final int expiresInSeconds;
+  final int retryLimit;
+  final List<DeliveryPreview> deliveries;
+
+  const SendOtpResult({
+    required this.message,
+    required this.purpose,
+    required this.expiresInSeconds,
+    required this.retryLimit,
+    required this.deliveries,
+  });
+
+  factory SendOtpResult.fromJson(Map<String, dynamic> json) {
+    final rawDeliveries = json['deliveries'] as List? ?? const [];
+    return SendOtpResult(
+      message: json['message'] as String? ?? '',
+      purpose: json['purpose'] as String? ?? 'signup',
+      expiresInSeconds: json['expires_in_seconds'] as int? ?? 300,
+      retryLimit: json['retry_limit'] as int? ?? 5,
+      deliveries: rawDeliveries
+          .whereType<Map<String, dynamic>>()
+          .map(DeliveryPreview.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class VerifyOtpResult {
+  final bool emailVerified;
+  final bool phoneVerified;
+  final String confirmationToken;
+  final String confirmationLink;
+
+  const VerifyOtpResult({
+    required this.emailVerified,
+    required this.phoneVerified,
+    required this.confirmationToken,
+    required this.confirmationLink,
+  });
+
+  factory VerifyOtpResult.fromJson(Map<String, dynamic> json) {
+    return VerifyOtpResult(
+      emailVerified: json['email_verified'] as bool? ?? false,
+      phoneVerified: json['phone_verified'] as bool? ?? false,
+      confirmationToken: json['confirmation_token'] as String? ?? '',
+      confirmationLink: json['confirmation_link'] as String? ?? '',
+    );
+  }
+}
+
+class AuthUser {
+  final int id;
+  final String email;
+  final String phone;
+  final String username;
+  final String name;
+  final bool isEmailVerified;
+  final bool isPhoneVerified;
+  final bool isAccountConfirmed;
+  final bool isDigilockerVerified;
+
+  const AuthUser({
+    required this.id,
+    required this.email,
+    required this.phone,
+    required this.username,
+    required this.name,
+    required this.isEmailVerified,
+    required this.isPhoneVerified,
+    required this.isAccountConfirmed,
+    required this.isDigilockerVerified,
+  });
+
+  bool get isVerified => isDigilockerVerified;
+
+  factory AuthUser.fromJson(Map<String, dynamic> json) {
+    return AuthUser(
+      id: json['id'] as int? ?? 0,
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      username: json['username'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      isEmailVerified: json['is_email_verified'] as bool? ?? false,
+      isPhoneVerified: json['is_phone_verified'] as bool? ?? false,
+      isAccountConfirmed: json['is_account_confirmed'] as bool? ?? false,
+      isDigilockerVerified: json['is_digilocker_verified'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'phone': phone,
+      'username': username,
+      'name': name,
+      'is_email_verified': isEmailVerified,
+      'is_phone_verified': isPhoneVerified,
+      'is_account_confirmed': isAccountConfirmed,
+      'is_digilocker_verified': isDigilockerVerified,
+    };
+  }
+}
+
+class LoginResult {
+  final String accessToken;
+  final int expiresIn;
+  final AuthUser user;
+
+  const LoginResult({
+    required this.accessToken,
+    required this.expiresIn,
+    required this.user,
+  });
+
+  factory LoginResult.fromJson(Map<String, dynamic> json) {
+    return LoginResult(
+      accessToken: json['access_token'] as String? ?? '',
+      expiresIn: json['expires_in'] as int? ?? 0,
+      user: AuthUser.fromJson(json['user'] as Map<String, dynamic>? ?? const {}),
+    );
+  }
+}
+
+class ForgotPasswordResult {
+  final int userId;
+  final String message;
+  final int expiresInSeconds;
+  final List<DeliveryPreview> deliveries;
+
+  const ForgotPasswordResult({
+    required this.userId,
+    required this.message,
+    required this.expiresInSeconds,
+    required this.deliveries,
+  });
+
+  factory ForgotPasswordResult.fromJson(Map<String, dynamic> json) {
+    final rawDeliveries = json['deliveries'] as List? ?? const [];
+    return ForgotPasswordResult(
+      userId: json['user_id'] as int? ?? 0,
+      message: json['message'] as String? ?? '',
+      expiresInSeconds: json['expires_in_seconds'] as int? ?? 300,
+      deliveries: rawDeliveries
+          .whereType<Map<String, dynamic>>()
+          .map(DeliveryPreview.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class ResetOtpVerifiedResult {
+  final String resetToken;
+  final String message;
+
+  const ResetOtpVerifiedResult({
+    required this.resetToken,
+    required this.message,
+  });
+
+  factory ResetOtpVerifiedResult.fromJson(Map<String, dynamic> json) {
+    return ResetOtpVerifiedResult(
+      resetToken: json['reset_token'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+    );
+  }
+}
+
 class DigiLockerRequestResult {
   final String requestId;
   final String status;
+  final String redirectUrl;
+  final String oauthState;
 
-  const DigiLockerRequestResult({required this.requestId, required this.status});
+  const DigiLockerRequestResult({
+    required this.requestId,
+    required this.status,
+    required this.redirectUrl,
+    required this.oauthState,
+  });
+
+  factory DigiLockerRequestResult.fromJson(Map<String, dynamic> json) {
+    return DigiLockerRequestResult(
+      requestId: json['request_id'] as String? ?? '',
+      status: json['status'] as String? ?? 'PENDING',
+      redirectUrl: json['redirect_url'] as String? ?? '',
+      oauthState: json['oauth_state'] as String? ?? '',
+    );
+  }
 }
 
-/// Response model for DigiLocker consent
-class DigiLockerConsentResult {
-  final bool verified;
-  final String? reason;
+class DigiLockerVerifyResult {
+  final String status;
+  final String verifiedName;
+  final String docType;
 
-  const DigiLockerConsentResult({required this.verified, this.reason});
+  const DigiLockerVerifyResult({
+    required this.status,
+    required this.verifiedName,
+    required this.docType,
+  });
+
+  bool get verified => status.toUpperCase() == 'VERIFIED';
+
+  factory DigiLockerVerifyResult.fromJson(Map<String, dynamic> json) {
+    return DigiLockerVerifyResult(
+      status: json['status'] as String? ?? 'FAILED',
+      verifiedName: json['verified_name'] as String? ?? '',
+      docType: json['doc_type'] as String? ?? '',
+    );
+  }
 }
 
 class DigiLockerStatusResult {
   final bool isVerified;
   final String status;
   final String? verifiedName;
-  final String? documentType;
+  final String? docType;
 
   const DigiLockerStatusResult({
     required this.isVerified,
     required this.status,
     this.verifiedName,
-    this.documentType,
+    this.docType,
   });
+
+  factory DigiLockerStatusResult.fromJson(Map<String, dynamic> json) {
+    return DigiLockerStatusResult(
+      isVerified: json['is_verified'] as bool? ?? false,
+      status: json['status'] as String? ?? 'NOT_STARTED',
+      verifiedName: json['verified_name'] as String?,
+      docType: json['doc_type'] as String?,
+    );
+  }
 }
 
 class ApiService {
-  static const String _signupPath = '/auth/signup';
-  static const String _loginPath = '/auth/login';
-  static const String _digilockerRequestPath = '/digilocker/request';
-  static const String _digilockerConsentPath = '/digilocker/consent';
-  static const String _environmentPath = '/environment';
-  static const String _gigGenerateDataPath = '/gig/generate-data';
-  static const String _gigConnectPath = '/gig/connect';
-  static const String _gigBaselinePath = '/gig/baseline-income';
-  static const String _gigTodayPath = '/gig/today-income';
-  static const String _gigHistoryPath = '/gig/income-history';
-  static const String _digilockerStatusPath = '/digilocker/status';
-  static const String _premiumPath = '/premium';
-  static const String _premiumCalculatePath = '/premium/calculate';
-  static const String _paymentPayPremiumPath = '/payment/pay-premium';
-  static const String _paymentLinkBankPath = '/payment/link-bank';
-  static const String _paymentSummaryPath = '/payment/summary';
-  static const String _claimProcessPath = '/claim/process';
-
   static const Duration _timeout = Duration(seconds: 15);
 
-  static Map<String, String> get _headers =>
-      {'Content-Type': 'application/json'};
+  static Map<String, String> _headers({String? token}) {
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
 
-  // ── 📊 Gig Income Data ────────────────────────────────────────────────────
+  static Exception _asException(http.Response response) {
+    final message = _tryDecodeError(response.body) ?? 'Request failed (${response.statusCode})';
+    return Exception(message);
+  }
+
+  static Future<Map<String, dynamic>> _getJson(
+    String path, {
+    String? token,
+  }) async {
+    final response = await http
+        .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
+        .timeout(_timeout);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw _asException(response);
+  }
+
+  static Future<Map<String, dynamic>> _postJson(
+    String path, {
+    required Map<String, dynamic> body,
+    String? token,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('${Config.baseUrl}$path'),
+          headers: _headers(token: token),
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw _asException(response);
+  }
+
+  static Future<AvailabilityResult> checkUsernameAvailability(String username) async {
+    final encoded = Uri.encodeQueryComponent(username);
+    final body = await _getJson('/auth/check-username?username=$encoded');
+    return AvailabilityResult.fromJson(body);
+  }
+
+  static Future<AvailabilityResult> checkEmailAvailability(String email) async {
+    final encoded = Uri.encodeQueryComponent(email);
+    final body = await _getJson('/auth/check-email?email=$encoded');
+    return AvailabilityResult.fromJson(body);
+  }
+
+  static Future<List<String>> suggestUsernames(String seed) async {
+    final encoded = Uri.encodeQueryComponent(seed);
+    final body = await _getJson('/auth/suggest-usernames?username=$encoded');
+    return (body['suggestions'] as List? ?? const []).map((e) => '$e').toList();
+  }
+
+  static Future<PendingRegistration> signup({
+    required String email,
+    required String countryCode,
+    required String phoneNumber,
+    required String username,
+    required String password,
+  }) async {
+    final body = await _postJson(
+      '/auth/signup',
+      body: {
+        'email': email,
+        'country_code': countryCode,
+        'phone_number': phoneNumber,
+        'username': username,
+        'password': password,
+      },
+    );
+    return PendingRegistration.fromJson(body);
+  }
+
+  static Future<SendOtpResult> sendOtp({
+    required int userId,
+    String purpose = 'signup',
+  }) async {
+    final body = await _postJson(
+      '/auth/send-otp',
+      body: {
+        'user_id': userId,
+        'purpose': purpose,
+      },
+    );
+    return SendOtpResult.fromJson(body);
+  }
+
+  static Future<VerifyOtpResult> verifyOtp({
+    required int userId,
+    required String emailOtp,
+    required String phoneOtp,
+  }) async {
+    final body = await _postJson(
+      '/auth/verify-otp',
+      body: {
+        'user_id': userId,
+        'email_otp': emailOtp,
+        'phone_otp': phoneOtp,
+      },
+    );
+    return VerifyOtpResult.fromJson(body);
+  }
+
+  static Future<String> confirmAccount(String token) async {
+    final encoded = Uri.encodeQueryComponent(token);
+    final body = await _getJson('/auth/confirm?token=$encoded');
+    return body['message'] as String? ?? 'Account confirmed';
+  }
+
+  static Future<LoginResult> login({
+    required String identifier,
+    required String password,
+  }) async {
+    final body = await _postJson(
+      '/auth/login',
+      body: {
+        'identifier': identifier,
+        'password': password,
+      },
+    );
+    return LoginResult.fromJson(body);
+  }
+
+  static Future<AuthUser> getCurrentUser(String accessToken) async {
+    final body = await _getJson('/auth/me', token: accessToken);
+    return AuthUser.fromJson(body);
+  }
+
+  static Future<ForgotPasswordResult> forgotPassword(String identifier) async {
+    final body = await _postJson(
+      '/auth/forgot-password',
+      body: {'identifier': identifier},
+    );
+    return ForgotPasswordResult.fromJson(body);
+  }
+
+  static Future<ResetOtpVerifiedResult> verifyResetOtp({
+    required int userId,
+    required String emailOtp,
+    required String phoneOtp,
+  }) async {
+    final body = await _postJson(
+      '/auth/verify-reset-otp',
+      body: {
+        'user_id': userId,
+        'email_otp': emailOtp,
+        'phone_otp': phoneOtp,
+      },
+    );
+    return ResetOtpVerifiedResult.fromJson(body);
+  }
+
+  static Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    await _postJson(
+      '/auth/reset-password',
+      body: {
+        'reset_token': resetToken,
+        'new_password': newPassword,
+      },
+    );
+  }
+
+  static Future<DigiLockerRequestResult> createDigiLockerRequest({
+    required int userId,
+    required String docType,
+  }) async {
+    final body = await _postJson(
+      '/digilocker/request',
+      body: {
+        'user_id': userId,
+        'doc_type': docType,
+      },
+    );
+    return DigiLockerRequestResult.fromJson(body);
+  }
+
+  static Future<DigiLockerVerifyResult> verifyDigiLocker({
+    required String requestId,
+    required String consentCode,
+  }) async {
+    final body = await _postJson(
+      '/digilocker/verify',
+      body: {
+        'request_id': requestId,
+        'consent_code': consentCode,
+      },
+    );
+    return DigiLockerVerifyResult.fromJson(body);
+  }
+
+  static Future<DigiLockerStatusResult> getDigiLockerStatusByUserId(int userId) async {
+    final body = await _getJson('/digilocker/status?user_id=$userId');
+    return DigiLockerStatusResult.fromJson(body);
+  }
 
   static Future<bool> generateGigData(int userId, {int days = 30}) async {
-    try {
-      final response = await http
-          .post(Uri.parse('${Config.baseUrl}$_gigGenerateDataPath'),
-              headers: _headers,
-              body: jsonEncode({'user_id': userId, 'days': days}))
-          .timeout(_timeout);
-      
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (e) {
-      throw Exception('Network or server error: $e');
-    }
+    await _postJson(
+      '/gig/generate-data',
+      body: {'user_id': userId, 'days': days},
+    );
+    return true;
   }
 
   static Future<bool> connectGigAccount({
@@ -96,177 +534,71 @@ class ApiService {
     required String platform,
     required String partnerId,
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('${Config.baseUrl}$_gigConnectPath'),
-            headers: _headers,
-            body: jsonEncode({
-              'user_id': userId,
-              'platform': platform.toLowerCase(),
-              'partner_id': partnerId,
-            }),
-          )
-          .timeout(_timeout);
-
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (e) {
-      throw Exception('Network or server error: $e');
-    }
+    await _postJson(
+      '/gig/connect',
+      body: {
+        'user_id': userId,
+        'platform': platform.toLowerCase(),
+        'partner_id': partnerId,
+      },
+    );
+    return true;
   }
 
   static Future<BaselineIncomeModel> getBaselineIncome(int userId) async {
-    try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigBaselinePath?user_id=$userId')).timeout(_timeout);
-      if (response.statusCode == 200) return BaselineIncomeModel.fromJson(jsonDecode(response.body));
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load baseline income');
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    final body = await _getJson('/gig/baseline-income?user_id=$userId');
+    return BaselineIncomeModel.fromJson(body);
   }
 
   static Future<TodayIncomeModel> getTodayIncome(int userId) async {
-    try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigTodayPath?user_id=$userId')).timeout(_timeout);
-      if (response.statusCode == 200) return TodayIncomeModel.fromJson(jsonDecode(response.body));
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load today income');
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    final body = await _getJson('/gig/today-income?user_id=$userId');
+    return TodayIncomeModel.fromJson(body);
   }
 
   static Future<IncomeHistoryModel> getIncomeHistory(int userId) async {
-    try {
-      final response = await http.get(Uri.parse('${Config.baseUrl}$_gigHistoryPath?user_id=$userId')).timeout(_timeout);
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        if (decoded is List) {
-          return IncomeHistoryModel.fromList(decoded);
-        }
-        if (decoded is Map<String, dynamic>) {
-          return IncomeHistoryModel.fromJson(decoded);
-        }
-        throw Exception('Unexpected income history response format');
+    final response = await http
+        .get(Uri.parse('${Config.baseUrl}/gig/income-history?user_id=$userId'))
+        .timeout(_timeout);
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is List) {
+        return IncomeHistoryModel.fromList(decoded);
       }
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load income history');
-    } catch (e) {
-      throw Exception('Network error: $e');
+      if (decoded is Map<String, dynamic>) {
+        return IncomeHistoryModel.fromJson(decoded);
+      }
+      throw Exception('Unexpected income history response format');
     }
+    throw _asException(response);
   }
-
-  // ── 🌍 Environment Data ───────────────────────────────────────────────────
 
   static Future<EnvironmentModel> getEnvironment(double lat, double lon) async {
-    try {
-      final response = await http
-          .get(Uri.parse('${Config.baseUrl}$_environmentPath?lat=$lat&lon=$lon'))
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return EnvironmentModel.fromJson(data);
-      } else {
-        throw Exception('Failed to load environment data');
-      }
-    } catch (e) {
-      throw Exception('Network or server error: $e');
-    }
+    final body = await _getJson('/environment?lat=$lat&lon=$lon');
+    return EnvironmentModel.fromJson(body);
   }
 
-  // ── 🛡️ Risk Data ────────────────────────────────────────────────────────────
-
   static Future<Map<String, dynamic>> getRiskData(int userId, double lat, double lon) async {
-    try {
-      final uri = Uri.parse('${Config.baseUrl}/risk?user_id=$userId&lat=$lat&lon=$lon');
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-      
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        if (body.containsKey('error') && body['error'] == true) {
-           throw Exception(body['message'] ?? 'Error assessing risk');
-        }
-        return body;
-      }
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load risk data (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Risk Data error: $e');
-    }
+    return _getJson('/risk?user_id=$userId&lat=$lat&lon=$lon');
   }
 
   static Future<Map<String, dynamic>> getPremium(int userId) async {
     try {
-      final primaryUri = Uri.parse('${Config.baseUrl}$_premiumPath?user_id=$userId');
-      var response = await http.get(primaryUri, headers: _headers).timeout(_timeout);
-
-      if (response.statusCode == 404) {
-        final fallbackUri = Uri.parse('${Config.baseUrl}$_premiumCalculatePath?user_id=$userId');
-        response = await http.get(fallbackUri, headers: _headers).timeout(_timeout);
-      }
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load premium');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Premium error: $e');
+      return await _getJson('/premium?user_id=$userId');
+    } catch (_) {
+      return _getJson('/premium/calculate?user_id=$userId');
     }
   }
 
   static Future<void> payPremium(int userId, double amount) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('${Config.baseUrl}$_paymentPayPremiumPath'),
-            headers: _headers,
-            body: jsonEncode({'user_id': userId, 'amount': amount}),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return;
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to pay premium');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Premium payment error: $e');
-    }
+    await _postJson(
+      '/payment/pay-premium',
+      body: {'user_id': userId, 'amount': amount},
+    );
   }
 
   static Future<InsuranceSummaryModel> getInsuranceSummary(int userId) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('${Config.baseUrl}$_paymentSummaryPath?user_id=$userId'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        return InsuranceSummaryModel.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to load insurance summary');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Insurance summary error: $e');
-    }
+    final body = await _getJson('/payment/summary?user_id=$userId');
+    return InsuranceSummaryModel.fromJson(body);
   }
 
   static Future<void> linkBankAccount(
@@ -274,239 +606,23 @@ class ApiService {
     String accountNumber = '123456789012',
     String ifsc = 'HDFC0001234',
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('${Config.baseUrl}$_paymentLinkBankPath'),
-            headers: _headers,
-            body: jsonEncode({
-              'user_id': userId,
-              'account_number': accountNumber,
-              'ifsc': ifsc,
-            }),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return;
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to link bank account');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Bank linking error: $e');
-    }
+    await _postJson(
+      '/payment/link-bank',
+      body: {
+        'user_id': userId,
+        'account_number': accountNumber,
+        'ifsc': ifsc,
+      },
+    );
   }
 
   static Future<Map<String, dynamic>> processClaim(int userId, double lat, double lon) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('${Config.baseUrl}$_claimProcessPath'),
-            headers: _headers,
-            body: jsonEncode({'user_id': userId, 'lat': lat, 'lon': lon}),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to process claim');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    } catch (e) {
-      throw Exception('Claim error: $e');
-    }
+    return _postJson(
+      '/claim/process',
+      body: {'user_id': userId, 'lat': lat, 'lon': lon},
+    );
   }
 
-  // ─── SIGNUP ─────────────────────────────────────────────────────────────────
-  /// Returns [AuthResult] with the userId on success, throws on failure.
-  static Future<AuthResult> signup({
-    required String name,
-    required String email,
-    required String phone,
-    required String password,
-  }) async {
-    final uri = Uri.parse('${Config.baseUrl}$_signupPath');
-    try {
-      final response = await http
-          .post(
-            uri,
-            headers: _headers,
-            body: jsonEncode({
-              'name': name,
-              'email': email,
-              'phone': phone,
-              'password': password,
-            }),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        // Backend returns user object with "id" or "user_id"
-        final id = (body['id'] ?? body['user_id']) as int;
-        final isVerified = (body['is_verified'] as bool?) ?? false;
-        return AuthResult(
-          userId: id,
-          name: body['name'] as String? ?? name,
-          email: body['email'] as String? ?? email,
-          phone: body['phone'] as String? ?? phone,
-          isVerified: isVerified,
-        );
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Signup failed (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    }
-  }
-
-  // ─── LOGIN ───────────────────────────────────────────────────────────────────
-  /// Returns [AuthResult] with the userId on success, throws on failure.
-  static Future<AuthResult> login({
-    required String email,
-    required String password,
-  }) async {
-    final uri = Uri.parse('${Config.baseUrl}$_loginPath');
-    try {
-      final response = await http
-          .post(
-            uri,
-            headers: _headers,
-            body: jsonEncode({'email': email, 'password': password}),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final id = (body['id'] ?? body['user_id']) as int;
-        final isVerified = (body['is_verified'] as bool?) ?? false;
-        return AuthResult(
-          userId: id,
-          name: body['name'] as String? ?? email.split('@').first,
-          email: body['email'] as String? ?? email,
-          phone: body['phone'] as String? ?? '',
-          isVerified: isVerified,
-        );
-      }
-
-      if (response.statusCode == 401 || response.statusCode == 400) {
-        throw Exception('Invalid credentials');
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Login failed (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    }
-  }
-
-  // ─── DIGILOCKER REQUEST ──────────────────────────────────────────────────────
-  /// Step 1: Initiate DigiLocker — returns a [requestId].
-  static Future<DigiLockerRequestResult> createDigiLockerRequest({
-    required int userId,
-  }) async {
-    final uri = Uri.parse('${Config.baseUrl}$_digilockerRequestPath');
-    try {
-      final response = await http
-          .post(
-            uri,
-            headers: _headers,
-            body: jsonEncode({'user_id': userId}),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        return DigiLockerRequestResult(
-          requestId: body['request_id'] as String,
-          status: body['status'] as String? ?? 'PENDING',
-        );
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'DigiLocker request failed (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    }
-  }
-
-  // ─── DIGILOCKER CONSENT ──────────────────────────────────────────────────────
-  /// Step 2: Submit document details for verification.
-  static Future<DigiLockerConsentResult> submitDigiLockerConsent({
-    required String requestId,
-    required String documentType,   // 'aadhaar' or 'license'
-    required String documentNumber,
-    required String name,
-  }) async {
-    final uri = Uri.parse('${Config.baseUrl}$_digilockerConsentPath');
-    try {
-      final response = await http
-          .post(
-            uri,
-            headers: _headers,
-            body: jsonEncode({
-              'request_id': requestId,
-              'document_type': documentType,
-              'document_number': documentNumber,
-              'name': name,
-            }),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final status = body['status'] as String? ?? '';
-        final reason = body['reason'] as String?;
-        return DigiLockerConsentResult(
-          verified: status.toUpperCase() == 'VERIFIED',
-          reason: reason,
-        );
-      }
-
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Verification failed (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    }
-  }
-
-  // ─── DIGILOCKER STATUS ───────────────────────────────────────────────────────
-  @Deprecated('Use getDigiLockerStatusByUserId instead.')
-  static Future<String> getDigiLockerStatus(String requestId) async {
-    throw UnimplementedError('Use getDigiLockerStatusByUserId instead.');
-  }
-
-  static Future<DigiLockerStatusResult> getDigiLockerStatusByUserId(int userId) async {
-    final uri = Uri.parse('${Config.baseUrl}$_digilockerStatusPath?user_id=$userId');
-    try {
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        if (body.containsKey('error') && body['error'] == true) {
-           throw Exception(body['message'] ?? 'Error fetching status');
-        }
-        return DigiLockerStatusResult(
-          isVerified: body['is_verified'] as bool? ?? false,
-          status: body['status'] as String? ?? 'NONE',
-          verifiedName: body['verified_name'] as String?,
-          documentType: body['document_type'] as String?,
-        );
-      }
-      final errorBody = _tryDecodeError(response.body);
-      throw Exception(errorBody ?? 'Failed to get status (${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server not reachable');
-    }
-  }
-
-  // ─── HELPERS ─────────────────────────────────────────────────────────────────
   static String? _tryDecodeError(String body) {
     try {
       final map = jsonDecode(body) as Map<String, dynamic>;
@@ -517,22 +633,25 @@ class ApiService {
   }
 }
 
-// ── 🌍 Environment Models ──────────────────────────────────────────────────
-
 class EnvironmentModel {
   final WeatherData weather;
   final AqiData aqi;
   final TrafficData traffic;
   final ContextData context;
 
-  EnvironmentModel({required this.weather, required this.aqi, required this.traffic, required this.context});
+  EnvironmentModel({
+    required this.weather,
+    required this.aqi,
+    required this.traffic,
+    required this.context,
+  });
 
   factory EnvironmentModel.fromJson(Map<String, dynamic> json) {
     return EnvironmentModel(
-      weather: WeatherData.fromJson(json['weather']),
-      aqi: AqiData.fromJson(json['aqi']),
-      traffic: TrafficData.fromJson(json['traffic']),
-      context: ContextData.fromJson(json['context']),
+      weather: WeatherData.fromJson(json['weather'] as Map<String, dynamic>? ?? const {}),
+      aqi: AqiData.fromJson(json['aqi'] as Map<String, dynamic>? ?? const {}),
+      traffic: TrafficData.fromJson(json['traffic'] as Map<String, dynamic>? ?? const {}),
+      context: ContextData.fromJson(json['context'] as Map<String, dynamic>? ?? const {}),
     );
   }
 }
@@ -543,14 +662,19 @@ class WeatherData {
   final double windSpeed;
   final double rainfall;
 
-  WeatherData({required this.temperature, required this.humidity, required this.windSpeed, required this.rainfall});
+  WeatherData({
+    required this.temperature,
+    required this.humidity,
+    required this.windSpeed,
+    required this.rainfall,
+  });
 
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     return WeatherData(
-      temperature: (json['temperature'] as num).toDouble(),
-      humidity: (json['humidity'] as num).toDouble(),
-      windSpeed: (json['wind_speed'] as num).toDouble(),
-      rainfall: (json['rainfall'] as num).toDouble(),
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.0,
+      humidity: (json['humidity'] as num?)?.toDouble() ?? 0.0,
+      windSpeed: (json['wind_speed'] as num?)?.toDouble() ?? 0.0,
+      rainfall: (json['rainfall'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -560,13 +684,17 @@ class AqiData {
   final double pm25;
   final double pm10;
 
-  AqiData({required this.aqi, required this.pm25, required this.pm10});
+  AqiData({
+    required this.aqi,
+    required this.pm25,
+    required this.pm10,
+  });
 
   factory AqiData.fromJson(Map<String, dynamic> json) {
     return AqiData(
-      aqi: json['aqi'] as int,
-      pm25: (json['pm2_5'] as num).toDouble(),
-      pm10: (json['pm10'] as num).toDouble(),
+      aqi: json['aqi'] as int? ?? 0,
+      pm25: (json['pm2_5'] as num?)?.toDouble() ?? 0.0,
+      pm10: (json['pm10'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -575,12 +703,15 @@ class TrafficData {
   final double trafficScore;
   final String trafficLevel;
 
-  TrafficData({required this.trafficScore, required this.trafficLevel});
+  TrafficData({
+    required this.trafficScore,
+    required this.trafficLevel,
+  });
 
   factory TrafficData.fromJson(Map<String, dynamic> json) {
     return TrafficData(
-      trafficScore: (json['traffic_score'] as num).toDouble(),
-      trafficLevel: json['traffic_level'] as String,
+      trafficScore: (json['traffic_score'] as num?)?.toDouble() ?? 0.0,
+      trafficLevel: json['traffic_level'] as String? ?? 'LOW',
     );
   }
 }
@@ -589,17 +720,18 @@ class ContextData {
   final int hour;
   final String dayType;
 
-  ContextData({required this.hour, required this.dayType});
+  ContextData({
+    required this.hour,
+    required this.dayType,
+  });
 
   factory ContextData.fromJson(Map<String, dynamic> json) {
     return ContextData(
-      hour: json['hour'] as int,
-      dayType: json['day_type'] as String,
+      hour: json['hour'] as int? ?? 0,
+      dayType: json['day_type'] as String? ?? 'weekday',
     );
   }
 }
-
-// ── 📊 Gig Income Models ───────────────────────────────────────────────────
 
 class BaselineIncomeModel {
   final double baselineDailyIncome;
@@ -644,7 +776,11 @@ class IncomeHistoryModel {
   final DailyRecord? bestDay;
   final DailyRecord? worstDay;
 
-  IncomeHistoryModel({required this.records, this.bestDay, this.worstDay});
+  IncomeHistoryModel({
+    required this.records,
+    this.bestDay,
+    this.worstDay,
+  });
 
   factory IncomeHistoryModel.fromJson(Map<String, dynamic> json) {
     final rawRecords = json['records'] as List? ?? const [];
@@ -654,7 +790,7 @@ class IncomeHistoryModel {
   factory IncomeHistoryModel.fromList(List<dynamic> rawRecords) {
     final parsed = rawRecords
         .whereType<Map<String, dynamic>>()
-        .map((e) => DailyRecord.fromJson(e))
+        .map(DailyRecord.fromJson)
         .toList();
 
     DailyRecord? bestDay;
@@ -778,15 +914,9 @@ class InsuranceSummaryModel {
       claimReady: json['claim_ready'] as bool? ?? false,
       lastPayout: (json['last_payout'] as num?)?.toDouble() ?? 0.0,
       latestClaimStatus: json['latest_claim_status'] as String?,
-      recentRemarks: (json['recent_remarks'] as List? ?? const [])
-          .map((e) => '$e')
-          .toList(),
-      policyStart: json['policy_start'] != null
-          ? DateTime.tryParse('${json['policy_start']}')
-          : null,
-      policyEnd: json['policy_end'] != null
-          ? DateTime.tryParse('${json['policy_end']}')
-          : null,
+      recentRemarks: (json['recent_remarks'] as List? ?? const []).map((e) => '$e').toList(),
+      policyStart: json['policy_start'] != null ? DateTime.tryParse('${json['policy_start']}') : null,
+      policyEnd: json['policy_end'] != null ? DateTime.tryParse('${json['policy_end']}') : null,
     );
   }
 }

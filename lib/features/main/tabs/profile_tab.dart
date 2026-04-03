@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
-import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
 import 'package:guidewire_gig_ins/main.dart';
@@ -47,7 +47,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
   Future<void> _toggleBiometric(bool value) async {
     if (!value) {
       await AuthStorageService.setBiometricEnabled(false);
-      await AuthStorageService.clearCredentials();
+      await AuthStorageService.clearSession();
       if (!mounted) return;
       setState(() => _biometricEnabled = false);
       return;
@@ -73,8 +73,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         throw Exception('Biometric setup was cancelled');
       }
 
-      final credentials = await AuthStorageService.getCredentials();
-      if (credentials == null) {
+      final session = await AuthStorageService.getSession();
+      if (session == null) {
         throw Exception('Login once manually before enabling biometric login');
       }
 
@@ -358,12 +358,12 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                   ),
                   onTap: () async {
                     await AuthStorageService.setBiometricEnabled(false);
-                    await AuthStorageService.clearCredentials();
+                    await AuthStorageService.clearSession();
                     if (!mounted) return;
                     ref.read(userProvider.notifier).logout();
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const SignupScreen()),
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
                       (route) => false,
                     );
                   },

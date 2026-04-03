@@ -31,7 +31,7 @@ PUBLIC_BASE_URL = os.getenv('API_PUBLIC_BASE_URL', 'http://127.0.0.1:8000')
 
 
 def _utcnow() -> datetime:
-    return datetime.now(UTC)
+    return datetime.utcnow()
 
 
 def _normalize_email(email: str) -> str:
@@ -71,12 +71,21 @@ def _active_verification(db: Session, user_id: int, purpose: str, channel: str) 
     )
 
 
+def _verification_types_for_purpose(purpose: str) -> tuple[str, str]:
+    if purpose == 'signup':
+        return ('email', 'phone')
+    if purpose == 'reset':
+        return ('reset', 'reset')
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Unsupported OTP purpose')
+
+
 def _mark_existing_codes_consumed(db: Session, user_id: int, purpose: str) -> None:
+    email_type, phone_type = _verification_types_for_purpose(purpose)
     (
         db.query(Verification)
         .filter(
             Verification.user_id == int(user_id),
-            Verification.type == purpose,
+            Verification.type.in_([email_type, phone_type]),
             Verification.is_consumed.is_(False),
         )
         .update({'is_consumed': True}, synchronize_session=False)
@@ -184,6 +193,7 @@ def send_otp(db: Session, user_id: int, purpose: str) -> dict:
     enforce_rate_limit(f'otp-send:{purpose}:{user.id}', limit=3, window_seconds=10 * 60)
 
     _mark_existing_codes_consumed(db, user.id, purpose)
+    email_type, phone_type = _verification_types_for_purpose(purpose)
 
     email_otp = _generate_otp()
     phone_otp = _generate_otp()
@@ -192,7 +202,7 @@ def send_otp(db: Session, user_id: int, purpose: str) -> dict:
     email_record = Verification(
         user_id=user.id,
         otp_code=hash_otp(email_otp),
-        type=purpose,
+        type=email_type,
         channel='email',
         destination=user.email,
         expires_at=expires_at,
@@ -202,7 +212,7 @@ def send_otp(db: Session, user_id: int, purpose: str) -> dict:
     phone_record = Verification(
         user_id=user.id,
         otp_code=hash_otp(phone_otp),
-        type=purpose,
+        type=phone_type,
         channel='phone',
         destination=user.phone,
         expires_at=expires_at,
@@ -247,8 +257,8 @@ def verify_signup_otp(db: Session, user_id: int, email_otp: str, phone_otp: str)
     user = _user_or_404(db, user_id)
     enforce_rate_limit(f'otp-verify:signup:{user.id}', limit=6, window_seconds=10 * 60)
 
-    email_record = _active_verification(db, user.id, 'signup', 'email')
-    phone_record = _active_verification(db, user.id, 'signup', 'phone')
+    email_record = _active_verification(db, user.id, 'email', 'email')
+    phone_record = _active_verification(db, user.id, 'phone', 'phone')
 
     _validate_otp_record(db, email_record, email_otp, 'email')
     _validate_otp_record(db, phone_record, phone_otp, 'phone')
