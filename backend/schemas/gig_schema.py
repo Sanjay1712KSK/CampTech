@@ -1,5 +1,6 @@
 from datetime import date
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class GigIncomeRecord(BaseModel):
@@ -62,35 +63,55 @@ class GigConnectRequest(BaseModel):
 
     user_id: int = Field(..., gt=0)
     platform: str = Field(..., min_length=3, max_length=20)
-    partner_id: str = Field(..., min_length=3, max_length=64)
+    worker_id: str | None = Field(default=None, min_length=3, max_length=64)
+    partner_id: str | None = Field(default=None, min_length=3, max_length=64)
+
+    @model_validator(mode='after')
+    def normalize_worker_id(self):
+        resolved_worker_id = (self.worker_id or self.partner_id or '').strip()
+        if not resolved_worker_id:
+            raise ValueError('worker_id is required')
+        self.worker_id = resolved_worker_id
+        self.partner_id = resolved_worker_id
+        return self
 
 
 class GigConnectResponse(BaseModel):
+    message: str
+    income_generated: bool
     status: str
     user_id: int
     platform: str
+    worker_id: str
     partner_id: str
     generated: int
 
 
 class GigIncomeHistoryItem(BaseModel):
     date: date
+    income: float
+    hours: float
+    earnings: float
     orders_completed: int
     hours_worked: float
-    earnings: float
     platform: str
     disruption_type: str
 
 
 class BaselineIncomeResponse(BaseModel):
+    baseline_income: float
     baseline_daily_income: float
 
 
 class TodayIncomeResponse(BaseModel):
+    date: date
+    income: float
+    hours: float
     earnings: float
     orders_completed: int
     hours_worked: float
     disruption_type: str
+    platform: str
 
 
 class WeeklySummaryDay(BaseModel):
@@ -102,6 +123,8 @@ class WeeklySummaryDay(BaseModel):
 
 
 class WeeklySummaryResponse(BaseModel):
+    total_income: float
+    average_daily: float
     avg_daily_earnings: float
     total_orders: int
     total_hours: float
