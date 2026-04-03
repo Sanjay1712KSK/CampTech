@@ -106,6 +106,8 @@ class AuthOnboardingTests(unittest.TestCase):
 
         confirm = auth_routes.confirm_account(token=verify['confirmation_token'], db=self.db)
         self.assertTrue(confirm['account_confirmed'])
+        onboarding_status = auth_routes.onboarding_status(user_id=user_id, db=self.db)
+        self.assertEqual(onboarding_status['next_step'], 'digilocker_verification')
 
         digilocker_request = digilocker_routes.digilocker_request(
             DigiLockerRequestSchema(user_id=user_id, doc_type='aadhaar'),
