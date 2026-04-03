@@ -9,15 +9,23 @@ import 'package:guidewire_gig_ins/features/main/tabs/ai_engine_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/profile_tab.dart';
 
 class MainShell extends ConsumerStatefulWidget {
-  const MainShell({Key? key}) : super(key: key);
+  final int initialIndex;
+
+  const MainShell({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _currentIndex = 0; // Starts at Home
+  late int _currentIndex;
   bool _isVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   void _onNavTap(int index) => setState(() => _currentIndex = index);
 

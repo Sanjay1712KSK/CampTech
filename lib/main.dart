@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
-import 'package:guidewire_gig_ins/features/main/main_shell.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/post_auth_gate_screen.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
@@ -139,7 +139,7 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
         }
 
         if (snapshot.data == _BootstrapResult.main) {
-          return const MainShell();
+          return const PostAuthGateScreen();
         }
 
         return const LoginScreen();

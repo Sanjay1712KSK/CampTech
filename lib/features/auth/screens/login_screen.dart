@@ -7,8 +7,8 @@ import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/post_auth_gate_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
-import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -61,7 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const MainShell()),
+          MaterialPageRoute(builder: (_) => const PostAuthGateScreen()),
         );
       }
     } catch (error) {

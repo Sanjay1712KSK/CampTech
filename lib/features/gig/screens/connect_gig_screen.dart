@@ -4,6 +4,7 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/post_auth_gate_screen.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
@@ -13,6 +14,7 @@ class ConnectGigScreen extends ConsumerStatefulWidget {
   final String? identifier;
   final String? password;
   final bool isOnboardingFlow;
+  final bool redirectToRiskOnSuccess;
 
   const ConnectGigScreen({
     super.key,
@@ -20,6 +22,7 @@ class ConnectGigScreen extends ConsumerStatefulWidget {
     this.identifier,
     this.password,
     this.isOnboardingFlow = false,
+    this.redirectToRiskOnSuccess = false,
   });
 
   @override
@@ -87,7 +90,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
           if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const MainShell()),
+            MaterialPageRoute(builder: (_) => const PostAuthGateScreen()),
             (route) => false,
           );
         }
@@ -98,6 +101,14 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message)),
       );
+      if (widget.redirectToRiskOnSuccess) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 2)),
+          (route) => false,
+        );
+        return;
+      }
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
