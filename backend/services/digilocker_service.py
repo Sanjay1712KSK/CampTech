@@ -1,271 +1,160 @@
 import json
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict
 
-from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
-from models.user_model import User
 from models.digilocker_request import DigiLockerRequest
+from models.user_model import User
 from services.blockchain_service import log_verification
-from utils.validators import validate_aadhaar, validate_license
 
-DEFAULT_MOCK_DOCUMENTS = [
-    {
-        'document_type': 'aadhaar',
-        'document_number': '123456789012',
-        'name': 'Sanju',
-        'dob': '2002-01-01',
-        'gender': 'Male',
-        'address': 'Chennai, Tamil Nadu',
-        'issued_by': 'UIDAI',
-        'issued_date': '2018-06-01',
-        'status': 'valid',
-    },
-    {
-        'document_type': 'license',
-        'document_number': 'TN1234567',
-        'name': 'Sanju',
-        'dob': '2002-01-01',
-        'gender': 'Male',
-        'address': 'Chennai, Tamil Nadu',
-        'issued_by': 'RTO Tamil Nadu',
-        'issued_date': '2023-03-14',
-        'status': 'valid',
-    },
-    {
-        'document_type': 'aadhaar',
-        'document_number': '987654321098',
-        'name': 'Aditi',
-        'dob': '1995-09-10',
-        'gender': 'Female',
-        'address': 'Bengaluru, Karnataka',
-        'issued_by': 'UIDAI',
-        'issued_date': '2017-11-20',
-        'status': 'valid',
-    },
-    {
-        'document_type': 'license',
-        'document_number': 'DL9876543210',
-        'name': 'Aditi',
-        'dob': '1995-09-10',
-        'gender': 'Female',
-        'address': 'Bengaluru, Karnataka',
-        'issued_by': 'RTO Karnataka',
-        'issued_date': '2021-02-01',
-        'status': 'expired',
-    },
-    {
-        'document_type': 'aadhaar',
-        'document_number': '111122223333',
-        'name': 'Rahul',
-        'dob': '1988-12-05',
-        'gender': 'Male',
-        'address': 'Pune, Maharashtra',
-        'issued_by': 'UIDAI',
-        'issued_date': '2016-05-10',
-        'status': 'invalid',
-    },
-    {
-        'document_type': 'license',
-        'document_number': 'MH1234567890123',
-        'name': 'Riya',
-        'dob': '1992-03-04',
-        'gender': 'Female',
-        'address': 'Mumbai, Maharashtra',
-        'issued_by': 'RTO Maharashtra',
-        'issued_date': '2024-01-10',
-        'status': 'valid',
-    },
-]
 
+PROVIDER_NAME = 'DigiLocker'
 MOCK_DATASET_PATH = Path(__file__).resolve().parent.parent / 'data' / 'digilocker_mock_documents.json'
 
 
-def _load_mock_documents() -> list[dict]:
-    if MOCK_DATASET_PATH.exists():
-        try:
-            payload = json.loads(MOCK_DATASET_PATH.read_text(encoding='utf-8'))
-            if isinstance(payload, list):
-                return payload
-        except (OSError, json.JSONDecodeError):
-            pass
-    return list(DEFAULT_MOCK_DOCUMENTS)
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
-MOCK_DOCUMENTS = _load_mock_documents()
+def _mock_verified_name(user: User) -> str:
+    return (user.name or user.username).replace('_', ' ').title()
+
+
+def _mock_document_mask(doc_type: str) -> str:
+    if doc_type == 'aadhaar':
+        suffix = random.randint(1000, 9999)
+        return f'XXXX-XXXX-{suffix}'
+    suffix = random.randint(1000, 9999)
+    return f'P******{suffix}'
 
 
 def refresh_mock_documents() -> list[dict]:
-    global MOCK_DOCUMENTS
-    MOCK_DOCUMENTS = _load_mock_documents()
-    return MOCK_DOCUMENTS
+    if not MOCK_DATASET_PATH.exists():
+        return []
+    try:
+        payload = json.loads(MOCK_DATASET_PATH.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return []
+    return payload if isinstance(payload, list) else []
 
 
-def _mask_document(document_type: str, doc_number: str):
-    if document_type == 'aadhaar' and len(doc_number) == 12 and doc_number.isdigit():
-        return f"XXXX-XXXX-{doc_number[-4:]}"
-    if document_type == 'license':
-        mask = doc_number[:2] + '****' + doc_number[-4:]
-        return mask
-    return '****'
-
-
-def _round(value, places=3):
-    return float(round(value, places))
-
-
-def create_request(db: Session, user_id: int) -> dict:
-    user = db.query(User).filter(User.id == user_id).first()
+def create_request(db: Session, user_id: int, doc_type: str) -> dict:
+    user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
     request_id = str(uuid.uuid4())
-    req = DigiLockerRequest(
+    oauth_state = uuid.uuid4().hex[:12].upper()
+    redirect_url = f'https://mock.digilocker.local/authorize?request_id={request_id}&state={oauth_state}'
+
+    record = DigiLockerRequest(
         request_id=request_id,
-        user_id=user_id,
+        user_id=user.id,
+        doc_type=doc_type,
         status='PENDING',
-        provider_name='DigiLocker',
-        consent_given=False,
+        provider_name=PROVIDER_NAME,
+        redirect_url=redirect_url,
+        oauth_state=oauth_state,
+        consent_granted=False,
     )
-    db.add(req)
+    db.add(record)
     db.commit()
-    db.refresh(req)
+    db.refresh(record)
 
     return {
-        'request_id': req.request_id,
-        'status': req.status,
-        'provider_name': req.provider_name,
+        'request_id': record.request_id,
+        'status': record.status,
+        'provider_name': record.provider_name,
+        'redirect_url': record.redirect_url,
+        'oauth_state': record.oauth_state,
     }
 
 
-def process_consent(db: Session, request_id: str, document_type: str, document_number: str, name: str) -> dict:
-    refresh_mock_documents()
-    req = db.query(DigiLockerRequest).filter(DigiLockerRequest.request_id == request_id).first()
-    if not req:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Digilocker request not found')
-
-    if req.status != 'PENDING':
+def verify_request(db: Session, request_id: str, consent_code: str) -> dict:
+    record = db.query(DigiLockerRequest).filter(DigiLockerRequest.request_id == request_id).first()
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='DigiLocker request not found')
+    if record.status != 'PENDING':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Request already processed')
-
-    if document_type == 'aadhaar':
-        if not validate_aadhaar(document_number):
-            req.status = 'FAILED'
-            req.failure_reason = 'Invalid Aadhaar format'
-            req.verification_score = 0.1
-            req.provider_name = 'DigiLocker'
-            db.commit()
-            return {
-                'status': 'FAILED',
-                'provider_name': req.provider_name,
-                'verification_score': req.verification_score,
-                'failure_reason': req.failure_reason,
-            }
-    elif document_type == 'license':
-        if not validate_license(document_number):
-            req.status = 'FAILED'
-            req.failure_reason = 'Invalid license format'
-            req.verification_score = 0.1
-            req.provider_name = 'DigiLocker'
-            db.commit()
-            return {
-                'status': 'FAILED',
-                'provider_name': req.provider_name,
-                'verification_score': req.verification_score,
-                'failure_reason': req.failure_reason,
-            }
-
-    document = next(
-        (doc for doc in MOCK_DOCUMENTS if doc['document_type'] == document_type and doc['document_number'] == document_number),
-        None,
-    )
-
-    if not document or document['name'].lower() != name.lower() or document['status'] != 'valid':
-        req.status = 'FAILED'
-        req.failure_reason = 'Invalid document or mismatch'
-        req.verification_score = 0.2
-        req.provider_name = 'DigiLocker'
-        req.consent_given = True
+    if record.oauth_state != consent_code.strip().upper():
+        record.status = 'FAILED'
+        record.failure_reason = 'Invalid DigiLocker consent code'
         db.commit()
-        return {
-            'status': 'FAILED',
-            'provider_name': req.provider_name,
-            'verification_score': req.verification_score,
-            'failure_reason': req.failure_reason,
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid DigiLocker consent code')
+
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+
+    verified_name = _mock_verified_name(user)
+    verified_at = _utcnow()
+    blockchain = log_verification(user.id)
+
+    record.status = 'VERIFIED'
+    record.consent_granted = True
+    record.document_number_masked = _mock_document_mask(record.doc_type or 'aadhaar')
+    record.verification_score = 0.97
+    record.verified_name = verified_name
+    record.verified_dob = '1995-01-01'
+    record.verified_gender = 'Not Specified'
+    record.verified_address = 'India'
+    record.issued_by = 'Govt. of India'
+    record.issued_date = '2024-01-01'
+    record.verified_at = verified_at
+    record.verified_payload_json = json.dumps(
+        {
+            'doc_type': record.doc_type,
+            'verified_name': verified_name,
+            'document_number_masked': record.document_number_masked,
         }
+    )
+    record.blockchain_txn_id = blockchain.get('transaction_id')
 
-    req.status = 'VERIFIED'
-    req.consent_given = True
-    req.document_type = document_type
-    req.document_number_masked = _mask_document(document_type, document_number)
-    req.verification_score = random.uniform(0.90, 0.99)
-    req.verified_name = document['name']
-    req.verified_dob = document['dob']
-    req.verified_gender = document['gender']
-    req.verified_address = document['address']
-    req.issued_by = document['issued_by']
-    req.issued_date = document['issued_date']
-    req.verified_at = datetime.now(timezone.utc)
-
-    chain_resp = log_verification(req.user_id)
-    req.blockchain_txn_id = chain_resp.get('transaction_id', f"MOCK_TXN_{uuid.uuid4()}")
-
-    user = db.query(User).filter(User.id == req.user_id).first()
-    if user:
-        user.is_verified = True
-        user.verified_at = datetime.now(timezone.utc)
+    user.is_digilocker_verified = True
+    user.verified_at = verified_at
 
     db.commit()
 
     return {
         'status': 'VERIFIED',
-        'provider_name': req.provider_name,
-        'verification_score': _round(req.verification_score),
-        'document_type': req.document_type,
-        'document_number_masked': req.document_number_masked,
-        'verified_profile': {
-            'name': req.verified_name,
-            'dob': req.verified_dob,
-            'gender': req.verified_gender,
-            'address': req.verified_address,
-            'issued_by': req.issued_by,
-            'issued_date': req.issued_date,
-        },
-        'blockchain_txn_id': req.blockchain_txn_id,
+        'provider_name': record.provider_name,
+        'verified_name': verified_name,
+        'doc_type': record.doc_type,
+        'verified_at': verified_at,
+        'blockchain_txn_id': record.blockchain_txn_id,
     }
 
 
 def get_status(db: Session, user_id: int) -> dict:
-    req = (
+    record = (
         db.query(DigiLockerRequest)
-        .filter(DigiLockerRequest.user_id == user_id)
-        .order_by(DigiLockerRequest.created_at.desc())
+        .filter(DigiLockerRequest.user_id == int(user_id))
+        .order_by(DigiLockerRequest.created_at.desc(), DigiLockerRequest.id.desc())
         .first()
     )
-    if not req:
+    if not record:
         return {
             'is_verified': False,
-            'provider_name': 'DigiLocker',
-            'status': 'NONE',
+            'provider_name': PROVIDER_NAME,
+            'status': 'NOT_STARTED',
             'verified_name': None,
-            'document_type': None,
-            'document_number_masked': None,
+            'doc_type': None,
             'verified_at': None,
             'verification_score': None,
             'blockchain_txn_id': None,
         }
 
     return {
-        'is_verified': req.status == 'VERIFIED',
-        'provider_name': req.provider_name,
-        'status': req.status,
-        'verified_name': req.verified_name,
-        'document_type': req.document_type,
-        'document_number_masked': req.document_number_masked,
-        'verified_at': req.verified_at,
-        'verification_score': req.verification_score,
-        'blockchain_txn_id': req.blockchain_txn_id,
+        'is_verified': record.status == 'VERIFIED',
+        'provider_name': record.provider_name,
+        'status': record.status,
+        'verified_name': record.verified_name,
+        'doc_type': record.doc_type,
+        'verified_at': record.verified_at,
+        'verification_score': record.verification_score,
+        'blockchain_txn_id': record.blockchain_txn_id,
     }

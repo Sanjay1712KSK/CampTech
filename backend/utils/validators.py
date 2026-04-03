@@ -7,3 +7,7 @@ def validate_aadhaar(aadhaar_number: str) -> bool:
 
 def validate_license(license_number: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9]{8,15}", license_number))
+
+
+def validate_passport(passport_number: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z][0-9]{7}", passport_number.upper()))

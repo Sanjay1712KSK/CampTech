@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from database.db import get_db
 from models.gig_income import GigIncome
+from models.profile import Profile
 from schemas.gig_schema import (
     BaselineIncomeResponse,
     GigConnectRequest,
@@ -30,13 +31,24 @@ def generate_data_endpoint(payload: GenerateGigDataRequest):
 
 
 @router.post('/connect', response_model=GigConnectResponse)
-def connect_gig_account_endpoint(payload: GigConnectRequest):
+def connect_gig_account_endpoint(payload: GigConnectRequest, db: Session = Depends(get_db)):
     platform = payload.platform.strip().lower()
-    if platform not in {'swiggy', 'zomato'}:
-        raise HTTPException(status_code=400, detail='Platform must be swiggy or zomato')
+    allowed_platforms = {'swiggy', 'zomato', 'blinkit', 'porter', 'uber'}
+    if platform not in allowed_platforms:
+        raise HTTPException(status_code=400, detail='Platform must be one of swiggy, zomato, blinkit, porter, or uber')
 
     try:
         data = generate_data(user_id=payload.user_id, days=30, platform=platform)
+        avg_income = sum(item['earnings'] for item in data) / max(len(data), 1)
+        latest_city = data[-1].get('city') if data else None
+        profile = db.query(Profile).filter(Profile.user_id == payload.user_id).first()
+        if profile is None:
+            profile = Profile(user_id=payload.user_id)
+            db.add(profile)
+        profile.platform = platform
+        profile.city = latest_city
+        profile.avg_income = float(round(avg_income, 2))
+        db.commit()
         return {
             'status': 'CONNECTED',
             'user_id': payload.user_id,
