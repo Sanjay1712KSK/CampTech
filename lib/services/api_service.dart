@@ -126,6 +126,35 @@ class VerifyOtpResult {
   }
 }
 
+class OnboardingStatusResult {
+  final int userId;
+  final bool isEmailVerified;
+  final bool isPhoneVerified;
+  final bool isAccountConfirmed;
+  final bool isDigilockerVerified;
+  final String nextStep;
+
+  const OnboardingStatusResult({
+    required this.userId,
+    required this.isEmailVerified,
+    required this.isPhoneVerified,
+    required this.isAccountConfirmed,
+    required this.isDigilockerVerified,
+    required this.nextStep,
+  });
+
+  factory OnboardingStatusResult.fromJson(Map<String, dynamic> json) {
+    return OnboardingStatusResult(
+      userId: json['user_id'] as int? ?? 0,
+      isEmailVerified: json['is_email_verified'] as bool? ?? false,
+      isPhoneVerified: json['is_phone_verified'] as bool? ?? false,
+      isAccountConfirmed: json['is_account_confirmed'] as bool? ?? false,
+      isDigilockerVerified: json['is_digilocker_verified'] as bool? ?? false,
+      nextStep: json['next_step'] as String? ?? '',
+    );
+  }
+}
+
 class AuthUser {
   final int id;
   final String email;
@@ -446,6 +475,11 @@ class ApiService {
     final encoded = Uri.encodeQueryComponent(token);
     final body = await _getJson('/auth/confirm?token=$encoded');
     return body['message'] as String? ?? 'Account confirmed';
+  }
+
+  static Future<OnboardingStatusResult> getOnboardingStatus(int userId) async {
+    final body = await _getJson('/auth/onboarding-status?user_id=$userId');
+    return OnboardingStatusResult.fromJson(body);
   }
 
   static Future<LoginResult> login({

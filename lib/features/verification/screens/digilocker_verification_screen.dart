@@ -107,91 +107,96 @@ class _DigilockerVerificationScreenState extends ConsumerState<DigilockerVerific
   @override
   Widget build(BuildContext context) {
     final isVerified = _status?.isVerified ?? ref.watch(userProvider)?.isVerified ?? false;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text('DigiLocker Verification'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Mandatory KYC check',
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Choose a government document and simulate the DigiLocker consent redirect.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DocCard(
-                      title: 'Aadhaar',
-                      icon: Icons.credit_card,
-                      selected: _selectedDocument == 'aadhaar',
-                      onTap: () => setState(() => _selectedDocument = 'aadhaar'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DocCard(
-                      title: 'Passport',
-                      icon: Icons.language_outlined,
-                      selected: _selectedDocument == 'passport',
-                      onTap: () => setState(() => _selectedDocument = 'passport'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(20),
+    return PopScope(
+      canPop: !widget.isOnboardingFlow,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: !widget.isOnboardingFlow,
+          title: const Text('DigiLocker Verification'),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mandatory KYC check',
+                  style: Theme.of(context).textTheme.displayMedium,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVerified ? 'Status: VERIFIED' : 'Status: PENDING',
-                      style: TextStyle(
-                        color: isVerified ? AppTheme.successColor : AppTheme.warningColor,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(height: 12),
+                Text(
+                  'Choose a government document and simulate the DigiLocker consent redirect.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
                       ),
                     ),
-                    if (_request != null) ...[
-                      const SizedBox(height: 16),
-                      Text('Mock OAuth redirect:\n${_request!.redirectUrl}'),
-                      const SizedBox(height: 12),
-                      Text('Demo consent code: ${_request!.oauthState}'),
-                    ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DocCard(
+                        title: 'Aadhaar',
+                        icon: Icons.credit_card,
+                        selected: _selectedDocument == 'aadhaar',
+                        onTap: () => setState(() => _selectedDocument = 'aadhaar'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _DocCard(
+                        title: 'Passport',
+                        icon: Icons.language_outlined,
+                        selected: _selectedDocument == 'passport',
+                        onTap: () => setState(() => _selectedDocument = 'passport'),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              PrimaryButton(
-                text: _isRequesting ? 'Creating request...' : 'Start DigiLocker flow',
-                isLoading: _isRequesting,
-                onPressed: _startRequest,
-              ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                text: _isVerifying ? 'Verifying...' : 'Approve consent and verify',
-                isLoading: _isVerifying,
-                onPressed: _request == null ? () {} : _completeVerification,
-              ),
-            ],
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isVerified ? 'Status: VERIFIED' : 'Status: PENDING',
+                        style: TextStyle(
+                          color: isVerified ? AppTheme.successColor : AppTheme.warningColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (_request != null) ...[
+                        const SizedBox(height: 16),
+                        Text('Mock OAuth redirect:\n${_request!.redirectUrl}'),
+                        const SizedBox(height: 12),
+                        Text('Demo consent code: ${_request!.oauthState}'),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                PrimaryButton(
+                  text: _isRequesting ? 'Creating request...' : 'Start DigiLocker flow',
+                  isLoading: _isRequesting,
+                  onPressed: _startRequest,
+                ),
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  text: _isVerifying ? 'Verifying...' : 'Approve consent and verify',
+                  isLoading: _isVerifying,
+                  onPressed: _request == null ? () {} : _completeVerification,
+                ),
+              ],
+            ),
           ),
         ),
       ),
