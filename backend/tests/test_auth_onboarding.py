@@ -31,6 +31,8 @@ from schemas.digilocker_schema import DigiLockerRequestSchema, DigiLockerVerifyS
 from schemas.gig_schema import GigConnectRequest  # noqa: E402
 from schemas.user_schema import (  # noqa: E402
     ForgotPasswordRequest,
+    FirstLoginOtpRequest,
+    FirstLoginOtpVerifyRequest,
     LoginRequest,
     RegistrationRequest,
     ResetPasswordRequest,
@@ -117,16 +119,44 @@ class AuthOnboardingTests(unittest.TestCase):
         )
         self.assertEqual(digilocker_verify['status'], 'VERIFIED')
 
-        login = auth_routes.login(
-            LoginRequest(identifier='worker.one', password='Secure@123'),
-            db=self.db,
-        )
-        token = login['access_token']
+        with (
+            patch('services.auth_service._generate_otp', return_value='555555'),
+            patch(
+                'services.auth_service.send_email_otp',
+                return_value={'channel': 'email', 'destination': 'wo***@example.com', 'mock_otp': None},
+            ),
+        ):
+            login = auth_routes.login(
+                LoginRequest(identifier='worker.one', password='Secure@123'),
+                db=self.db,
+            )
+            self.assertTrue(login['requires_two_factor'])
+
+            first_login_send = auth_routes.send_first_login_otp(
+                FirstLoginOtpRequest(
+                    challenge_token=login['two_factor_token'],
+                    channel='email',
+                ),
+                db=self.db,
+            )
+            self.assertEqual(first_login_send['purpose'], 'first_login')
+
+            verified_login = auth_routes.verify_first_login_otp(
+                FirstLoginOtpVerifyRequest(
+                    challenge_token=login['two_factor_token'],
+                    channel='email',
+                    otp='555555',
+                ),
+                db=self.db,
+            )
+
+        token = verified_login['access_token']
         me = auth_routes.me(
             credentials=HTTPAuthorizationCredentials(scheme='Bearer', credentials=token),
             db=self.db,
         )
         self.assertTrue(me['is_digilocker_verified'])
+        self.assertTrue(me['has_completed_first_login_2fa'])
 
         with patch('services.gig_service.SessionLocal', self.SessionLocal):
             connect = gig_routes.connect_gig_account_endpoint(
@@ -176,6 +206,7 @@ class AuthOnboardingTests(unittest.TestCase):
             db=self.db,
         )
         self.assertTrue(login_again['access_token'])
+        self.assertFalse(login_again['requires_two_factor'])
 
 
 if __name__ == '__main__':

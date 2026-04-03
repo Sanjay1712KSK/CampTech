@@ -409,7 +409,7 @@ def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dic
     )
     return {
         'message': 'First-login OTP sent',
-        'purpose': 'signup',
+        'purpose': 'first_login',
         'expires_in_seconds': OTP_EXPIRY_SECONDS,
         'retry_limit': OTP_RETRY_LIMIT,
         'deliveries': [delivery],
