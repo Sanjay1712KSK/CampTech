@@ -25,9 +25,11 @@ class DeliveryEfficiencyResponse(BaseModel):
 class FraudSignalsResponse(BaseModel):
     location_match: bool
     environment_match: bool
+    pattern_flag: bool = False
 
 
 class PredictiveRiskResponse(BaseModel):
+    next_6hr: float = Field(..., ge=0.0, le=1.0)
     next_6hr_risk: float = Field(..., ge=0.0, le=1.0)
     trend: Literal['increasing', 'decreasing', 'stable']
 
@@ -41,6 +43,7 @@ class RiskResponse(BaseModel):
     risk_score: float = Field(..., ge=0.0, le=1.0)
     risk_level: Literal['LOW', 'MEDIUM', 'HIGH']
     expected_income_loss: str
+    expected_income_loss_pct: int = Field(..., ge=0, le=100)
     delivery_efficiency: DeliveryEfficiencyResponse
     hyper_local_risk: float
     hyper_local_analysis: dict
@@ -59,6 +62,7 @@ class RiskEnvelopeResponse(BaseModel):
     risk_score: float = Field(..., ge=0.0, le=1.0)
     risk_level: Literal['LOW', 'MEDIUM', 'HIGH']
     expected_income_loss: str
+    expected_income_loss_pct: int = Field(..., ge=0, le=100)
     delivery_efficiency: DeliveryEfficiencyResponse
     hyper_local_risk: float
     hyper_local_analysis: dict

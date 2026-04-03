@@ -5,8 +5,10 @@ import logging
 from sqlalchemy.orm import Session
 
 from core.adaptive_layer import get_weights, update_weights
-from core.disruption_model import calculate_delivery_efficiency, calculate_disruption
-from models.gig_income import GigIncome
+from core.disruption_model import calculate_disruption
+from core.efficiency_engine import calculate_efficiency
+from core.fraud_engine import evaluate_fraud_signals
+from core.trigger_engine import evaluate_triggers
 
 logger = logging.getLogger('gig_insurance_backend.core_risk_engine')
 
@@ -66,76 +68,6 @@ def _risk_level(score: float) -> str:
     return 'HIGH'
 
 
-def _trigger_payload(snapshot: dict) -> dict:
-    active = []
-    rain = float(snapshot.get('rain_estimate', 0.0))
-    traffic_index = float(snapshot.get('traffic_index', 1.0))
-    aqi = float(snapshot.get('aqi', 50.0))
-    temperature = float(snapshot.get('temperature', 30.0))
-
-    if rain >= 3.0:
-        active.append('RAIN_TRIGGER')
-    if traffic_index >= 1.35:
-        active.append('TRAFFIC_TRIGGER')
-    if aqi >= 150.0:
-        active.append('AQI_TRIGGER')
-    if temperature >= 37.0:
-        active.append('HEAT_TRIGGER')
-    if len(active) >= 2:
-        active.append('COMBINED_TRIGGER')
-
-    severity = 'LOW'
-    if 'COMBINED_TRIGGER' in active or len(active) >= 3:
-        severity = 'HIGH'
-    elif active:
-        severity = 'MEDIUM'
-
-    return {
-        'active_triggers': active,
-        'severity': severity,
-    }
-
-
-def _fraud_signals(environment_data: dict, user_id: int | None = None, db: Session | None = None, today_income: dict | None = None) -> dict:
-    snapshot = environment_data.get('snapshot') or {}
-    environment_city = environment_data.get('city') or environment_data.get('resolved_city')
-    majority_city = None
-    if db is not None and user_id is not None:
-        records = (
-            db.query(GigIncome)
-            .filter(GigIncome.user_id == int(user_id))
-            .order_by(GigIncome.date.desc(), GigIncome.created_at.desc())
-            .limit(20)
-            .all()
-        )
-        if records:
-            counts: dict[str, int] = {}
-            for record in records:
-                city = (record.city or '').strip()
-                if city:
-                    counts[city] = counts.get(city, 0) + 1
-            if counts:
-                majority_city = max(counts.items(), key=lambda item: item[1])[0]
-
-    location_match = True
-    if majority_city and environment_city:
-        location_match = str(majority_city).lower() == str(environment_city).lower()
-
-    disruption_type = str((today_income or {}).get('disruption_type', 'none') or 'none').lower()
-    environment_match = True
-    if disruption_type == 'rain':
-        environment_match = float(snapshot.get('rain_estimate', 0.0)) >= 1.0
-    elif disruption_type == 'traffic':
-        environment_match = float(snapshot.get('traffic_index', 1.0)) >= 1.2
-    elif disruption_type == 'heatwave':
-        environment_match = float(snapshot.get('temperature', 30.0)) >= 36.0
-
-    return {
-        'location_match': location_match,
-        'environment_match': environment_match,
-    }
-
-
 def calculate_risk(environment_data: dict, user_id: int | None = None, db: Session | None = None, today_income: dict | None = None) -> dict:
     snapshot = (environment_data or {}).get('snapshot') or {}
     hyper_local = (environment_data or {}).get('hyper_local_analysis') or {}
@@ -152,8 +84,9 @@ def calculate_risk(environment_data: dict, user_id: int | None = None, db: Sessi
         weights = update_weights(db, user_id=user_id)
 
     disruption = calculate_disruption(snapshot)
-    delivery_efficiency = calculate_delivery_efficiency(snapshot, disruption)
+    delivery_efficiency = calculate_efficiency(snapshot, disruption)
     expected_income_loss_ratio = _clamp(1.0 - float(delivery_efficiency['score']))
+    expected_income_loss_pct = int(round(expected_income_loss_ratio * 100))
 
     rain_factor = _rain_factor(snapshot)
     traffic_factor = _traffic_factor(snapshot)
@@ -170,9 +103,15 @@ def calculate_risk(environment_data: dict, user_id: int | None = None, db: Sessi
     hyper_local_risk = float(hyper_local.get('hyper_local_risk', 1.0) or 1.0)
     risk_score = _clamp(risk_score * min(max(hyper_local_risk, 0.8), 1.5))
 
-    trigger_payload = _trigger_payload(snapshot)
-    fraud_signals = _fraud_signals(environment_data, user_id=user_id, db=db, today_income=today_income)
+    trigger_payload = evaluate_triggers(snapshot)
+    fraud_signals = evaluate_fraud_signals(environment_data, user_id=user_id, db=db, today_income=today_income)
     risk_level = _risk_level(risk_score)
+    predictive_score = float(predictive.get('next_6hr', predictive.get('next_6hr_risk', 0.0)) or 0.0)
+    predictive_payload = {
+        'next_6hr': _round(predictive_score),
+        'next_6hr_risk': _round(predictive_score),
+        'trend': str(predictive.get('trend', 'stable') or 'stable'),
+    }
 
     reasons = []
     if rain_factor >= 0.3:
@@ -192,12 +131,14 @@ def calculate_risk(environment_data: dict, user_id: int | None = None, db: Sessi
     result = {
         'risk_score': _round(risk_score),
         'risk_level': risk_level,
-        'expected_income_loss': f'{int(round(expected_income_loss_ratio * 100))}%',
+        'expected_income_loss': f'{expected_income_loss_pct}%',
+        'expected_income_loss_pct': expected_income_loss_pct,
+        'disruption': disruption,
         'delivery_efficiency': delivery_efficiency,
         'hyper_local_risk': _round(hyper_local_risk),
         'hyper_local_analysis': hyper_local,
         'time_slot_risk': time_slot_risk,
-        'predictive_risk': predictive,
+        'predictive_risk': predictive_payload,
         'active_triggers': trigger_payload['active_triggers'],
         'trigger_severity': trigger_payload['severity'],
         'fraud_signals': fraud_signals,

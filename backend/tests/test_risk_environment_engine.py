@@ -169,10 +169,13 @@ class RiskEnvironmentEngineTests(unittest.TestCase):
         self.assertGreater(result['risk_score'], 0.0)
         self.assertEqual(result['risk_level'], 'HIGH')
         self.assertIn('expected_income_loss', result)
+        self.assertIn('expected_income_loss_pct', result)
         self.assertIn('delivery_efficiency', result)
         self.assertIn('RAIN_TRIGGER', result['active_triggers'])
         self.assertIn('TRAFFIC_TRIGGER', result['active_triggers'])
         self.assertIn('fraud_signals', result)
+        self.assertIn('pattern_flag', result['fraud_signals'])
+        self.assertIn('next_6hr', result['predictive_risk'])
         self.assertIn('adaptive_weights', result)
 
         weights = result['adaptive_weights']
@@ -241,6 +244,7 @@ class RiskEnvironmentEngineTests(unittest.TestCase):
 
         self.assertIn('risk_score', response)
         self.assertIn('delivery_efficiency', response)
+        self.assertIn('expected_income_loss_pct', response)
         self.assertEqual(response['gig_context']['orders_completed'], 7)
         self.assertIn('environment', response)
 
