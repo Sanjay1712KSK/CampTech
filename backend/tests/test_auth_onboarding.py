@@ -72,17 +72,32 @@ class AuthOnboardingTests(unittest.TestCase):
         )
         user_id = signup['user_id']
 
-        otp = auth_routes.send_otp(
-            SendOtpRequest(user_id=user_id, purpose='signup'),
-            db=self.db,
-        )
-        email_otp = next(item['mock_otp'] for item in otp['deliveries'] if item['channel'] == 'email')
-        phone_otp = next(item['mock_otp'] for item in otp['deliveries'] if item['channel'] == 'phone')
+        with (
+            patch('services.auth_service._generate_otp', side_effect=['111111', '222222']),
+            patch(
+                'services.auth_service.send_email_otp',
+                return_value={'channel': 'email', 'destination': 'wo***@example.com', 'mock_otp': None},
+            ),
+            patch(
+                'services.auth_service.send_sms_otp',
+                return_value={'channel': 'phone', 'destination': '987***210', 'mock_otp': '222222'},
+            ),
+            patch(
+                'services.auth_service.send_confirmation_email',
+                return_value={'channel': 'email', 'destination': 'wo***@example.com', 'confirmation_link': 'mock'},
+            ),
+        ):
+            otp = auth_routes.send_otp(
+                SendOtpRequest(user_id=user_id, purpose='signup'),
+                db=self.db,
+            )
+            self.assertEqual(otp['deliveries'][0]['channel'], 'email')
+            phone_otp = next(item['mock_otp'] for item in otp['deliveries'] if item['channel'] == 'phone')
 
-        verify = auth_routes.verify_otp(
-            VerifyOtpRequest(user_id=user_id, email_otp=email_otp, phone_otp=phone_otp),
-            db=self.db,
-        )
+            verify = auth_routes.verify_otp(
+                VerifyOtpRequest(user_id=user_id, email_otp='111111', phone_otp=phone_otp),
+                db=self.db,
+            )
         self.assertTrue(verify['email_verified'])
         self.assertTrue(verify['phone_verified'])
 
@@ -120,21 +135,31 @@ class AuthOnboardingTests(unittest.TestCase):
             )
         self.assertEqual(connect['status'], 'CONNECTED')
 
-        forgot = auth_routes.forgot_password(
-            ForgotPasswordRequest(identifier='worker.one'),
-            db=self.db,
-        )
-        reset_email_otp = next(item['mock_otp'] for item in forgot['deliveries'] if item['channel'] == 'email')
-        reset_phone_otp = next(item['mock_otp'] for item in forgot['deliveries'] if item['channel'] == 'phone')
-
-        verify_reset = auth_routes.verify_reset_otp(
-            VerifyResetOtpRequest(
-                user_id=user_id,
-                email_otp=reset_email_otp,
-                phone_otp=reset_phone_otp,
+        with (
+            patch('services.auth_service._generate_otp', side_effect=['333333', '444444']),
+            patch(
+                'services.auth_service.send_email_otp',
+                return_value={'channel': 'email', 'destination': 'wo***@example.com', 'mock_otp': None},
             ),
-            db=self.db,
-        )
+            patch(
+                'services.auth_service.send_sms_otp',
+                return_value={'channel': 'phone', 'destination': '987***210', 'mock_otp': '444444'},
+            ),
+        ):
+            forgot = auth_routes.forgot_password(
+                ForgotPasswordRequest(identifier='worker.one'),
+                db=self.db,
+            )
+            reset_phone_otp = next(item['mock_otp'] for item in forgot['deliveries'] if item['channel'] == 'phone')
+
+            verify_reset = auth_routes.verify_reset_otp(
+                VerifyResetOtpRequest(
+                    user_id=user_id,
+                    email_otp='333333',
+                    phone_otp=reset_phone_otp,
+                ),
+                db=self.db,
+            )
         self.assertTrue(verify_reset['reset_token'])
 
         reset = auth_routes.reset_password(

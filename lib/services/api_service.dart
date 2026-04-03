@@ -27,12 +27,12 @@ class AvailabilityResult {
 class DeliveryPreview {
   final String channel;
   final String destination;
-  final String mockOtp;
+  final String? mockOtp;
 
   const DeliveryPreview({
     required this.channel,
     required this.destination,
-    required this.mockOtp,
+    this.mockOtp,
   });
 
   factory DeliveryPreview.fromJson(Map<String, dynamic> json) {

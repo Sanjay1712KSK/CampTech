@@ -115,6 +115,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    DeliveryPreview? emailDelivery;
+    DeliveryPreview? phoneDelivery;
+    for (final delivery in _deliveries) {
+      if (delivery.channel == 'email') {
+        emailDelivery = delivery;
+      } else if (delivery.channel == 'phone') {
+        phoneDelivery = delivery;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -160,16 +170,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _deliveries
-                        .map(
-                          (delivery) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              '${delivery.channel.toUpperCase()}: ${delivery.destination}\nDemo OTP: ${delivery.mockOtp}',
-                            ),
-                          ),
-                        )
-                        .toList(),
+                    children: [
+                      if (emailDelivery != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text('Email OTP sent to ${emailDelivery.destination}'),
+                        ),
+                      if (phoneDelivery != null)
+                        Text('Phone OTP sent to ${phoneDelivery.destination}\nDemo OTP: ${phoneDelivery.mockOtp ?? ""}'),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),

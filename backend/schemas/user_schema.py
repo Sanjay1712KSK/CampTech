@@ -63,7 +63,7 @@ class SendOtpRequest(BaseModel):
 class OtpDeliveryPreview(BaseModel):
     channel: Literal['email', 'phone']
     destination: str
-    mock_otp: str
+    mock_otp: str | None = None
 
 
 class SendOtpResponse(BaseModel):
