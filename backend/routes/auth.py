@@ -13,6 +13,7 @@ from schemas.user_schema import (
     LoginRequest,
     LoginResponse,
     MessageResponse,
+    OnboardingStatusResponse,
     RegistrationRequest,
     RegistrationResponse,
     SendOtpRequest,
@@ -80,6 +81,11 @@ def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
 @router.get('/confirm', response_model=ConfirmAccountResponse)
 def confirm_account(token: str = Query(..., min_length=16), db: Session = Depends(get_db)):
     return auth_service.confirm_account(db, token)
+
+
+@router.get('/onboarding-status', response_model=OnboardingStatusResponse)
+def onboarding_status(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
+    return auth_service.get_onboarding_status(db, user_id)
 
 
 @router.post('/login', response_model=LoginResponse)

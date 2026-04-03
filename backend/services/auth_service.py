@@ -319,6 +319,28 @@ def confirm_account(db: Session, token: str) -> dict:
     }
 
 
+def get_onboarding_status(db: Session, user_id: int) -> dict:
+    user = _user_or_404(db, user_id)
+
+    if not user.is_email_verified or not user.is_phone_verified:
+        next_step = 'otp_verification'
+    elif not user.is_account_confirmed:
+        next_step = 'account_confirmation'
+    elif not user.is_digilocker_verified:
+        next_step = 'digilocker_verification'
+    else:
+        next_step = 'gig_connection'
+
+    return {
+        'user_id': user.id,
+        'is_email_verified': bool(user.is_email_verified),
+        'is_phone_verified': bool(user.is_phone_verified),
+        'is_account_confirmed': bool(user.is_account_confirmed),
+        'is_digilocker_verified': bool(user.is_digilocker_verified),
+        'next_step': next_step,
+    }
+
+
 def _resolve_identifier_query(db: Session, identifier: str) -> User | None:
     normalized_identifier = identifier.strip()
     normalized_email = normalized_identifier.lower()

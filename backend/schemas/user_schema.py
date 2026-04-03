@@ -96,6 +96,15 @@ class ConfirmAccountResponse(BaseModel):
     message: str
 
 
+class OnboardingStatusResponse(BaseModel):
+    user_id: int
+    is_email_verified: bool
+    is_phone_verified: bool
+    is_account_confirmed: bool
+    is_digilocker_verified: bool
+    next_step: str
+
+
 class LoginRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
