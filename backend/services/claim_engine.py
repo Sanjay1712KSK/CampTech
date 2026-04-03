@@ -119,7 +119,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             'fraud_score': 1.0,
         }
 
-    environment_data = get_environment(lat, lon)
+    environment_data = get_environment(lat, lon, db=db, user_id=user_id)
     environment_data['city'] = resolve_city_from_coordinates(lat, lon)
     today_income = _today_income_payload(user_id, db)
     baseline = baseline_value(user_id, db)

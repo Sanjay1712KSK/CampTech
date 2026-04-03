@@ -127,6 +127,8 @@ def ensure_schema():
         ],
         'profiles': ['user_id', 'platform', 'city', 'avg_income'],
         'gig_accounts': ['user_id', 'platform', 'worker_id', 'created_at'],
+        'adaptive_risk_weights': ['rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight', 'sample_count', 'updated_at'],
+        'environment_snapshots': ['bucket_lat', 'bucket_lon', 'temperature', 'wind_speed', 'humidity', 'rain_estimate', 'aqi', 'traffic_index', 'observed_at'],
         'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],
         'bank_accounts': ['user_id', 'account_number', 'ifsc', 'balance', 'created_at'],
         'bank_transactions': ['user_id', 'transaction_type', 'amount', 'status', 'reference_id', 'metadata_json'],

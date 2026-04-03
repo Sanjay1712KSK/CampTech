@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from models.gig_income import GigIncome
 from services.environment_service import get_environment
 from services.gig_service import calculate_baseline_value
 from services.risk_engine import calculate_risk
@@ -54,8 +55,8 @@ def resolve_city_from_coordinates(lat: float, lon: float) -> str:
 def calculate_weekly_premium(user_id: int, db: Session) -> dict:
     baseline = _baseline_value(user_id, db)
     lat, lon = _resolve_coordinates(user_id, db)
-    environment = get_environment(lat, lon)
-    risk_result = calculate_risk(environment)
+    environment = get_environment(lat, lon, db=db, user_id=user_id)
+    risk_result = calculate_risk(environment, user_id=user_id, db=db)
     risk_score = float(risk_result.get('risk_score', 0.0))
 
     weekly_income = _round(baseline * 7)
