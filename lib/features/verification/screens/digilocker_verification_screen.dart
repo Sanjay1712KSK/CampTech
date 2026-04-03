@@ -132,7 +132,6 @@ class _DigilockerVerificationScreenState extends ConsumerState<DigilockerVerific
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
-                    ),
                 ),
                 const SizedBox(height: 24),
                 Row(
