@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Float, DateTime, Boolean, func
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, func
 
 from database.db import Base
 
@@ -7,7 +7,7 @@ class GigIncome(Base):
     __tablename__ = 'gig_income'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), index=True, nullable=False)
     date = Column(Date, nullable=False, index=True)
     orders_completed = Column(Integer, nullable=False)
     hours_worked = Column(Float, nullable=False)

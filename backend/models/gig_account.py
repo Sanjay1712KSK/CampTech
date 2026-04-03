@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 
 from database.db import Base
 
@@ -11,7 +11,7 @@ class GigAccount(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     platform = Column(String(50), nullable=False, index=True)
     worker_id = Column(String(64), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

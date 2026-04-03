@@ -19,6 +19,7 @@ from database.db import Base  # noqa: E402
 from fastapi.security.http import HTTPAuthorizationCredentials  # noqa: E402
 from models import bank_account as bank_account_model  # noqa: F401,E402
 from models import digilocker_request as digilocker_request_model  # noqa: F401,E402
+from models import gig_account as gig_account_model  # noqa: F401,E402
 from models import gig_income as gig_income_model  # noqa: F401,E402
 from models import insurance as insurance_model  # noqa: F401,E402
 from models import profile as profile_model  # noqa: F401,E402

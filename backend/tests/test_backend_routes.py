@@ -11,6 +11,7 @@ import main
 from database.db import Base
 from models import bank_account as bank_account_model  # noqa: F401
 from models import digilocker_request as digilocker_request_model  # noqa: F401
+from models import gig_account as gig_account_model  # noqa: F401
 from models import gig_income as gig_income_model  # noqa: F401
 from models import insurance as insurance_model  # noqa: F401
 from models import user_model as user_model_module  # noqa: F401
@@ -143,19 +144,19 @@ class BackendRouteTests(unittest.TestCase):
         signup_result = self._signup_user(email="gig@example.com", phone="9123456789")
         user_id = signup_result["id"]
 
-        with patch("services.gig_service.SessionLocal", self.SessionLocal):
-            generate_result = gig_routes.generate_data_endpoint(
-                GenerateGigDataRequest(user_id=user_id, days=3)
-            )
+        generate_result = gig_routes.generate_data_endpoint(
+            GenerateGigDataRequest(user_id=user_id, days=3),
+            db=self.db,
+        )
         self.assertEqual(generate_result["generated"], 3)
 
         history_result = gig_routes.income_history_endpoint(user_id=user_id, db=self.db)
         self.assertGreaterEqual(len(history_result), 1)
-        self.assertEqual(history_result[0].user_id, user_id)
+        self.assertEqual(history_result[0]["user_id"], user_id)
 
         today_result = gig_routes.today_income_endpoint(user_id=user_id, db=self.db)
-        self.assertEqual(today_result.user_id, user_id)
-        self.assertTrue(hasattr(today_result, "earnings"))
+        self.assertEqual(today_result["platform"], history_result[0]["platform"])
+        self.assertIn("earnings", today_result)
 
     def test_digilocker_request_consent_and_status(self):
         document = MOCK_DOCUMENTS[0]

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from models.gig_income import GigIncome
 from services.environment_service import get_environment
+from services.gig_service import calculate_baseline_value
 from services.risk_engine import calculate_risk
 
 
@@ -19,16 +19,7 @@ def _round(value: float) -> float:
 
 
 def _baseline_value(user_id: int, db: Session) -> float:
-    records = (
-        db.query(GigIncome)
-        .filter(GigIncome.user_id == int(user_id), GigIncome.disruption_type == 'none')
-        .order_by(GigIncome.earnings.desc())
-        .limit(5)
-        .all()
-    )
-    if not records:
-        return 0.0
-    return _round(sum(record.earnings for record in records) / len(records))
+    return calculate_baseline_value(user_id=user_id, db=db)
 
 
 def baseline_value(user_id: int, db: Session) -> float:
