@@ -27,6 +27,7 @@ def calculate_disruption(snapshot: dict) -> dict:
 
     return {
         'delivery_capacity': _round(delivery_capacity),
+        'working_hours': _round(working_hours_factor),
         'working_hours_factor': _round(working_hours_factor),
         'factor_breakdown': {
             'rain_penalty': _round(rain_penalty),
@@ -39,21 +40,6 @@ def calculate_disruption(snapshot: dict) -> dict:
 
 
 def calculate_delivery_efficiency(snapshot: dict, disruption: dict) -> dict:
-    normal_deliveries_per_hour = 3.2
-    efficiency_score = _clamp(
-        float(disruption.get('delivery_capacity', 1.0)) * float(disruption.get('working_hours_factor', 1.0)),
-        0.15,
-        1.0,
-    )
-    estimated_current = normal_deliveries_per_hour * efficiency_score
-    drop_ratio = 1.0 - efficiency_score
+    from core.efficiency_engine import calculate_efficiency
 
-    return {
-        'score': _round(efficiency_score),
-        'drop': f'{int(round(drop_ratio * 100))}%',
-        'drop_percentage': f'{int(round(drop_ratio * 100))}%',
-        'normal_deliveries_per_hour': _round(normal_deliveries_per_hour, 2),
-        'estimated_current': _round(estimated_current, 2),
-        'delivery_capacity': _round(float(disruption.get('delivery_capacity', 1.0))),
-        'working_hours_factor': _round(float(disruption.get('working_hours_factor', 1.0))),
-    }
+    return calculate_efficiency(snapshot=snapshot, disruption=disruption)
