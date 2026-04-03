@@ -474,6 +474,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
 
   Widget _buildHyperLocalCard(RiskModel risk) {
     final insight = risk.hyperLocalAnalysis['insight']?.toString();
+    final source = risk.hyperLocalAnalysis['source']?.toString();
     final baselineSnapshotRaw = risk.hyperLocalAnalysis['baseline_snapshot'];
     final baselineSnapshot = baselineSnapshotRaw is Map<String, dynamic>
         ? baselineSnapshotRaw
@@ -496,7 +497,6 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
                   value: risk.hyperLocalRisk!.toStringAsFixed(2),
                   color: AppTheme.warningColor,
                 ),
-              final source = risk.hyperLocalAnalysis['source']?.toString();
               if (source != null && source.isNotEmpty)
                 RiskMetricChip(
                   label: 'Source',
