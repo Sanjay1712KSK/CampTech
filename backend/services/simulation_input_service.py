@@ -261,6 +261,17 @@ def _ensure_user(db: Session, user_type: str) -> User:
         )
         db.add(user)
         db.flush()
+    else:
+        user.email = config['email']
+        user.phone = config['phone']
+        user.name = config['name']
+        user.password_hash = hash_password(DEFAULT_SIMULATION_PASSWORD)
+        user.is_email_verified = True
+        user.is_phone_verified = True
+        user.is_account_confirmed = True
+        user.is_digilocker_verified = True
+        user.has_completed_first_login_2fa = True
+        user.verified_at = _utcnow()
     return user
 
 
