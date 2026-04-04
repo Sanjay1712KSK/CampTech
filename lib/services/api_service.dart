@@ -380,6 +380,20 @@ class GigConnectResult {
   }
 }
 
+class GigStatusResult {
+  final bool connected;
+
+  const GigStatusResult({
+    required this.connected,
+  });
+
+  factory GigStatusResult.fromJson(Map<String, dynamic> json) {
+    return GigStatusResult(
+      connected: json['connected'] as bool? ?? false,
+    );
+  }
+}
+
 class ApiService {
   static const Duration _timeout = Duration(seconds: 15);
 
@@ -671,6 +685,22 @@ class ApiService {
         return IncomeHistoryModel.fromJson(decoded);
       }
       throw Exception('Unexpected income history response format');
+    }
+    throw _asException(response);
+  }
+
+  static Future<GigStatusResult> getGigStatus(int userId) async {
+    final response = await http
+        .get(Uri.parse('${Config.baseUrl}/gig/status?user_id=$userId'))
+        .timeout(_timeout);
+    if (response.statusCode == 200) {
+      return GigStatusResult.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    if (response.statusCode == 404) {
+      final history = await getIncomeHistory(userId);
+      return GigStatusResult(connected: history.records.isNotEmpty);
     }
     throw _asException(response);
   }
