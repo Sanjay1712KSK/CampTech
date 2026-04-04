@@ -24,6 +24,8 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         value: "*"
+      - key: EMAIL_OTP_OPTIONAL_ON_FAILURE
+        value: "true"
       - key: OPENWEATHER_API_KEY
         sync: false
       - key: ORS_API_KEY
