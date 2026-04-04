@@ -117,8 +117,12 @@ class _EmailConfirmationResultScreenState extends State<EmailConfirmationResultS
               PrimaryButton(
                 text: _isSuccess ? 'Continue in app' : 'Back to login',
                 onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
+                  final navigator = Navigator.of(context);
+                  if (_isSuccess && navigator.canPop()) {
+                    navigator.pop();
+                    return;
+                  }
+                  navigator.pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,
                   );
