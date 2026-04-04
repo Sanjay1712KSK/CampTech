@@ -17,6 +17,7 @@ from routes import payment as payment_router
 from routes import premium as premium_router
 from routes import risk as risk_router
 from routes import support as support_router
+from routes import simulation as simulation_router
 from utils.response import error_response
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +43,7 @@ app.include_router(payment_router.router)
 app.include_router(premium_router.router)
 app.include_router(risk_router.router)
 app.include_router(support_router.router)
+app.include_router(simulation_router.router)
 
 
 @app.on_event('startup')
