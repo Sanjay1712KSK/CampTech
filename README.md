@@ -977,8 +977,12 @@ This creates the clearest contrast:
 
 ## Team
 
-Built by Team CampTech for the Guidewire / DevTrails hackathon.
-**Astha Bhatia**[https://github.com/asthabhatia1] - Team Leader
-Sanjay Kumar S[https://github.com/Sanjay1712KSK]
-Jahanvi[https://github.com/Jahanvisaini3135]
-Surbhi Kaushal[https://github.com/SurbhiKaushal]
+### Built by Team CampTech  
+For the **Guidewire / DevTrails Hackathon**
+
+#### Team Members
+
+- [**Astha Bhatia**](https://github.com/asthabhatia1) – Team Leader  
+- [**Sanjay Kumar S**](https://github.com/Sanjay1712KSK)  
+- [**Jahanvi**](https://github.com/Jahanvisaini3135)  
+- [**Surbhi Kaushal**](https://github.com/SurbhiKaushal)  
