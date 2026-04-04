@@ -205,6 +205,7 @@ class _DashboardContent extends StatelessWidget {
     final premiumPaid = (summary?.totalPaid ?? 0.0) > 0;
     final eligibleForInsurance = riskScore >= 0.05 && weeklyPremium > 0;
     final persona = _personaFor(user.userName);
+    final personaStory = _personaStoryFor(user.userName);
     final claimStatus = (claim?['claim_status'] as String?) ?? (summary?.latestClaimStatus ?? 'NOT STARTED');
     final fraudScore = ((claim?['fraud_score'] as num?)?.toDouble() ?? 0.0);
     final payout = ((claim?['payout'] as num?)?.toDouble() ?? (summary?.lastPayout ?? 0.0));
@@ -219,9 +220,22 @@ class _DashboardContent extends StatelessWidget {
       children: [
         _ProfileCard(
           name: user.userName,
-          persona: persona,
+          persona: persona.title,
           protectedStatus: policyProtected ? 'Protected' : 'Not Protected',
           premiumStatus: premiumPaid ? 'Paid' : 'Not Paid',
+        ),
+        const SizedBox(height: 18),
+        _SectionCard(
+          title: 'Persona story',
+          subtitle: persona.summary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(label: 'Scenario', value: personaStory.scenario),
+              _InfoRow(label: 'System behavior', value: personaStory.behavior),
+              _InfoRow(label: 'Expected outcome', value: personaStory.outcome),
+            ],
+          ),
         ),
         const SizedBox(height: 18),
         _SectionCard(
@@ -372,18 +386,68 @@ class _DashboardContent extends StatelessWidget {
     );
   }
 
-  String _personaFor(String username) {
+  _PersonaMeta _personaFor(String username) {
     switch (username.trim().toLowerCase()) {
       case 'good_actor':
-        return 'Reliable Partner';
+        return const _PersonaMeta(
+          title: 'Trusted Professional',
+          summary: 'Consistent worker, real disruption, strongest example of the honest payout story.',
+        );
       case 'bad_actor':
-        return 'Anomaly Watch';
+        return const _PersonaMeta(
+          title: 'System Gamer',
+          summary: 'Irregular worker profile designed to show anomaly detection and claim rejection.',
+        );
       case 'edge_case':
-        return 'Mixed Conditions';
+        return const _PersonaMeta(
+          title: 'Uncertain Case',
+          summary: 'Borderline signals that help explain flagged or review-needed outcomes.',
+        );
       case 'low_risk':
-        return 'Stable Performer';
+        return const _PersonaMeta(
+          title: 'Normal Day',
+          summary: 'Stable conditions, lower risk, and lower premium story.',
+        );
       default:
-        return 'Delivery Partner';
+        return const _PersonaMeta(
+          title: 'Delivery Partner',
+          summary: 'Live gig-insurance dashboard connected to risk, premium, claim, and payout engines.',
+        );
+    }
+  }
+
+  _PersonaStory _personaStoryFor(String username) {
+    switch (username.trim().toLowerCase()) {
+      case 'good_actor':
+        return const _PersonaStory(
+          scenario: 'Heavy rain and traffic are hurting a disciplined worker during a real disruption.',
+          behavior: 'Risk should rise, premium logic stays valid, and fraud concern stays low.',
+          outcome: 'This is the best persona to demonstrate a fair auto-payout path once policy timing is valid.',
+        );
+      case 'bad_actor':
+        return const _PersonaStory(
+          scenario: 'Normal weather and normal traffic, but the user tries to show high loss.',
+          behavior: 'Risk should stay low and fraud logic should react to the mismatch.',
+          outcome: 'Best persona to explain why suspicious claims are rejected.',
+        );
+      case 'edge_case':
+        return const _PersonaStory(
+          scenario: 'Mild rain and moderate traffic create an ambiguous real-world case.',
+          behavior: 'Risk should stay medium and the claim may be borderline.',
+          outcome: 'Best persona to explain a flagged or review-needed outcome.',
+        );
+      case 'low_risk':
+        return const _PersonaStory(
+          scenario: 'Normal day with stable work conditions and little disruption.',
+          behavior: 'Risk should stay low and pricing should remain lighter.',
+          outcome: 'Best persona to explain fair pricing under calm conditions.',
+        );
+      default:
+        return const _PersonaStory(
+          scenario: 'Live conditions are being monitored.',
+          behavior: 'The system connects environment, risk, premium, and claims.',
+          outcome: 'Use this dashboard to explain the full insurance lifecycle.',
+        );
     }
   }
 
@@ -764,6 +828,28 @@ class _FlowPill extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PersonaMeta {
+  final String title;
+  final String summary;
+
+  const _PersonaMeta({
+    required this.title,
+    required this.summary,
+  });
+}
+
+class _PersonaStory {
+  final String scenario;
+  final String behavior;
+  final String outcome;
+
+  const _PersonaStory({
+    required this.scenario,
+    required this.behavior,
+    required this.outcome,
+  });
 }
 
 class _LoadingView extends StatelessWidget {
