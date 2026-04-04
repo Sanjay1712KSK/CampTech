@@ -652,6 +652,96 @@ Key UX goals:
 
 The demo also includes persona-specific UI explanation banners so the story changes visibly across users.
 
+## Visual Walkthrough
+
+The screenshot library is available in [Demo/Screenshots](/s:/flutter/guidewire_gig_ins/Demo/Screenshots) and is grouped into:
+
+- `Real User`
+- `Good Mock Up User`
+- `Bad Mock Up User`
+
+Below is a structured visual walkthrough for the README so the app flow is easy to scan.
+
+### Onboarding Flow
+
+<p align="center">
+  <img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page.png" width="220" alt="Sign up page" />
+  <img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page%20With%20Credentials%20Filled.png" width="220" alt="Sign up page with credentials" />
+  <img src="Demo/Screenshots/Real%20User/Verify%20Contact%20Channels.png" width="220" alt="Verify contact channels" />
+</p>
+
+<p align="center">
+  <img src="Demo/Screenshots/Real%20User/Email%20Confirmation%20Page.png" width="220" alt="Email confirmation page" />
+  <img src="Demo/Screenshots/Real%20User/Digilocker%20Verification%20Mockup.png" width="220" alt="DigiLocker verification" />
+  <img src="Demo/Screenshots/Real%20User/Gig%20Account%20Mockup%20Connection.png" width="220" alt="Gig account connection" />
+</p>
+
+What this shows:
+
+- registration and credential setup
+- OTP verification across channels
+- email confirmation
+- DigiLocker completion
+- gig account connection before the main dashboard
+
+### Core Product Tabs
+
+<p align="center">
+  <img src="Demo/Screenshots/Real%20User/Home%20Page%201%20Real%20User.png" width="220" alt="Home risk dashboard" />
+  <img src="Demo/Screenshots/Real%20User/Earnings%201%20Real%20User.png" width="220" alt="Earnings dashboard" />
+  <img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="220" alt="Insurance dashboard" />
+  <img src="Demo/Screenshots/Real%20User/Claims%20Page%201%20Real%20User.png" width="220" alt="Claims dashboard" />
+</p>
+
+What this shows:
+
+- Home tab focused on live disruption and risk
+- Earnings tab focused on worker income behavior
+- Insurance tab focused on premium and protection
+- Claims tab focused on approval, fraud, payout, and trust
+
+### Persona Views
+
+#### Good Actor View
+
+<p align="center">
+  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor home" />
+  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor insurance" />
+  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor claims" />
+</p>
+
+This persona is used to show:
+
+- genuine disruption
+- higher risk
+- meaningful premium logic
+- believable insured worker story
+
+#### Bad Actor View
+
+<p align="center">
+  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor home" />
+  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor insurance" />
+  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor claims" />
+</p>
+
+This persona is used to show:
+
+- weak disruption support
+- low trigger confidence
+- anomaly-based fraud concern
+- rejection or guarded claim outcome
+
+### Why These Screens Matter
+
+The screenshots are not just UI previews. They visually demonstrate that:
+
+- onboarding is complete and production-style
+- the risk engine is visible and explainable
+- the same app behaves differently across personas
+- premium, claim, and payout are connected through one backend pipeline
+- the demo is story-driven, not just a collection of isolated screens
+
 ## Database Design
 
 The backend includes a structured relational schema covering:
