@@ -234,7 +234,7 @@ class _DashboardContent extends StatelessWidget {
               _MetricChip(label: 'City', value: location.city),
               _MetricChip(label: 'Time', value: '${environment.context.hour}:00'),
               _MetricChip(label: 'Weather 🌧', value: '${environment.weather.rainfall.toStringAsFixed(1)} mm'),
-              _MetricChip(label: 'AQI 🌫', value: '${environment.aqi.aqiIndex.toStringAsFixed(0)}'),
+              _MetricChip(label: 'AQI 🌫', value: '${environment.aqi.aqi}'),
               _MetricChip(label: 'Traffic 🚦', value: environment.traffic.trafficLevel),
             ],
           ),
