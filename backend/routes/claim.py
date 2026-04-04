@@ -64,12 +64,17 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
     db.refresh(account)
 
     return {
+        'claim_status': 'APPROVED',
+        'reason': result.get('reason'),
         'status': 'APPROVED',
+        'expected_income': result.get('expected_income'),
+        'actual_income': result.get('actual_income'),
         'weekly_loss': result['weekly_loss'],
         'loss': result['loss'],
         'payout': result['payout'],
+        'predicted_loss': result.get('predicted_loss'),
         'fraud_score': result['fraud_score'],
-        'reasons': None,
+        'reasons': result.get('reasons'),
     }
 
 
