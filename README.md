@@ -131,6 +131,36 @@ Main UX surfaces:
 - OpenRouteService
 - Mailtrap
 
+## Local Vs Deployed OTP Behavior
+
+The project now differentiates OTP behavior between local development and the deployed Render backend.
+
+### Local backend
+
+When you run the backend locally, the intended behavior remains strict:
+
+- signup expects both email OTP and phone OTP
+- forgot-password reset expects both email OTP and phone OTP
+- the email OTP field should appear in the UI
+- this is the recommended mode for full onboarding testing after cloning the repository
+
+In local mode, email delivery is expected to work when your Mailtrap setup is valid.
+
+### Deployed backend
+
+The Render deployment currently has a resilience fallback enabled because Mailtrap delivery may fail intermittently in deployment.
+
+- signup can continue with phone OTP if email OTP delivery fails
+- forgot-password reset can continue with phone OTP if email OTP delivery fails
+- the UI hides the email OTP field when the backend reports that email delivery failed
+- login already supports choosing `email` or `phone`, so deployed usage should prefer `phone` when email is unreliable
+
+This fallback is controlled by the backend environment variable:
+
+- `EMAIL_OTP_OPTIONAL_ON_FAILURE=true` on Render
+
+Local development does not need this flag enabled. By default, the backend keeps strict email+phone OTP behavior locally.
+
 ### ML / Intelligence Stack
 
 - Heuristic + weighted decision models
