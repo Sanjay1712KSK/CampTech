@@ -529,6 +529,125 @@ def _generate_income_inputs(db: Session, user: User, user_type: str, days: int, 
         profile.avg_income = _round(sum(generated_earnings) / len(generated_earnings))
 
 
+def _seed_premium_success_story(db: Session, user: User) -> None:
+    db.query(BlockchainRecord).filter(BlockchainRecord.user_id == user.id).delete(synchronize_session=False)
+    db.query(ClaimHistory).filter(ClaimHistory.user_id == user.id).delete(synchronize_session=False)
+    db.query(Claim).filter(Claim.user_id == user.id).delete(synchronize_session=False)
+    db.query(BankTransaction).filter(BankTransaction.user_id == user.id).delete(synchronize_session=False)
+    db.query(Policy).filter(Policy.user_id == user.id).delete(synchronize_session=False)
+
+    account = link_account(
+        db,
+        user_id=user.id,
+        account_number='50123456789012',
+        ifsc='HDFC0005678',
+        opening_balance=12500.0,
+    )
+
+    policy = create_policy(user_id=user.id, db=db, start_date=date.today() - timedelta(days=7))
+    refresh_policy_status(policy)
+
+    premium_amount = 150.0
+    baseline_income = 920.0
+    loss_amount = 400.0
+    payout_amount = 320.0
+    fraud_score = 0.18
+
+    premium_txn = log_transaction(
+        db,
+        user_id=user.id,
+        transaction_type='PREMIUM_PAYMENT',
+        amount=premium_amount,
+        reference_id=f'premium_{user.id}_{policy.id}',
+        metadata={
+            'remark': f'Weekly premium paid for policy #{policy.id}',
+            'scenario': 'premium_success',
+        },
+    )
+    premium_txn.created_at = _utcnow() - timedelta(days=7)
+
+    claim = Claim(
+        user_id=user.id,
+        week=policy.start_date.strftime('%G-W%V'),
+        loss=_round(loss_amount),
+        payout=_round(payout_amount),
+        fraud_score=fraud_score,
+        status='APPROVED',
+        reasons_json=json.dumps(
+            [
+                'Heavy rain trigger was active',
+                'Traffic disruption reduced delivery capacity',
+                'Income loss matched the weather anomaly',
+            ]
+        ),
+        created_at=_utcnow(),
+    )
+    db.add(claim)
+    db.flush()
+
+    claim_history = ClaimHistory(
+        user_id=user.id,
+        policy_id=policy.id,
+        claim_reference=f'CLAIM-SURESH-{policy.id}',
+        claim_date=date.today(),
+        status='APPROVED',
+        predicted_loss=_round(365.0),
+        actual_loss=_round(loss_amount),
+        claimed_loss=_round(loss_amount),
+        approved_payout=_round(payout_amount),
+        fraud_score=fraud_score,
+        trigger_snapshot=['RAIN_TRIGGER', 'COMBINED_TRIGGER'],
+        reasons=[
+            'Protected worker experienced a real disruption after paying premium',
+            'Weather anomaly matched reduced earnings',
+        ],
+        review_notes='Auto-approved premium success demo case',
+    )
+    db.add(claim_history)
+    db.flush()
+
+    payout_txn = log_transaction(
+        db,
+        user_id=user.id,
+        transaction_type='CLAIM_PAYOUT',
+        amount=payout_amount,
+        reference_id=f'payout_{claim_history.claim_reference}',
+        metadata={
+            'remark': 'Auto payout credited after approved claim',
+            'claim_reference': claim_history.claim_reference,
+            'scenario': 'premium_success',
+        },
+    )
+    payout_txn.created_at = _utcnow()
+    account.balance = _round(account.balance - premium_amount + payout_amount)
+
+    create_policy_record(
+        user_id=user.id,
+        premium=premium_amount,
+        baseline_income=baseline_income,
+        policy_id=policy.id,
+        db=db,
+    )
+    log_claim(
+        claim_id=claim_history.claim_reference,
+        details={
+            'user_id': user.id,
+            'policy_id': policy.id,
+            'claim_history_id': claim_history.id,
+            'loss': _round(loss_amount),
+            'payout': _round(payout_amount),
+            'status': 'APPROVED',
+        },
+        db=db,
+    )
+    record_payout(
+        claim_id=claim_history.claim_reference,
+        amount=payout_amount,
+        user_id=user.id,
+        db=db,
+    )
+
+
 def simulate_inputs(db: Session, *, enable_simulation: bool = True, regenerate_income: bool = True, days: int = 30) -> dict:
     set_simulation_mode(enable_simulation)
     seeded_users = []
@@ -538,6 +657,8 @@ def simulate_inputs(db: Session, *, enable_simulation: bool = True, regenerate_i
         _ensure_profile_and_settings(db, user, user_type)
         _record_user_behavior(db, user, user_type)
         _generate_income_inputs(db, user, user_type, days=days, regenerate_income=regenerate_income)
+        if user_type == 'premium_success':
+            _seed_premium_success_story(db, user)
         config = SIMULATED_USERS[user_type]
         seeded_users.append(
             {

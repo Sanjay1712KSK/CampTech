@@ -412,6 +412,9 @@ class _DashboardContent extends StatelessWidget {
     if (email == 'low.risk@gigshield.demo' || phone == '+919100000004' || display == 'low_risk') {
       return 'low_risk';
     }
+    if (email == 'suresh.patel@gigshield.demo' || phone == '+919100000005' || display == 'premium_success') {
+      return 'premium_success';
+    }
     return display;
   }
 
@@ -449,6 +452,14 @@ class _DashboardContent extends StatelessWidget {
           focusLabel: 'Best for pricing demo',
           demoAngle: 'Show how low disruption leads to lighter premium and fewer claims.',
         );
+      case 'premium_success':
+        return const _PersonaMeta(
+          title: 'Premium Success User',
+          summary: 'Protected worker with last week premium paid and today payout already credited after real disruption.',
+          headline: 'Paid policy turned into an automatic payout story',
+          focusLabel: 'Best for full lifecycle demo',
+          demoAngle: 'Show premium paid earlier, strong disruption today, and a successful payout outcome.',
+        );
       default:
         return const _PersonaMeta(
           title: 'Delivery Partner',
@@ -485,6 +496,12 @@ class _DashboardContent extends StatelessWidget {
           scenario: 'Normal day with stable work conditions and little disruption.',
           behavior: 'Risk should stay low and pricing should remain lighter.',
           outcome: 'Best persona to explain fair pricing under calm conditions.',
+        );
+      case 'premium_success':
+        return const _PersonaStory(
+          scenario: 'The worker paid last week premium, then a weather anomaly disrupted earnings and triggered a valid payout story.',
+          behavior: 'Risk stays high, the policy story is already valid, and the payout outcome should feel complete.',
+          outcome: 'Best persona to demonstrate premium, policy, approved claim, bank credit, and blockchain trust in one flow.',
         );
       default:
         return const _PersonaStory(
@@ -533,6 +550,8 @@ class _DashboardContent extends StatelessWidget {
         return AppTheme.warningColor;
       case 'low_risk':
         return AppTheme.primaryColor;
+      case 'premium_success':
+        return AppTheme.successColor;
       default:
         return AppTheme.primaryColor;
     }

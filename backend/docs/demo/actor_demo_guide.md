@@ -64,6 +64,12 @@ Demo@1234
 - Email: `low.risk@gigshield.demo`
 - Phone: `+919100000004`
 
+### Premium Success
+
+- Username: `premium_success`
+- Email: `suresh.patel@gigshield.demo`
+- Phone: `+919100000005`
+
 You can log in with any one of:
 
 - username
@@ -429,15 +435,26 @@ This is the best actor for explaining:
 
 ### Intended system story
 
-- premium paid -> `₹150`
-- payout received -> `₹320`
+- premium paid -> `Rs 150`
+- payout received -> `Rs 320`
 - auto payout
 - blockchain record stored
 - bank credited
 
-### How to show this in the current demo
+### Simulated login
 
-There is not a separately seeded fifth login user at the moment. Use `good_actor` to tell this premium-success story, because that actor is the closest match to a real protected user under disruption.
+- Username: `premium_success`
+- Email: `suresh.patel@gigshield.demo`
+- Phone: `+919100000005`
+
+### What is pre-seeded for this actor
+
+- bank account already linked
+- premium payment already recorded for the previous policy week
+- completed policy week already exists
+- approved claim already present
+- payout credited today
+- blockchain policy, claim, and payout records already written
 
 ### Demo line
 
@@ -464,6 +481,7 @@ Use this simple story:
 - Use `bad_actor` to explain fraud detection and controlled payouts.
 - Use `edge_case` to explain explainable AI in uncertain conditions.
 - Use `low_risk` to explain lower premium and stable earnings.
+- Use `premium_success` to explain the complete premium-to-payout success story.
 
 ## Quick Demo Script
 

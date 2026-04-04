@@ -129,6 +129,29 @@ PersonaStoryBundle resolvePersonaStory(UserState user) {
     );
   }
 
+  if (email == 'suresh.patel@gigshield.demo' || phone == '+919100000005' || display == 'premium_success') {
+    return const PersonaStoryBundle(
+      key: 'premium_success',
+      title: 'Premium Success User',
+      accentColor: AppTheme.successColor,
+      earnings: PersonaTabStory(
+        title: 'Weather anomaly caused a visible earnings drop',
+        summary: 'This worker already had protection in place, so today the income drop tells a complete insurance story.',
+        focus: 'Use this tab to show the fall from normal earnings into disruption-led loss.',
+      ),
+      insurance: PersonaTabStory(
+        title: 'Premium was already paid before disruption happened',
+        summary: 'This is the best actor for showing that cover was active before the weather event.',
+        focus: 'Use this tab to point out paid protection, valid policy history, and meaningful coverage.',
+      ),
+      claims: PersonaTabStory(
+        title: 'Best example of automatic payout value',
+        summary: 'The system sees real disruption, low fraud concern, and a payout already credited today.',
+        focus: 'Use this tab to show the full protected-worker success story from premium to payout.',
+      ),
+    );
+  }
+
   return const PersonaStoryBundle(
     key: 'default',
     title: 'Delivery Partner',
