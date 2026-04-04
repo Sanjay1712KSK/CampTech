@@ -539,8 +539,8 @@ class _QuickActions extends StatelessWidget {
       children: [
         _ActionCard(
           icon: Icons.shield_outlined,
-          title: 'Buy Weekly Insurance',
-          subtitle: 'Activate 7-day policy cover',
+          title: 'Premium Engine',
+          subtitle: 'Open premium, coverage, and pricing view',
           onTap: onBuyPolicy,
         ),
         _ActionCard(

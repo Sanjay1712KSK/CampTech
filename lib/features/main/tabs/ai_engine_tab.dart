@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/glass_card.dart';
+import 'package:guidewire_gig_ins/features/insurance/screens/premium_purchase_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
 import 'package:local_auth/local_auth.dart';
@@ -309,13 +310,26 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
           gradient: const LinearGradient(colors: [Color(0xFF1F291B), Color(0xFF161A16)]),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: const Column(
+        child: Builder(
+          builder: (context) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('AI Insurance System', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-            SizedBox(height: 8),
-            Text('See premium, pay weekly cover, and process claims with live backend intelligence.', style: TextStyle(color: AppTheme.textSecondary, height: 1.5)),
+            const Text('AI Insurance System', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+            const SizedBox(height: 8),
+            const Text('See premium, pay weekly cover, and process claims with live backend intelligence.', style: TextStyle(color: AppTheme.textSecondary, height: 1.5)),
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PremiumPurchaseScreen()),
+                );
+              },
+              icon: const Icon(Icons.shield_outlined),
+              label: const Text('Open Premium Engine'),
+            ),
           ],
+        ),
         ),
       );
 
