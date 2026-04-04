@@ -664,12 +664,26 @@ Below is a tighter visual walkthrough using the strongest screens only, so the R
 
 ### Onboarding Flow
 
-<p align="center">
-  <img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page.png" width="220" alt="Sign up page" />
-  <img src="Demo/Screenshots/Real%20User/Verify%20Contact%20Channels.png" width="220" alt="Verify contact channels" />
-  <img src="Demo/Screenshots/Real%20User/Email%20Confirmation%20Page.png" width="220" alt="Email confirmation page" />
-  <img src="Demo/Screenshots/Real%20User/Digilocker%20Verification%20Mockup.png" width="220" alt="DigiLocker verification" />
-</p>
+<table>
+  <tr>
+    <th>Sign Up</th>
+    <th>Verify Contact Channels</th>
+    <th>Email Confirmation</th>
+    <th>DigiLocker Verification</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page.png" width="220" alt="Sign up page" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Verify%20Contact%20Channels.png" width="220" alt="Verify contact channels" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Email%20Confirmation%20Page.png" width="220" alt="Email confirmation page" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Digilocker%20Verification%20Mockup.png" width="220" alt="DigiLocker verification" /></td>
+  </tr>
+  <tr>
+    <td>Registration form for a new worker account.</td>
+    <td>Dual-channel verification across email and phone.</td>
+    <td>Account activation step before full onboarding.</td>
+    <td>Mandatory KYC stage before access to the main product.</td>
+  </tr>
+</table>
 
 What this shows:
 
@@ -680,12 +694,26 @@ What this shows:
 
 ### Core Product Tabs
 
-<p align="center">
-  <img src="Demo/Screenshots/Real%20User/Home%20Page%201%20Real%20User.png" width="220" alt="Home risk dashboard" />
-  <img src="Demo/Screenshots/Real%20User/Earnings%201%20Real%20User.png" width="220" alt="Earnings dashboard" />
-  <img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="220" alt="Insurance dashboard" />
-  <img src="Demo/Screenshots/Real%20User/Claims%20Page%201%20Real%20User.png" width="220" alt="Claims dashboard" />
-</p>
+<table>
+  <tr>
+    <th>Home</th>
+    <th>Earnings</th>
+    <th>Insurance</th>
+    <th>Claims</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Real%20User/Home%20Page%201%20Real%20User.png" width="220" alt="Home risk dashboard" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Earnings%201%20Real%20User.png" width="220" alt="Earnings dashboard" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="220" alt="Insurance dashboard" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Claims%20Page%201%20Real%20User.png" width="220" alt="Claims dashboard" /></td>
+  </tr>
+  <tr>
+    <td>Live disruption, risk, persona context, and system summary.</td>
+    <td>Income trends, work patterns, and earning behavior.</td>
+    <td>Premium, coverage, pricing logic, and payment flow.</td>
+    <td>Claim status, fraud signals, payout, and trust layer.</td>
+  </tr>
+</table>
 
 What this shows:
 
@@ -698,11 +726,23 @@ What this shows:
 
 #### Good Actor View
 
-<p align="center">
-  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor home" />
-  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor insurance" />
-  <img src="Demo/Screenshots/Good%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor claims" />
-</p>
+<table>
+  <tr>
+    <th>Good Actor Home</th>
+    <th>Good Actor Insurance</th>
+    <th>Good Actor Claims</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Good%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor home" /></td>
+    <td><img src="Demo/Screenshots/Good%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor insurance" /></td>
+    <td><img src="Demo/Screenshots/Good%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Good actor claims" /></td>
+  </tr>
+  <tr>
+    <td>Shows a genuine disruption-led high-risk story.</td>
+    <td>Shows how live risk justifies meaningful protection pricing.</td>
+    <td>Shows the credible insured-worker claim path.</td>
+  </tr>
+</table>
 
 This persona is used to show:
 
@@ -713,11 +753,23 @@ This persona is used to show:
 
 #### Bad Actor View
 
-<p align="center">
-  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor home" />
-  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor insurance" />
-  <img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor claims" />
-</p>
+<table>
+  <tr>
+    <th>Bad Actor Home</th>
+    <th>Bad Actor Insurance</th>
+    <th>Bad Actor Claims</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Home%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor home" /></td>
+    <td><img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Insurance%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor insurance" /></td>
+    <td><img src="Demo/Screenshots/Bad%20Mock%20Up%20User/Claims%20Page%201%20Mock%20Up%20User.png" width="240" alt="Bad actor claims" /></td>
+  </tr>
+  <tr>
+    <td>Shows weaker disruption and lower trust signals.</td>
+    <td>Shows restrained pricing under weak real-world support.</td>
+    <td>Shows fraud concern and rejection-oriented claim behavior.</td>
+  </tr>
+</table>
 
 This persona is used to show:
 
@@ -728,11 +780,23 @@ This persona is used to show:
 
 #### Premium Success View
 
-<p align="center">
-  <img src="Demo/Screenshots/Real%20User/Home%20Page%202%20Real%20User.png" width="240" alt="Premium success home" />
-  <img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="240" alt="Premium success insurance" />
-  <img src="Demo/Screenshots/Real%20User/Claims%20Page%202%20Real%20User.png" width="240" alt="Premium success claims" />
-</p>
+<table>
+  <tr>
+    <th>Premium Success Home</th>
+    <th>Premium Success Insurance</th>
+    <th>Premium Success Claims</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Real%20User/Home%20Page%202%20Real%20User.png" width="240" alt="Premium success home" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="240" alt="Premium success insurance" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Claims%20Page%202%20Real%20User.png" width="240" alt="Premium success claims" /></td>
+  </tr>
+  <tr>
+    <td>Shows the protected worker under real disruption.</td>
+    <td>Shows that protection was already active before the event.</td>
+    <td>Shows approved payout, trusted record, and completed success story.</td>
+  </tr>
+</table>
 
 This persona is used to show:
 
