@@ -1,10 +1,6 @@
+import logging
+
 from sqlalchemy.orm import Session
-
-from models.gig_income import GigIncome
-from services.environment_service import get_environment
-from services.gig_service import calculate_baseline_value
-from services.risk_engine import calculate_risk
-
 
 CITY_COORDINATES = {
     'chennai': (13.0827, 80.2707),
@@ -13,6 +9,12 @@ CITY_COORDINATES = {
     'pune': (18.5204, 73.8567),
     'hyderabad': (17.3850, 78.4867),
 }
+
+from services.environment_service import get_environment
+from services.gig_service import calculate_baseline_value
+from services.risk_engine import calculate_risk
+
+logger = logging.getLogger('gig_insurance_backend.premium')
 
 
 def _round(value: float) -> float:
@@ -27,20 +29,6 @@ def baseline_value(user_id: int, db: Session) -> float:
     return _baseline_value(user_id, db)
 
 
-def _resolve_coordinates(user_id: int, db: Session) -> tuple[float, float]:
-    latest = (
-        db.query(GigIncome)
-        .filter(GigIncome.user_id == int(user_id))
-        .order_by(GigIncome.date.desc(), GigIncome.created_at.desc())
-        .first()
-    )
-    if latest and latest.city:
-        coords = CITY_COORDINATES.get(str(latest.city).lower())
-        if coords:
-            return coords
-    return CITY_COORDINATES['chennai']
-
-
 def resolve_city_from_coordinates(lat: float, lon: float) -> str:
     closest_city = 'Chennai'
     closest_distance = float('inf')
@@ -52,19 +40,58 @@ def resolve_city_from_coordinates(lat: float, lon: float) -> str:
     return closest_city
 
 
-def calculate_weekly_premium(user_id: int, db: Session) -> dict:
+def _build_explanation(risk: dict) -> str:
+    reasons = [str(item) for item in (risk.get('reasons') or []) if str(item).strip()]
+    if reasons:
+        lead = reasons[:2]
+        return f"Pricing is based on {' and '.join(lead).lower()}"
+    severity = str(risk.get('trigger_severity', 'MEDIUM')).lower()
+    return f'Pricing is based on {severity} disruption conditions from the live risk engine'
+
+
+def calculate_weekly_premium(user_id: int, lat: float, lon: float, db: Session) -> dict:
     baseline = _baseline_value(user_id, db)
-    lat, lon = _resolve_coordinates(user_id, db)
     environment = get_environment(lat, lon, db=db, user_id=user_id)
     risk_result = calculate_risk(environment, user_id=user_id, db=db)
     risk_score = float(risk_result.get('risk_score', 0.0))
+    active_triggers = [str(item) for item in (risk_result.get('active_triggers') or [])]
+    trigger_severity = str(risk_result.get('trigger_severity', 'MEDIUM') or 'MEDIUM').upper()
 
     weekly_income = _round(baseline * 7)
-    weekly_premium = _round(weekly_income * risk_score * 0.05)
+    weekly_premium = weekly_income * risk_score * 0.07
+    if trigger_severity == 'HIGH':
+        weekly_premium *= 1.15
+    if 'COMBINED_TRIGGER' in active_triggers:
+        weekly_premium *= 1.10
+    weekly_premium = _round(weekly_premium)
+    coverage = _round(weekly_income * 0.8)
 
-    return {
-        'baseline': baseline,
-        'weekly_income': weekly_income,
+    linked_risk = {
         'risk_score': _round(risk_score),
-        'weekly_premium': weekly_premium,
+        'expected_income_loss': risk_result.get('expected_income_loss', '0%'),
+        'trigger_severity': trigger_severity,
+        'active_triggers': active_triggers,
+        'reasons': risk_result.get('reasons', []),
     }
+
+    response = {
+        'baseline': _round(baseline),
+        'weekly_income': weekly_income,
+        'weekly_premium': weekly_premium,
+        'coverage': coverage,
+        'risk_score': _round(risk_score),
+        'risk': linked_risk,
+        'explanation': _build_explanation(linked_risk),
+    }
+
+    logger.info(
+        'premium calculated user_id=%s lat=%s lon=%s premium=%s risk_score=%s severity=%s',
+        user_id,
+        lat,
+        lon,
+        weekly_premium,
+        linked_risk['risk_score'],
+        trigger_severity,
+    )
+
+    return response

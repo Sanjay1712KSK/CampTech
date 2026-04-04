@@ -749,11 +749,11 @@ class ApiService {
     return _getJson('/risk?user_id=$userId&lat=$lat&lon=$lon');
   }
 
-  static Future<Map<String, dynamic>> getPremium(int userId) async {
+  static Future<Map<String, dynamic>> getPremium(int userId, double lat, double lon) async {
     try {
-      return await _getJson('/premium?user_id=$userId');
+      return await _getJson('/premium?user_id=$userId&lat=$lat&lon=$lon');
     } catch (_) {
-      return _getJson('/premium/calculate?user_id=$userId');
+      return _getJson('/premium/calculate?user_id=$userId&lat=$lat&lon=$lon');
     }
   }
 

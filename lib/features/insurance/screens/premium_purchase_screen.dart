@@ -133,8 +133,14 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
           data: (premiumData) {
             final baseline = (premiumData['baseline'] as num?)?.toDouble() ?? 0.0;
             final weeklyIncome = (premiumData['weekly_income'] as num?)?.toDouble() ?? 0.0;
-            final riskScore = (premiumData['risk_score'] as num?)?.toDouble() ?? 0.0;
             final weeklyPremium = (premiumData['weekly_premium'] as num?)?.toDouble() ?? 0.0;
+            final coverage = (premiumData['coverage'] as num?)?.toDouble() ?? 0.0;
+            final risk = (premiumData['risk'] as Map<String, dynamic>?) ?? const {};
+            final riskScore = (risk['risk_score'] as num?)?.toDouble() ?? (premiumData['risk_score'] as num?)?.toDouble() ?? 0.0;
+            final expectedIncomeLoss = risk['expected_income_loss']?.toString() ?? '0%';
+            final triggerSeverity = risk['trigger_severity']?.toString() ?? 'LOW';
+            final activeTriggers = (risk['active_triggers'] as List? ?? const []).map((item) => '$item').toList();
+            final explanation = premiumData['explanation']?.toString() ?? 'Pricing is based on live risk conditions.';
             return FutureBuilder<InsuranceSummaryModel>(
               future: ApiService.getInsuranceSummary(user.userId),
               builder: (context, snapshot) {
@@ -165,7 +171,7 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Premium Purchase Flow',
+                              'Premium Linked To Risk',
                               style: TextStyle(
                                 color: AppTheme.textPrimary,
                                 fontWeight: FontWeight.bold,
@@ -174,7 +180,7 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'Income -> Risk -> Premium',
+                              'Risk engine output directly drives weekly pricing.',
                               style: TextStyle(color: AppTheme.textSecondary),
                             ),
                             const SizedBox(height: 18),
@@ -189,15 +195,15 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                                     SizedBox(
                                       width: cardWidth,
                                       child: _MetricCard(
-                                        label: 'Baseline Income',
-                                        value: 'Rs ${baseline.toStringAsFixed(0)}',
+                                        label: 'Weekly Premium',
+                                        value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
                                       ),
                                     ),
                                     SizedBox(
                                       width: cardWidth,
                                       child: _MetricCard(
-                                        label: 'Weekly Income',
-                                        value: 'Rs ${weeklyIncome.toStringAsFixed(0)}',
+                                        label: 'Coverage',
+                                        value: 'Rs ${coverage.toStringAsFixed(0)}',
                                       ),
                                     ),
                                   ],
@@ -216,20 +222,78 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                                     SizedBox(
                                       width: cardWidth,
                                       child: _MetricCard(
-                                        label: 'Risk Score',
-                                        value: riskScore.toStringAsFixed(2),
+                                        label: 'Weekly Income',
+                                        value: 'Rs ${weeklyIncome.toStringAsFixed(0)}',
                                       ),
                                     ),
                                     SizedBox(
                                       width: cardWidth,
                                       child: _MetricCard(
-                                        label: 'Premium',
-                                        value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
+                                        label: 'Baseline Income',
+                                        value: 'Rs ${baseline.toStringAsFixed(0)}',
                                       ),
                                     ),
                                   ],
                                 );
                               },
+                            ),
+                            const SizedBox(height: 18),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Risk Context',
+                                    style: TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: [
+                                      _MetricCard(label: 'Risk Score', value: riskScore.toStringAsFixed(2)),
+                                      _MetricCard(label: 'Income Loss', value: expectedIncomeLoss),
+                                      _MetricCard(label: 'Trigger Severity', value: triggerSeverity),
+                                    ],
+                                  ),
+                                  if (activeTriggers.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: activeTriggers
+                                          .map(
+                                            (trigger) => Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.primaryColor.withOpacity(0.12),
+                                                borderRadius: BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                trigger,
+                                                style: const TextStyle(
+                                                  color: AppTheme.primaryColor,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                             if (summary != null) ...[
                               const SizedBox(height: 14),
@@ -254,7 +318,7 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            helperText,
+                            '$explanation\n\n$helperText',
                             style: const TextStyle(
                               color: AppTheme.textPrimary,
                               height: 1.5,

@@ -421,14 +421,20 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
   Widget _premiumCard(int userId, Map<String, dynamic> data) {
     final baseline = (data['baseline'] as num?)?.toDouble() ?? 0.0;
     final weeklyIncome = (data['weekly_income'] as num?)?.toDouble() ?? 0.0;
-    final riskScore = (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+    final coverage = (data['coverage'] as num?)?.toDouble() ?? 0.0;
     final weeklyPremium = (data['weekly_premium'] as num?)?.toDouble() ?? 0.0;
+    final risk = (data['risk'] as Map<String, dynamic>?) ?? const {};
+    final riskScore = (risk['risk_score'] as num?)?.toDouble() ?? (data['risk_score'] as num?)?.toDouble() ?? 0.0;
+    final expectedIncomeLoss = risk['expected_income_loss']?.toString() ?? '0%';
+    final triggerSeverity = risk['trigger_severity']?.toString() ?? 'LOW';
+    final activeTriggers = (risk['active_triggers'] as List? ?? const []).map((item) => '$item').toList();
+    final explanation = data['explanation']?.toString() ?? 'Pricing is based on live risk conditions.';
     return GlassCard(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Title('02', 'Your Weekly Premium', 'Baseline, risk, and premium from the backend'),
+          const _Title('02', 'Risk Linked Premium', 'Risk engine output directly drives weekly cover pricing'),
           const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -438,8 +444,8 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  SizedBox(width: cardWidth, child: _metric('Baseline Income', 'Rs ${baseline.toStringAsFixed(0)}')),
-                  SizedBox(width: cardWidth, child: _metric('Weekly Income', 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
+                  SizedBox(width: cardWidth, child: _metric('Weekly Premium', 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+                  SizedBox(width: cardWidth, child: _metric('Coverage', 'Rs ${coverage.toStringAsFixed(0)}')),
                 ],
               );
             },
@@ -453,11 +459,50 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  SizedBox(width: cardWidth, child: _metric('Risk Score', riskScore.toStringAsFixed(2))),
-                  SizedBox(width: cardWidth, child: _metric('Weekly Premium', 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
+                  SizedBox(width: cardWidth, child: _metric('Weekly Income', 'Rs ${weeklyIncome.toStringAsFixed(0)}')),
+                  SizedBox(width: cardWidth, child: _metric('Baseline Income', 'Rs ${baseline.toStringAsFixed(0)}')),
                 ],
               );
             },
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final cardWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(width: cardWidth, child: _metric('Risk Score', riskScore.toStringAsFixed(2))),
+                  SizedBox(width: cardWidth, child: _metric('Income Loss', expectedIncomeLoss)),
+                  SizedBox(width: cardWidth, child: _metric('Trigger Severity', triggerSeverity)),
+                ],
+              );
+            },
+          ),
+          if (activeTriggers.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: activeTriggers
+                  .map((trigger) => _pill(trigger, AppTheme.primaryColor))
+                  .toList(),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              explanation,
+              style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+            ),
           ),
           const SizedBox(height: 14),
           SizedBox(

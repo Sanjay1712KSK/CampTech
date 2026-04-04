@@ -219,8 +219,9 @@ final incomeHistoryProvider = FutureProvider<IncomeHistoryModel>((ref) async {
 
 final premiumProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final user = ref.watch(userProvider);
+  final loc = ref.watch(locationProvider);
   if (user == null) throw Exception("User not logged in");
-  return await ApiService.getPremium(user.userId);
+  return await ApiService.getPremium(user.userId, loc.lat, loc.lon);
 });
 
 class ClaimNotifier extends AsyncNotifier<Map<String, dynamic>?> {
