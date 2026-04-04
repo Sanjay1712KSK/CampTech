@@ -131,42 +131,143 @@ Main UX surfaces:
 - OpenRouteService
 - Mailtrap
 
-## Local Vs Deployed OTP Behavior
-
-The project now differentiates OTP behavior between local development and the deployed Render backend.
-
-### Local backend
-
-When you run the backend locally, the intended behavior remains strict:
-
-- signup expects both email OTP and phone OTP
-- forgot-password reset expects both email OTP and phone OTP
-- the email OTP field should appear in the UI
-- this is the recommended mode for full onboarding testing after cloning the repository
-
-In local mode, email delivery is expected to work when your Mailtrap setup is valid.
-
-### Deployed backend
-
-The Render deployment currently has a resilience fallback enabled because Mailtrap delivery may fail intermittently in deployment.
-
-- signup can continue with phone OTP if email OTP delivery fails
-- forgot-password reset can continue with phone OTP if email OTP delivery fails
-- the UI hides the email OTP field when the backend reports that email delivery failed
-- login already supports choosing `email` or `phone`, so deployed usage should prefer `phone` when email is unreliable
-
-This fallback is controlled by the backend environment variable:
-
-- `EMAIL_OTP_OPTIONAL_ON_FAILURE=true` on Render
-
-Local development does not need this flag enabled. By default, the backend keeps strict email+phone OTP behavior locally.
-
 ### ML / Intelligence Stack
 
 - Heuristic + weighted decision models
 - Anomaly-based fraud scoring
 - Database-driven adaptive learning
 - Regression-ready prediction hook
+
+## Run Locally
+
+### Prerequisites
+
+- Python `3.11+` or `3.12`
+- Flutter SDK
+- Android Studio or VS Code with Flutter support
+- A connected Android device or emulator for mobile testing
+
+### 1. Backend setup
+
+From the repository root:
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+The backend uses SQLite locally by default.
+
+- local database file: `backend/gig_insurance.db`
+- if the file does not exist, it is created automatically on startup
+- if the local schema is outdated, the development SQLite flow can recreate the schema automatically
+
+Optional local environment file:
+
+```env
+DATABASE_URL=sqlite:///./gig_insurance.db
+API_PUBLIC_BASE_URL=http://127.0.0.1:8000
+OPENWEATHER_API_KEY=YOUR_OPENWEATHER_KEY
+ORS_API_KEY=YOUR_ORS_KEY
+MAILTRAP_TOKEN=YOUR_MAILTRAP_TOKEN
+MAILTRAP_SENDER_EMAIL=hello@demomailtrap.co
+MAILTRAP_SENDER_NAME=Mailtrap Test
+BLOCKCHAIN_MODE=mock
+```
+
+Start the backend:
+
+```bash
+python main.py
+```
+
+Or, if you prefer:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Quick health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### 2. Seed demo or persona data
+
+After the backend is running, you can seed the simulation layer:
+
+```http
+POST /simulate/input
+Content-Type: application/json
+
+{
+  "enable_simulation": true,
+  "regenerate_income": true,
+  "days": 30
+}
+```
+
+This populates local input data for:
+
+- gig income history
+- user behavior
+- persona-based environment conditions
+
+### 3. Flutter app setup
+
+From the repository root:
+
+```bash
+flutter pub get
+```
+
+For local mobile testing against your laptop backend, launch with:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://YOUR_LOCAL_IP:8000
+```
+
+Examples:
+
+- Android emulator:
+  - `http://10.0.2.2:8000`
+- Real phone on same Wi-Fi:
+  - `http://192.168.x.x:8000`
+
+If you do not pass `API_BASE_URL`, the app falls back to the default value configured in `lib/config.dart`.
+
+### 4. Local OTP behavior
+
+When the backend is run locally, the intended onboarding behavior is strict:
+
+- signup expects both email OTP and phone OTP
+- forgot-password reset expects both email OTP and phone OTP
+- the email OTP field should appear in the UI
+
+Phone OTP is mocked and shown in the UI for demo convenience.
+Email OTP depends on your Mailtrap configuration working locally.
+
+### 5. Recommended local test flow
+
+1. Start the backend
+2. Confirm `/health` works
+3. Seed simulation inputs if you want demo personas
+4. Run the Flutter app with your local backend URL
+5. Test:
+   - signup
+   - OTP verification
+   - DigiLocker
+   - gig connection
+   - risk
+   - premium
+   - claim flow
 
 ## Backend Engines
 
