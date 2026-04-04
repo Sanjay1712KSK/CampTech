@@ -140,7 +140,7 @@ def ensure_schema():
         'claim_history': ['user_id', 'claim_reference', 'claim_date', 'status', 'predicted_loss', 'actual_loss', 'trigger_snapshot', 'reasons'],
         'user_behavior': ['user_id', 'event_type', 'behavior_metadata', 'observed_at'],
         'model_weights': ['model_name', 'version', 'rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight'],
-        'blockchain_records': ['transaction_type', 'transaction_hash', 'status', 'payload'],
+        'blockchain_records': ['record_type', 'reference_id', 'tx_hash', 'data', 'transaction_type', 'transaction_hash', 'status', 'payload'],
         'adaptive_risk_weights': ['rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight', 'sample_count', 'updated_at'],
         'environment_snapshots': ['bucket_lat', 'bucket_lon', 'temperature', 'wind_speed', 'humidity', 'rain_estimate', 'aqi', 'traffic_index', 'observed_at'],
         'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],

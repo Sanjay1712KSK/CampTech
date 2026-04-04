@@ -64,6 +64,8 @@ class ClaimProcessResponse(BaseModel):
     fraud_score: float | None = Field(default=None, ge=0.0, le=1.0)
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     reasons: list[str] | None = None
+    blockchain_txn_id: str | None = None
+    payout_blockchain_txn_id: str | None = None
 
 
 class ClaimPayoutRequest(BaseModel):

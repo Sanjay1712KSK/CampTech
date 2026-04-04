@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from database.db import get_db
 from schemas.insurance_schema import InsuranceSummaryResponse, LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
 from services.bank_service import debit, insurance_summary, link_account, log_transaction
-from services.blockchain_service import log_to_blockchain
+from services.blockchain_service import create_policy_record, log_to_blockchain
+from services.premium_engine import baseline_value
 from services.policy_service import create_policy
 
 router = APIRouter(prefix='/payment', tags=['payment'])
@@ -36,6 +37,13 @@ def link_bank_endpoint(payload: LinkBankRequest, db: Session = Depends(get_db)):
 def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_db)):
     account = debit(db=db, user_id=payload.user_id, amount=payload.amount)
     policy = create_policy(user_id=payload.user_id, db=db)
+    policy_chain_resp = create_policy_record(
+        user_id=payload.user_id,
+        premium=payload.amount,
+        baseline_income=baseline_value(payload.user_id, db),
+        policy_id=policy.id,
+        db=db,
+    )
     txn = log_transaction(
         db=db,
         user_id=payload.user_id,
@@ -53,9 +61,11 @@ def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_d
             'user_id': payload.user_id,
             'amount': payload.amount,
             'policy_id': policy.id,
+            'reference_id': txn.reference_id,
             'policy_end_date': policy.end_date.isoformat(),
             'transaction_id': txn.reference_id,
         },
+        db=db,
     )
     db.commit()
     db.refresh(account)
@@ -65,5 +75,5 @@ def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_d
         'amount': float(payload.amount),
         'balance': float(account.balance),
         'transaction_id': txn.reference_id,
-        'blockchain_txn_id': chain_resp.get('transaction_id'),
+        'blockchain_txn_id': policy_chain_resp.get('tx_hash') or chain_resp.get('tx_hash') or chain_resp.get('transaction_id'),
     }

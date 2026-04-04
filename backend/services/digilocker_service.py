@@ -92,7 +92,7 @@ def verify_request(db: Session, request_id: str, consent_code: str) -> dict:
 
     verified_name = _mock_verified_name(user)
     verified_at = _utcnow()
-    blockchain = log_verification(user.id)
+    blockchain = log_verification(user.id, db=db, digilocker_request_id=record.id)
 
     record.status = 'VERIFIED'
     record.consent_granted = True
@@ -112,7 +112,7 @@ def verify_request(db: Session, request_id: str, consent_code: str) -> dict:
             'document_number_masked': record.document_number_masked,
         }
     )
-    record.blockchain_txn_id = blockchain.get('transaction_id')
+    record.blockchain_txn_id = blockchain.get('tx_hash') or blockchain.get('transaction_id')
 
     user.is_digilocker_verified = True
     user.verified_at = verified_at
