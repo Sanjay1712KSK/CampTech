@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from database.db import get_db
+from models.models import PremiumSnapshot
 from schemas.insurance_schema import InsuranceSummaryResponse, LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
 from services.bank_service import debit, insurance_summary, link_account, log_transaction
 from services.blockchain_service import create_policy_record, log_to_blockchain
@@ -37,6 +38,14 @@ def link_bank_endpoint(payload: LinkBankRequest, db: Session = Depends(get_db)):
 def pay_premium_endpoint(payload: PayPremiumRequest, db: Session = Depends(get_db)):
     account = debit(db=db, user_id=payload.user_id, amount=payload.amount)
     policy = create_policy(user_id=payload.user_id, db=db)
+    latest_premium_snapshot = (
+        db.query(PremiumSnapshot)
+        .filter(PremiumSnapshot.user_id == int(payload.user_id))
+        .order_by(PremiumSnapshot.created_at.desc(), PremiumSnapshot.id.desc())
+        .first()
+    )
+    if latest_premium_snapshot and latest_premium_snapshot.policy_id is None:
+        latest_premium_snapshot.policy_id = policy.id
     policy_chain_resp = create_policy_record(
         user_id=payload.user_id,
         premium=payload.amount,

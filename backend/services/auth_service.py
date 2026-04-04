@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from models.models import UserSettings
 from models.user_model import User
 from models.verification import Verification
 from services.notification_service import send_confirmation_email, send_email_otp, send_sms_otp
@@ -175,6 +176,15 @@ def create_user(db: Session, email: str, country_code: str, phone_number: str, u
         is_digilocker_verified=False,
     )
     db.add(user)
+    db.commit()
+    db.refresh(user)
+    settings = UserSettings(
+        user_id=user.id,
+        ml_consent=True,
+        data_sharing_consent=True,
+        notification_preferences={'allow_model_training': True, 'created_during_signup': True},
+    )
+    db.add(settings)
     db.commit()
     db.refresh(user)
     return user

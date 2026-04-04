@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
-from models.models import ClaimHistory, ModelWeight, UserBehavior
+from models.models import ClaimHistory, ModelWeight, UserBehavior, UserSettings
 
 logger = logging.getLogger('gig_insurance_backend.ml_service')
 
@@ -71,6 +71,25 @@ def get_or_create_model_weights(
         db.add(record)
         db.flush()
     return record
+
+
+def user_allows_model_training(db: Session, *, user_id: int) -> bool:
+    settings = db.query(UserSettings).filter(UserSettings.user_id == int(user_id)).first()
+    if settings is None:
+        settings = UserSettings(
+            user_id=int(user_id),
+            ml_consent=True,
+            data_sharing_consent=True,
+            notification_preferences={'auto_created': True, 'allow_model_training': True},
+        )
+        db.add(settings)
+        db.flush()
+        return True
+    return bool(
+        getattr(settings, 'allow_model_training', False)
+        or settings.ml_consent
+        or (settings.notification_preferences or {}).get('allow_model_training', False)
+    )
 
 
 def expected_loss_prediction(risk_score: float, baseline_income: float) -> float:
