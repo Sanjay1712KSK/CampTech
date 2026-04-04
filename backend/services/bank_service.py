@@ -198,3 +198,37 @@ def insurance_summary(db: Session, user_id: int) -> dict:
             for txn in recent_transactions
         ],
     }
+
+
+def transaction_history(db: Session, user_id: int, limit: int = 10) -> dict:
+    _require_user(db, int(user_id))
+    transactions = (
+        db.query(BankTransaction)
+        .filter(BankTransaction.user_id == int(user_id))
+        .order_by(BankTransaction.created_at.desc(), BankTransaction.id.desc())
+        .limit(max(1, min(int(limit), 20)))
+        .all()
+    )
+    items = []
+    for txn in transactions:
+        metadata = {}
+        if txn.metadata_json:
+            try:
+                metadata = json.loads(txn.metadata_json)
+            except json.JSONDecodeError:
+                metadata = {}
+        items.append(
+            {
+                'transaction_id': str(txn.id),
+                'transaction_type': txn.transaction_type,
+                'amount': _round(txn.amount),
+                'status': txn.status,
+                'reference_id': txn.reference_id,
+                'remark': metadata.get('remark'),
+                'created_at': txn.created_at.isoformat() if txn.created_at else '',
+            }
+        )
+    return {
+        'user_id': int(user_id),
+        'transactions': items,
+    }

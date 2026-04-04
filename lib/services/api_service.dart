@@ -769,6 +769,11 @@ class ApiService {
     return InsuranceSummaryModel.fromJson(body);
   }
 
+  static Future<BankTransactionHistoryModel> getTransactionHistory(int userId, {int limit = 10}) async {
+    final body = await _getJson('/payment/transactions?user_id=$userId&limit=$limit');
+    return BankTransactionHistoryModel.fromJson(body);
+  }
+
   static Future<void> linkBankAccount(
     int userId, {
     String accountNumber = '123456789012',
@@ -1085,6 +1090,59 @@ class InsuranceSummaryModel {
       recentRemarks: (json['recent_remarks'] as List? ?? const []).map((e) => '$e').toList(),
       policyStart: json['policy_start'] != null ? DateTime.tryParse('${json['policy_start']}') : null,
       policyEnd: json['policy_end'] != null ? DateTime.tryParse('${json['policy_end']}') : null,
+    );
+  }
+}
+
+class BankTransactionHistoryModel {
+  final int userId;
+  final List<BankTransactionItemModel> transactions;
+
+  BankTransactionHistoryModel({
+    required this.userId,
+    required this.transactions,
+  });
+
+  factory BankTransactionHistoryModel.fromJson(Map<String, dynamic> json) {
+    final raw = json['transactions'] as List? ?? const [];
+    return BankTransactionHistoryModel(
+      userId: json['user_id'] as int? ?? 0,
+      transactions: raw
+          .whereType<Map<String, dynamic>>()
+          .map(BankTransactionItemModel.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class BankTransactionItemModel {
+  final String transactionId;
+  final String transactionType;
+  final double amount;
+  final String status;
+  final String? referenceId;
+  final String? remark;
+  final DateTime? createdAt;
+
+  BankTransactionItemModel({
+    required this.transactionId,
+    required this.transactionType,
+    required this.amount,
+    required this.status,
+    required this.referenceId,
+    required this.remark,
+    required this.createdAt,
+  });
+
+  factory BankTransactionItemModel.fromJson(Map<String, dynamic> json) {
+    return BankTransactionItemModel(
+      transactionId: json['transaction_id']?.toString() ?? '',
+      transactionType: json['transaction_type'] as String? ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      status: json['status'] as String? ?? '',
+      referenceId: json['reference_id'] as String?,
+      remark: json['remark'] as String?,
+      createdAt: json['created_at'] != null ? DateTime.tryParse('${json['created_at']}') : null,
     );
   }
 }

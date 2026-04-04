@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from database.db import get_db
 from models.models import PremiumSnapshot
-from schemas.insurance_schema import InsuranceSummaryResponse, LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
-from services.bank_service import debit, insurance_summary, link_account, log_transaction
+from schemas.insurance_schema import BankTransactionHistoryResponse, InsuranceSummaryResponse, LinkBankRequest, LinkBankResponse, PayPremiumRequest, PaymentResponse
+from services.bank_service import debit, insurance_summary, link_account, log_transaction, transaction_history
 from services.blockchain_service import create_policy_record, log_to_blockchain
 from services.premium_engine import baseline_value
 from services.policy_service import create_policy
@@ -15,6 +15,15 @@ router = APIRouter(prefix='/payment', tags=['payment'])
 @router.get('/summary', response_model=InsuranceSummaryResponse)
 def payment_summary_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
     return insurance_summary(db=db, user_id=user_id)
+
+
+@router.get('/transactions', response_model=BankTransactionHistoryResponse)
+def payment_transaction_history_endpoint(
+    user_id: int = Query(..., gt=0),
+    limit: int = Query(default=10, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    return transaction_history(db=db, user_id=user_id, limit=limit)
 
 
 @router.post('/link-bank', response_model=LinkBankResponse)

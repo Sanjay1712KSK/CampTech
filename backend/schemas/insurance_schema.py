@@ -43,6 +43,21 @@ class PaymentResponse(BaseModel):
     blockchain_txn_id: str | None = None
 
 
+class BankTransactionItemResponse(BaseModel):
+    transaction_id: str
+    transaction_type: str
+    amount: float
+    status: str
+    reference_id: str | None = None
+    remark: str | None = None
+    created_at: str
+
+
+class BankTransactionHistoryResponse(BaseModel):
+    user_id: int
+    transactions: list[BankTransactionItemResponse]
+
+
 class ClaimProcessRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
