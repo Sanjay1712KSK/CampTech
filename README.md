@@ -660,20 +660,15 @@ The screenshot library is available in [Demo/Screenshots](/s:/flutter/guidewire_
 - `Good Mock Up User`
 - `Bad Mock Up User`
 
-Below is a structured visual walkthrough for the README so the app flow is easy to scan.
+Below is a tighter visual walkthrough using the strongest screens only, so the README stays focused.
 
 ### Onboarding Flow
 
 <p align="center">
   <img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page.png" width="220" alt="Sign up page" />
-  <img src="Demo/Screenshots/Real%20User/Sign%20Up%20Page%20With%20Credentials%20Filled.png" width="220" alt="Sign up page with credentials" />
   <img src="Demo/Screenshots/Real%20User/Verify%20Contact%20Channels.png" width="220" alt="Verify contact channels" />
-</p>
-
-<p align="center">
   <img src="Demo/Screenshots/Real%20User/Email%20Confirmation%20Page.png" width="220" alt="Email confirmation page" />
   <img src="Demo/Screenshots/Real%20User/Digilocker%20Verification%20Mockup.png" width="220" alt="DigiLocker verification" />
-  <img src="Demo/Screenshots/Real%20User/Gig%20Account%20Mockup%20Connection.png" width="220" alt="Gig account connection" />
 </p>
 
 What this shows:
@@ -682,7 +677,6 @@ What this shows:
 - OTP verification across channels
 - email confirmation
 - DigiLocker completion
-- gig account connection before the main dashboard
 
 ### Core Product Tabs
 
@@ -731,6 +725,21 @@ This persona is used to show:
 - low trigger confidence
 - anomaly-based fraud concern
 - rejection or guarded claim outcome
+
+#### Premium Success View
+
+<p align="center">
+  <img src="Demo/Screenshots/Real%20User/Home%20Page%202%20Real%20User.png" width="240" alt="Premium success home" />
+  <img src="Demo/Screenshots/Real%20User/Insurance%20Page%201%20Real%20User.png" width="240" alt="Premium success insurance" />
+  <img src="Demo/Screenshots/Real%20User/Claims%20Page%202%20Real%20User.png" width="240" alt="Premium success claims" />
+</p>
+
+This persona is used to show:
+
+- policy already paid earlier
+- real disruption context
+- approved claim state
+- payout and trust story in the claims journey
 
 ### Why These Screens Matter
 
