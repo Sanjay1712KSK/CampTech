@@ -22,6 +22,11 @@ def _resolve_database_url(raw_url: str | None) -> str:
     if not raw_url:
         return f"sqlite:///{DEFAULT_SQLITE_PATH.as_posix()}"
 
+    if raw_url.startswith('postgres://'):
+        raw_url = raw_url.replace('postgres://', 'postgresql+psycopg://', 1)
+    elif raw_url.startswith('postgresql://'):
+        raw_url = raw_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+
     if raw_url.startswith('sqlite:///'):
         sqlite_path = raw_url.replace('sqlite:///', '', 1)
         if sqlite_path == ':memory:' or os.path.isabs(sqlite_path):

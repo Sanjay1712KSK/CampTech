@@ -8,7 +8,7 @@ import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verif
 import 'package:guidewire_gig_ins/main.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileTab extends ConsumerStatefulWidget {
@@ -19,7 +19,7 @@ class ProfileTab extends ConsumerStatefulWidget {
 }
 
 class _ProfileTabState extends ConsumerState<ProfileTab> {
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
 
   bool _biometricEnabled = false;
   bool _isLoadingBiometric = true;
@@ -53,19 +53,13 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
     }
 
     try {
-      final canCheck = await _localAuth.canCheckBiometrics;
-      final isSupported = await _localAuth.isDeviceSupported();
-
-      if (!canCheck && !isSupported) {
+      final canUseBiometrics = await _deviceAuth.canUseBiometrics();
+      if (!canUseBiometrics) {
         throw Exception('Biometric authentication is not available');
       }
 
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Enable fingerprint login for your account',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+      final didAuthenticate = await _deviceAuth.authenticate(
+        reason: 'Enable fingerprint login for your account',
       );
 
       if (!didAuthenticate) {

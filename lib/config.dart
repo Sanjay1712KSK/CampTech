@@ -1,4 +1,7 @@
 class Config {
-  // Set this to the local network IP reachable from your Android device.
-  static const String baseUrl = 'http://192.168.0.9:8000';
+  // Override with --dart-define=API_BASE_URL=https://your-backend.example.com
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000',
+  );
 }

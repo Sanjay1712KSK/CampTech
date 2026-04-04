@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 class ClaimFlowScreen extends ConsumerStatefulWidget {
   const ClaimFlowScreen({super.key});
@@ -13,7 +13,7 @@ class ClaimFlowScreen extends ConsumerStatefulWidget {
 }
 
 class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
   bool _isRunning = false;
   int _activeStep = -1;
   Map<String, dynamic>? _result;
@@ -28,12 +28,8 @@ class _ClaimFlowScreenState extends ConsumerState<ClaimFlowScreen> {
       setState(() => _error = 'Eligibility failed: identity verification is required');
       return;
     }
-    final authenticated = await _localAuth.authenticate(
-      localizedReason: 'Confirm your claim with fingerprint',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-      ),
+    final authenticated = await _deviceAuth.authenticate(
+      reason: 'Confirm your claim with fingerprint',
     );
     if (!authenticated) {
       setState(() => _error = 'Biometric confirmation failed. Claim was not submitted.');

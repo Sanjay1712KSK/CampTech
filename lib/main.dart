@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:app_links/app_links.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
@@ -14,6 +14,7 @@ import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.da
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('en'));
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -74,15 +75,19 @@ class _DeepLinkHost extends StatefulWidget {
 }
 
 class _DeepLinkHostState extends State<_DeepLinkHost> {
-  final AppLinks _appLinks = AppLinks();
+  AppLinks? _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
     super.initState();
-    _linkSubscription = _appLinks.uriLinkStream.listen(_handleUri);
+    if (kIsWeb) {
+      return;
+    }
+    _appLinks = AppLinks();
+    _linkSubscription = _appLinks!.uriLinkStream.listen(_handleUri);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final initialUri = await _appLinks.getInitialLink();
+      final initialUri = await _appLinks!.getInitialLink();
       if (initialUri != null) {
         _handleUri(initialUri);
       }
@@ -122,6 +127,7 @@ class _AuthBootstrapScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
   Future<_BootstrapResult>? _bootstrapFuture;
 
   @override
@@ -149,17 +155,11 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
       }
     }
 
-    final auth = LocalAuthentication();
-    final canCheck = await auth.canCheckBiometrics;
-    final supported = await auth.isDeviceSupported();
-    if (!canCheck && !supported) return _BootstrapResult.login;
+    final canUseBiometrics = await _deviceAuth.canUseBiometrics();
+    if (!canUseBiometrics) return _BootstrapResult.login;
 
-    final didAuthenticate = await auth.authenticate(
-      localizedReason: 'Unlock your insured gig profile',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-      ),
+    final didAuthenticate = await _deviceAuth.authenticate(
+      reason: 'Unlock your insured gig profile',
     );
     if (!didAuthenticate) return _BootstrapResult.login;
 

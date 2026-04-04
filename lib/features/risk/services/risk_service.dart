@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:guidewire_gig_ins/config.dart';
 import 'package:guidewire_gig_ins/features/risk/models/risk_model.dart';
@@ -34,13 +33,13 @@ class RiskService {
     http.Response response;
     try {
       response = await http.get(uri).timeout(_timeout);
-    } on SocketException {
-      throw const RiskServiceException(
-        'Unable to reach the backend. Check that your phone and laptop are on the same network.',
-      );
     } on TimeoutException {
       throw const RiskServiceException(
         'Risk service timed out. Pull to refresh and try again.',
+      );
+    } catch (_) {
+      throw const RiskServiceException(
+        'Unable to reach the backend. Check the API base URL and make sure the backend is running.',
       );
     }
 

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 class PremiumPurchaseScreen extends ConsumerStatefulWidget {
   const PremiumPurchaseScreen({super.key});
@@ -14,7 +14,7 @@ class PremiumPurchaseScreen extends ConsumerStatefulWidget {
 
 class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
     with SingleTickerProviderStateMixin {
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
   bool _isPaying = false;
   late final AnimationController _controller;
 
@@ -64,12 +64,8 @@ class _PremiumPurchaseScreenState extends ConsumerState<PremiumPurchaseScreen>
         false;
     if (!confirmed) return;
 
-    final didAuthenticate = await _localAuth.authenticate(
-      localizedReason: 'Confirm premium payment with fingerprint',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-      ),
+    final didAuthenticate = await _deviceAuth.authenticate(
+      reason: 'Confirm premium payment with fingerprint',
     );
     if (!didAuthenticate) {
       if (!mounted) return;

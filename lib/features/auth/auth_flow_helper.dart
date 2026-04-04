@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 class AuthFlowHelper {
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
+
   static Future<void> finalizeAuthenticatedSession(
     BuildContext context,
     WidgetRef ref,
@@ -36,6 +38,11 @@ class AuthFlowHelper {
 
     await AuthStorageService.setBiometricPromptSeen(true);
 
+    final canUseBiometrics = await _deviceAuth.canUseBiometrics();
+    if (!canUseBiometrics) {
+      return;
+    }
+
     final shouldEnable = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -61,25 +68,9 @@ class AuthFlowHelper {
       return;
     }
 
-    final localAuth = LocalAuthentication();
-    final canCheck = await localAuth.canCheckBiometrics;
-    final isSupported = await localAuth.isDeviceSupported();
-    if (!canCheck && !isSupported) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biometric authentication is not available on this device.')),
-        );
-      }
-      return;
-    }
-
     try {
-      final didAuthenticate = await localAuth.authenticate(
-        localizedReason: 'Enable biometric unlock for GigShield',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+      final didAuthenticate = await _deviceAuth.authenticate(
+        reason: 'Enable biometric unlock for GigShield',
       );
       if (didAuthenticate) {
         await AuthStorageService.setBiometricEnabled(true);

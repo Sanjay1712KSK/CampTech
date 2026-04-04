@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -13,7 +13,7 @@ class HomeTab extends ConsumerStatefulWidget {
 }
 
 class _HomeTabState extends ConsumerState<HomeTab> {
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
   bool _isPaying = false;
   bool _isClaiming = false;
 
@@ -33,12 +33,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     if (_isPaying || amount <= 0) return;
     setState(() => _isPaying = true);
     try {
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Confirm premium payment',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+      final didAuthenticate = await _deviceAuth.authenticate(
+        reason: 'Confirm premium payment',
       );
       if (!didAuthenticate) {
         throw Exception('Biometric verification was cancelled');

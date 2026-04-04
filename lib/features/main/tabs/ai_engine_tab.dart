@@ -9,7 +9,7 @@ import 'package:guidewire_gig_ins/core/widgets/glass_card.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/premium_purchase_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/bank_service.dart';
-import 'package:local_auth/local_auth.dart';
+import 'package:guidewire_gig_ins/services/device_auth_service.dart';
 
 class AIEngineTab extends ConsumerStatefulWidget {
   const AIEngineTab({Key? key}) : super(key: key);
@@ -20,7 +20,7 @@ class AIEngineTab extends ConsumerStatefulWidget {
 
 class _AIEngineTabState extends ConsumerState<AIEngineTab>
     with TickerProviderStateMixin {
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  static const DeviceAuthService _deviceAuth = DeviceAuthService();
   late final AnimationController _pulseController;
   Future<BankSummary>? _bankFuture;
   Future<InsuranceSummaryModel?>? _insuranceFuture;
@@ -110,12 +110,8 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
         false;
     if (!confirmed) return;
 
-    final didAuthenticate = await _localAuth.authenticate(
-      localizedReason: 'Confirm premium payment with fingerprint',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-      ),
+    final didAuthenticate = await _deviceAuth.authenticate(
+      reason: 'Confirm premium payment with fingerprint',
     );
     if (!didAuthenticate) {
       if (!mounted) return;
@@ -188,12 +184,8 @@ class _AIEngineTabState extends ConsumerState<AIEngineTab>
       );
       return;
     }
-    final didAuthenticate = await _localAuth.authenticate(
-      localizedReason: 'Confirm your claim with fingerprint',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-      ),
+    final didAuthenticate = await _deviceAuth.authenticate(
+      reason: 'Confirm your claim with fingerprint',
     );
     if (!didAuthenticate) {
       if (!mounted) return;
