@@ -137,7 +137,7 @@ def ensure_schema():
         'income_summary': ['user_id', 'summary_date', 'summary_type', 'total_income', 'summary_metadata'],
         'risk_snapshots': ['user_id', 'lat', 'lon', 'risk_score', 'active_triggers', 'environment_context'],
         'premium_snapshots': ['user_id', 'risk_snapshot_id', 'weekly_income', 'weekly_premium', 'coverage', 'pricing_metadata'],
-        'claim_history': ['user_id', 'claim_reference', 'claim_date', 'status', 'trigger_snapshot', 'reasons'],
+        'claim_history': ['user_id', 'claim_reference', 'claim_date', 'status', 'predicted_loss', 'actual_loss', 'trigger_snapshot', 'reasons'],
         'user_behavior': ['user_id', 'event_type', 'behavior_metadata', 'observed_at'],
         'model_weights': ['model_name', 'version', 'rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight'],
         'blockchain_records': ['transaction_type', 'transaction_hash', 'status', 'payload'],

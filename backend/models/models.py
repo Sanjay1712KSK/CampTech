@@ -115,6 +115,8 @@ class ClaimHistory(Base):
     claim_reference = Column(String(64), nullable=False, unique=True, index=True)
     claim_date = Column(Date, nullable=False, index=True)
     status = Column(String(24), nullable=False, default='PENDING', index=True)
+    predicted_loss = Column(Float, nullable=False, default=0.0)
+    actual_loss = Column(Float, nullable=False, default=0.0)
     claimed_loss = Column(Float, nullable=False, default=0.0)
     approved_payout = Column(Float, nullable=False, default=0.0)
     fraud_score = Column(Float, nullable=True)
