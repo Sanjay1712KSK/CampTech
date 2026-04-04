@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/demo/persona_story.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
@@ -59,6 +60,7 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
               builder: (context, snapshot) {
                 final summary = snapshot.data;
                 return _InsuranceContent(
+                  user: user,
                   premium: premium,
                   summary: summary,
                   onPay: () => _payPremium(
@@ -86,6 +88,7 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
 }
 
 class _InsuranceContent extends StatelessWidget {
+  final UserState user;
   final Map<String, dynamic> premium;
   final InsuranceSummaryModel? summary;
   final VoidCallback onPay;
@@ -93,6 +96,7 @@ class _InsuranceContent extends StatelessWidget {
   final bool isPaying;
 
   const _InsuranceContent({
+    required this.user,
     required this.premium,
     required this.summary,
     required this.onPay,
@@ -102,6 +106,7 @@ class _InsuranceContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final persona = resolvePersonaStory(user);
     final risk = (premium['risk'] as Map<String, dynamic>?) ?? const {};
     final triggers = (risk['active_triggers'] as List? ?? const []).map((item) => '$item').toList();
     final weeklyPremium = (premium['weekly_premium'] as num?)?.toDouble() ?? 0.0;
@@ -119,6 +124,13 @@ class _InsuranceContent extends StatelessWidget {
           subtitle: 'See what protection you get and how your price is calculated.',
         ),
         const SizedBox(height: 18),
+        _PersonaBanner(
+          title: persona.insurance.title,
+          summary: persona.insurance.summary,
+          focus: persona.insurance.focus,
+          accentColor: persona.accentColor,
+        ),
+        const SizedBox(height: 18),
         _TopPremiumCard(
           weeklyPremium: weeklyPremium,
           coverage: coverage,
@@ -131,7 +143,7 @@ class _InsuranceContent extends StatelessWidget {
           child: Column(
             children: [
               _DataPoint(label: 'Risk score', value: riskScore.toStringAsFixed(2)),
-              _DataPoint(label: 'Weekly income', value: '₹ ${weeklyIncome.toStringAsFixed(0)}'),
+              _DataPoint(label: 'Weekly income', value: 'Rs ${weeklyIncome.toStringAsFixed(0)}'),
               _DataPoint(label: 'Active triggers', value: triggers.isEmpty ? 'None right now' : triggers.join(', ')),
             ],
           ),
@@ -139,7 +151,7 @@ class _InsuranceContent extends StatelessWidget {
         const SizedBox(height: 18),
         _Section(
           title: 'Adaptive pricing',
-          subtitle: '🤖 Adaptive pricing that learns from real conditions',
+          subtitle: 'Adaptive pricing that learns from real conditions',
           child: Text(
             explanation,
             style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
@@ -197,9 +209,9 @@ class _InsuranceContent extends StatelessWidget {
               _FlowNode('Environment'),
               _FlowNode('Risk'),
               _FlowNode('Premium'),
-              _FlowNode('Policy 🔒'),
-              _FlowNode('Claim 🤖'),
-              _FlowNode('Payout 🔒'),
+              _FlowNode('Policy + Chain'),
+              _FlowNode('Claim + ML'),
+              _FlowNode('Payout + Chain'),
             ],
           ),
         ),
@@ -233,6 +245,55 @@ class _Header extends StatelessWidget {
         const SizedBox(height: 8),
         Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, height: 1.5)),
       ],
+    );
+  }
+}
+
+class _PersonaBanner extends StatelessWidget {
+  final String title;
+  final String summary;
+  final String focus;
+  final Color accentColor;
+
+  const _PersonaBanner({
+    required this.title,
+    required this.summary,
+    required this.focus,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accentColor.withOpacity(0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            summary,
+            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            focus,
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -286,9 +347,9 @@ class _TopPremiumCard extends StatelessWidget {
           const SizedBox(height: 18),
           Row(
             children: [
-              Expanded(child: _PremiumMetric(label: 'Weekly premium', value: '₹ ${weeklyPremium.toStringAsFixed(0)}')),
+              Expanded(child: _PremiumMetric(label: 'Weekly premium', value: 'Rs ${weeklyPremium.toStringAsFixed(0)}')),
               const SizedBox(width: 12),
-              Expanded(child: _PremiumMetric(label: 'Coverage amount', value: '₹ ${coverage.toStringAsFixed(0)}')),
+              Expanded(child: _PremiumMetric(label: 'Coverage amount', value: 'Rs ${coverage.toStringAsFixed(0)}')),
             ],
           ),
         ],

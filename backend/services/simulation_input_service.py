@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import os
 import random
+import json
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
+from models.bank_account import BankTransaction
 from models.gig_account import GigAccount
 from models.gig_income import GigIncome
-from models.models import UserBehavior, UserSettings
+from models.insurance import Claim, Policy
+from models.models import BlockchainRecord, ClaimHistory, UserBehavior, UserSettings
 from models.profile import Profile
 from models.user_model import User
+from services.bank_service import link_account, log_transaction
+from services.blockchain_service import create_policy_record, log_claim, record_payout
+from services.policy_service import create_policy, refresh_policy_status
 from utils.security import hash_password
 
 DEFAULT_SIMULATION_PASSWORD = 'Demo@1234'
@@ -64,6 +70,18 @@ SIMULATED_USERS = {
         'worker_id': 'ZMT-LOW-004',
         'lat': 17.3850,
         'lon': 78.4867,
+    },
+    'premium_success': {
+        'email': 'suresh.patel@gigshield.demo',
+        'phone': '+919100000005',
+        'username': 'premium_success',
+        'name': 'Suresh Patel',
+        'persona': 'Premium Success User',
+        'platform': 'swiggy',
+        'city': 'Pune',
+        'worker_id': 'SWG-SURESH-005',
+        'lat': 18.5204,
+        'lon': 73.8567,
     },
 }
 
@@ -125,6 +143,14 @@ def get_simulated_environment(user_type: str, lat: float | None = None, lon: flo
         aqi = 92.0
         traffic_index = 1.92
         traffic_level = 'HIGH'
+    elif normalized == 'premium_success':
+        temperature = 28.0
+        humidity = 90.0
+        wind_speed = 20.0
+        rain = 13.2
+        aqi = 86.0
+        traffic_index = 1.74
+        traffic_level = 'HIGH'
     elif normalized == 'bad_actor':
         temperature = 30.0
         humidity = 54.0
@@ -169,8 +195,8 @@ def get_simulated_environment(user_type: str, lat: float | None = None, lon: flo
 
     time_slot_risk = {
         'morning': 'HIGH' if traffic_index >= 1.6 or rain >= 8 else ('MEDIUM' if traffic_index >= 1.2 or rain >= 3 else 'LOW'),
-        'afternoon': 'MEDIUM' if normalized in {'edge_case', 'good_actor'} else 'LOW',
-        'evening': 'HIGH' if normalized == 'good_actor' else ('MEDIUM' if normalized == 'edge_case' else 'LOW'),
+        'afternoon': 'MEDIUM' if normalized in {'edge_case', 'good_actor', 'premium_success'} else 'LOW',
+        'evening': 'HIGH' if normalized in {'good_actor', 'premium_success'} else ('MEDIUM' if normalized == 'edge_case' else 'LOW'),
         'night': 'LOW',
     }
     next_6hr = _round(min(1.0, ((rain / 12.0) * 0.4) + (((traffic_index - 1.0) / 1.2) * 0.3) + (((aqi - 50.0) / 250.0) * 0.3)), 3)
@@ -209,10 +235,13 @@ def get_simulated_environment(user_type: str, lat: float | None = None, lon: flo
             'aqi': _round(aqi),
             'traffic_index': _round(traffic_index, 3),
         },
-        'hyper_local_risk': 1.32 if normalized == 'good_actor' else (1.08 if normalized == 'edge_case' else 0.88 if normalized == 'low_risk' else 0.96),
+        'hyper_local_risk': 1.38 if normalized == 'premium_success' else (1.32 if normalized == 'good_actor' else (1.08 if normalized == 'edge_case' else 0.88 if normalized == 'low_risk' else 0.96)),
         'hyper_local_analysis': {
-            'hyper_local_risk': 1.32 if normalized == 'good_actor' else (1.08 if normalized == 'edge_case' else 0.88 if normalized == 'low_risk' else 0.96),
+            'hyper_local_risk': 1.38 if normalized == 'premium_success' else (1.32 if normalized == 'good_actor' else (1.08 if normalized == 'edge_case' else 0.88 if normalized == 'low_risk' else 0.96)),
             'insight': (
+                'A protected worker is facing strong weather disruption beyond the recent local average'
+                if normalized == 'premium_success'
+                else
                 'Disruption is much higher than the recent local average'
                 if normalized == 'good_actor'
                 else 'Conditions look normal despite the claim pattern'
@@ -234,7 +263,7 @@ def get_simulated_environment(user_type: str, lat: float | None = None, lon: flo
         'time_slot_risk': time_slot_risk,
         'predictive_risk': {
             'next_6hr_risk': next_6hr,
-            'trend': 'increasing' if normalized == 'good_actor' else ('stable' if normalized in {'edge_case', 'bad_actor'} else 'decreasing'),
+            'trend': 'increasing' if normalized in {'good_actor', 'premium_success'} else ('stable' if normalized in {'edge_case', 'bad_actor'} else 'decreasing'),
         },
         'hourly_forecast': hourly_forecast,
         'simulation_meta': {
@@ -334,7 +363,7 @@ def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
     )
     work_pattern = (
         'steady'
-        if user_type == 'good_actor'
+        if user_type in {'good_actor', 'premium_success'}
         else 'anomalous'
         if user_type == 'bad_actor'
         else 'variable'
@@ -369,6 +398,15 @@ def _daily_profile(user_type: str, day: date) -> dict:
         traffic_score = random.uniform(1.5, 2.0)
         aqi_level = random.randint(2, 3)
         income_multiplier = random.uniform(0.48, 0.74)
+    elif user_type == 'premium_success':
+        base_income = random.uniform(860, 1160)
+        orders = random.randint(20, 30)
+        hours = random.uniform(7.5, 9.5)
+        disruption = 'rain'
+        rain = random.uniform(9.0, 17.0)
+        traffic_score = random.uniform(1.45, 1.9)
+        aqi_level = random.randint(2, 3)
+        income_multiplier = random.uniform(0.46, 0.7)
     elif user_type == 'bad_actor':
         base_income = random.uniform(760, 980)
         orders = random.randint(16, 24)

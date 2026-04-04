@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/demo/persona_story.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class ClaimsTab extends ConsumerStatefulWidget {
@@ -63,6 +64,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
           child: FutureBuilder<InsuranceSummaryModel>(
             future: ApiService.getInsuranceSummary(user.userId),
             builder: (context, snapshot) {
+              final persona = resolvePersonaStory(user);
               final summary = snapshot.data;
               final claim = claimState.asData?.value;
               return ListView(
@@ -72,6 +74,11 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                   const _Header(
                     title: 'Claims',
                     subtitle: 'Track your claim result, fraud checks, payout, and trust signals in one place.',
+                  ),
+                  const SizedBox(height: 18),
+                  _PersonaBanner(
+                    story: persona.claims,
+                    accentColor: persona.accentColor,
                   ),
                   const SizedBox(height: 18),
                   _StatusCard(
@@ -96,7 +103,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                   const SizedBox(height: 18),
                   _Section(
                     title: 'Blockchain record',
-                    subtitle: '🔒 Recorded securely on blockchain',
+                    subtitle: 'Recorded securely on blockchain',
                     child: Text(
                       (claim?['payout_blockchain_txn_id'] as String?) ??
                           (claim?['blockchain_txn_id'] as String?) ??
@@ -153,6 +160,51 @@ class _Header extends StatelessWidget {
         const SizedBox(height: 8),
         Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, height: 1.5)),
       ],
+    );
+  }
+}
+
+class _PersonaBanner extends StatelessWidget {
+  final PersonaTabStory story;
+  final Color accentColor;
+
+  const _PersonaBanner({
+    required this.story,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accentColor.withOpacity(0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            story.title,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            story.summary,
+            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            story.focus,
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -230,9 +282,9 @@ class _ValueCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Expanded(child: _Metric(label: 'Loss', value: '₹ ${loss.toStringAsFixed(0)}')),
+            Expanded(child: _Metric(label: 'Loss', value: 'Rs ${loss.toStringAsFixed(0)}')),
             const SizedBox(width: 12),
-            Expanded(child: _Metric(label: 'Payout', value: '₹ ${payout.toStringAsFixed(0)}')),
+            Expanded(child: _Metric(label: 'Payout', value: 'Rs ${payout.toStringAsFixed(0)}')),
           ],
         ),
       ),
@@ -292,7 +344,7 @@ class _FraudCard extends StatelessWidget {
                 : 'Waiting for claim review';
     return _Section(
       title: 'Fraud check',
-      subtitle: '🤖 Fraud score and ML review',
+      subtitle: 'Fraud score and ML review',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

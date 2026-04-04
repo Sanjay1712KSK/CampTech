@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/demo/persona_story.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
@@ -31,7 +32,11 @@ class InsightsTab extends ConsumerWidget {
           },
           child: historyAsync.when(
             data: (history) => baselineAsync.when(
-              data: (baseline) => _EarningsContent(history: history, baseline: baseline),
+              data: (baseline) => _EarningsContent(
+                user: user,
+                history: history,
+                baseline: baseline,
+              ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => _InlineState(message: error.toString()),
             ),
@@ -50,16 +55,19 @@ class InsightsTab extends ConsumerWidget {
 }
 
 class _EarningsContent extends StatelessWidget {
+  final UserState user;
   final IncomeHistoryModel history;
   final BaselineIncomeModel baseline;
 
   const _EarningsContent({
+    required this.user,
     required this.history,
     required this.baseline,
   });
 
   @override
   Widget build(BuildContext context) {
+    final persona = resolvePersonaStory(user);
     final records = history.records;
     final lastSeven = records.length > 7 ? records.sublist(records.length - 7) : records;
     final weeklyBuckets = _weeklyBuckets(records);
@@ -76,6 +84,13 @@ class _EarningsContent extends StatelessWidget {
         const _HeaderBlock(
           title: 'Earnings',
           subtitle: 'Understand how your work pattern and disruptions affect what you take home.',
+        ),
+        const SizedBox(height: 18),
+        _PersonaBanner(
+          title: persona.earnings.title,
+          summary: persona.earnings.summary,
+          focus: persona.earnings.focus,
+          accentColor: persona.accentColor,
         ),
         const SizedBox(height: 18),
         _PanelCard(
@@ -125,20 +140,20 @@ class _EarningsContent extends StatelessWidget {
           subtitle: 'Simple takeaways from your work patterns.',
           child: Column(
             children: [
-              _StatRow(label: 'Average daily income', value: '₹ ${avgIncome.toStringAsFixed(0)}'),
+              _StatRow(label: 'Average daily income', value: 'Rs ${avgIncome.toStringAsFixed(0)}'),
               _StatRow(
                 label: 'Best earning day',
-                value: bestDay == null ? '--' : '${bestDay.date}  •  ₹ ${bestDay.earnings.toStringAsFixed(0)}',
+                value: bestDay == null ? '--' : '${bestDay.date} • Rs ${bestDay.earnings.toStringAsFixed(0)}',
               ),
               _StatRow(label: 'Days with drop patterns', value: '$disruptionDays days'),
-              _StatRow(label: 'Baseline daily income', value: '₹ ${baseline.baselineDailyIncome.toStringAsFixed(0)}'),
+              _StatRow(label: 'Baseline daily income', value: 'Rs ${baseline.baselineDailyIncome.toStringAsFixed(0)}'),
             ],
           ),
         ),
         const SizedBox(height: 18),
         _PanelCard(
           title: 'ML-powered help',
-          subtitle: '🤖 Personalized insights based on your work patterns',
+          subtitle: 'Personalized insights based on your work patterns',
           child: const Text(
             'These income patterns help the system understand your usual earning rhythm, so risk, premium, and claim decisions stay connected to your real work.',
             style: TextStyle(color: AppTheme.textSecondary, height: 1.5),
@@ -189,6 +204,55 @@ class _HeaderBlock extends StatelessWidget {
           style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
         ),
       ],
+    );
+  }
+}
+
+class _PersonaBanner extends StatelessWidget {
+  final String title;
+  final String summary;
+  final String focus;
+  final Color accentColor;
+
+  const _PersonaBanner({
+    required this.title,
+    required this.summary,
+    required this.focus,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accentColor.withOpacity(0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            summary,
+            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            focus,
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -314,7 +378,7 @@ class _BarChart extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  '₹${value.toStringAsFixed(0)}',
+                  'Rs ${value.toStringAsFixed(0)}',
                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
                 ),
                 const SizedBox(height: 8),
@@ -390,7 +454,7 @@ class _OrdersIncomeChart extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text('₹${record.earnings.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.textPrimary)),
+                  Text('Rs ${record.earnings.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.textPrimary)),
                 ],
               ),
             ],
