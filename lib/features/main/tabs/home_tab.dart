@@ -257,9 +257,9 @@ class _DashboardContent extends StatelessWidget {
             children: [
               _MetricChip(label: 'City', value: location.city),
               _MetricChip(label: 'Time', value: '${environment.context.hour}:00'),
-              _MetricChip(label: 'Weather 🌧', value: '${environment.weather.rainfall.toStringAsFixed(1)} mm'),
-              _MetricChip(label: 'AQI 🌫', value: '${environment.aqi.aqi}'),
-              _MetricChip(label: 'Traffic 🚦', value: environment.traffic.trafficLevel),
+              _MetricChip(label: 'Weather', value: '${environment.weather.rainfall.toStringAsFixed(1)} mm rain'),
+              _MetricChip(label: 'AQI', value: '${environment.aqi.aqi}'),
+              _MetricChip(label: 'Traffic', value: environment.traffic.trafficLevel),
             ],
           ),
         ),
@@ -324,8 +324,8 @@ class _DashboardContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _InfoRow(label: 'Claim status', value: claimStatus),
-              _InfoRow(label: 'Loss', value: '₹ ${loss.toStringAsFixed(0)}'),
-              _InfoRow(label: 'Payout', value: '₹ ${payout.toStringAsFixed(0)}'),
+              _InfoRow(label: 'Loss', value: 'Rs ${loss.toStringAsFixed(0)}'),
+              _InfoRow(label: 'Payout', value: 'Rs ${payout.toStringAsFixed(0)}'),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -344,7 +344,7 @@ class _DashboardContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(label: '🤖 Fraud score', value: fraudScore.toStringAsFixed(2)),
+              _InfoRow(label: 'Fraud score', value: fraudScore.toStringAsFixed(2)),
               _InfoRow(
                 label: 'Auto payout',
                 value: premiumPaid && (summary?.bankLinked ?? false) ? 'Enabled' : 'Not enabled',
@@ -370,7 +370,7 @@ class _DashboardContent extends StatelessWidget {
         const SizedBox(height: 18),
         _SectionCard(
           title: 'Blockchain trust',
-          subtitle: '🔒 This record is securely stored',
+          subtitle: 'This record is securely stored',
           child: Text(
             blockchainId,
             style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
@@ -387,13 +387,32 @@ class _DashboardContent extends StatelessWidget {
               _FlowPill('Environment'),
               _FlowPill('Risk'),
               _FlowPill('Premium'),
-              _FlowPill('Claim 🤖'),
-              _FlowPill('Payout 🔒'),
+              _FlowPill('Claim + ML'),
+              _FlowPill('Payout + Chain'),
             ],
           ),
         ),
       ],
     );
+  }
+
+  String _personaKeyForUser(UserState user) {
+    final email = user.email.trim().toLowerCase();
+    final phone = user.phone.trim();
+    final display = user.userName.trim().toLowerCase();
+    if (email == 'good.actor@gigshield.demo' || phone == '+919100000001' || display == 'good_actor') {
+      return 'good_actor';
+    }
+    if (email == 'bad.actor@gigshield.demo' || phone == '+919100000002' || display == 'bad_actor') {
+      return 'bad_actor';
+    }
+    if (email == 'edge.case@gigshield.demo' || phone == '+919100000003' || display == 'edge_case') {
+      return 'edge_case';
+    }
+    if (email == 'low.risk@gigshield.demo' || phone == '+919100000004' || display == 'low_risk') {
+      return 'low_risk';
+    }
+    return display;
   }
 
   _PersonaMeta _personaFor(String username) {
@@ -402,26 +421,41 @@ class _DashboardContent extends StatelessWidget {
         return const _PersonaMeta(
           title: 'Trusted Professional',
           summary: 'Consistent worker, real disruption, strongest example of the honest payout story.',
+          headline: 'Real disruption for a disciplined worker',
+          focusLabel: 'Best for payout demo',
+          demoAngle: 'Show how fair insurance automatically supports a reliable worker.',
         );
       case 'bad_actor':
         return const _PersonaMeta(
           title: 'System Gamer',
           summary: 'Irregular worker profile designed to show anomaly detection and claim rejection.',
+          headline: 'Suspicious claim without matching disruption',
+          focusLabel: 'Best for fraud demo',
+          demoAngle: 'Show how AI prevents payout when the loss story does not match reality.',
         );
       case 'edge_case':
         return const _PersonaMeta(
           title: 'Uncertain Case',
           summary: 'Borderline signals that help explain flagged or review-needed outcomes.',
+          headline: 'A borderline day that needs explanation',
+          focusLabel: 'Best for explainability demo',
+          demoAngle: 'Show why uncertain cases are flagged instead of blindly approved.',
         );
       case 'low_risk':
         return const _PersonaMeta(
           title: 'Normal Day',
           summary: 'Stable conditions, lower risk, and lower premium story.',
+          headline: 'Calm conditions with low insurance need',
+          focusLabel: 'Best for pricing demo',
+          demoAngle: 'Show how low disruption leads to lighter premium and fewer claims.',
         );
       default:
         return const _PersonaMeta(
           title: 'Delivery Partner',
           summary: 'Live gig-insurance dashboard connected to risk, premium, claim, and payout engines.',
+          headline: 'Live insurance status',
+          focusLabel: 'Live user',
+          demoAngle: 'Use this dashboard to explain the connected system end to end.',
         );
     }
   }
@@ -488,19 +522,38 @@ class _DashboardContent extends StatelessWidget {
         return AppTheme.successColor;
     }
   }
+
+  Color _personaAccent(String key) {
+    switch (key) {
+      case 'good_actor':
+        return AppTheme.successColor;
+      case 'bad_actor':
+        return AppTheme.errorColor;
+      case 'edge_case':
+        return AppTheme.warningColor;
+      case 'low_risk':
+        return AppTheme.primaryColor;
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
 }
 
 class _ProfileCard extends StatelessWidget {
   final String name;
   final String persona;
+  final String focusLabel;
   final String protectedStatus;
   final String premiumStatus;
+  final Color accentColor;
 
   const _ProfileCard({
     required this.name,
     required this.persona,
+    required this.focusLabel,
     required this.protectedStatus,
     required this.premiumStatus,
+    required this.accentColor,
   });
 
   @override
@@ -530,6 +583,18 @@ class _ProfileCard extends StatelessWidget {
           Text(
             '$persona • Delivery Partner',
             style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              focusLabel,
+              style: TextStyle(color: accentColor, fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(height: 18),
           Wrap(
@@ -715,8 +780,8 @@ class _PremiumCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _MetricChip(label: 'Weekly premium', value: '₹ ${weeklyPremium.toStringAsFixed(0)}'),
-                _MetricChip(label: 'Coverage', value: '₹ ${coverage.toStringAsFixed(0)}'),
+                _MetricChip(label: 'Weekly premium', value: 'Rs ${weeklyPremium.toStringAsFixed(0)}'),
+                _MetricChip(label: 'Coverage', value: 'Rs ${coverage.toStringAsFixed(0)}'),
               ],
             ),
             const SizedBox(height: 16),
@@ -725,7 +790,7 @@ class _PremiumCard extends StatelessWidget {
               style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            _InfoRow(label: 'Weekly income used', value: '₹ ${weeklyIncome.toStringAsFixed(0)}'),
+            _InfoRow(label: 'Weekly income used', value: 'Rs ${weeklyIncome.toStringAsFixed(0)}'),
             _InfoRow(label: 'Risk score used', value: riskScore.toStringAsFixed(2)),
             _InfoRow(label: 'Trigger adjustments', value: triggers.isEmpty ? 'None' : triggers.join(', ')),
             const SizedBox(height: 16),
@@ -774,6 +839,49 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+class _StoryCallout extends StatelessWidget {
+  final String title;
+  final String body;
+  final Color accentColor;
+
+  const _StoryCallout({
+    required this.title,
+    required this.body,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accentColor.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: accentColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TransactionTile extends StatelessWidget {
   final BankTransactionItemModel txn;
 
@@ -804,7 +912,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
               ),
               Text(
-                '₹ ${txn.amount.toStringAsFixed(0)}',
+                'Rs ${txn.amount.toStringAsFixed(0)}',
                 style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
               ),
             ],
@@ -843,10 +951,16 @@ class _FlowPill extends StatelessWidget {
 class _PersonaMeta {
   final String title;
   final String summary;
+  final String headline;
+  final String focusLabel;
+  final String demoAngle;
 
   const _PersonaMeta({
     required this.title,
     required this.summary,
+    required this.headline,
+    required this.focusLabel,
+    required this.demoAngle,
   });
 }
 
