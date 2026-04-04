@@ -2,6 +2,8 @@ class RiskModel {
   final double? riskScore;
   final String? riskLevel;
   final String? expectedIncomeLoss;
+  final int? expectedIncomeLossPct;
+  final Map<String, dynamic> disruption;
   final DeliveryEfficiencyModel? deliveryEfficiency;
   final double? hyperLocalRisk;
   final Map<String, dynamic> hyperLocalAnalysis;
@@ -22,6 +24,8 @@ class RiskModel {
     this.riskScore,
     this.riskLevel,
     this.expectedIncomeLoss,
+    this.expectedIncomeLossPct,
+    this.disruption = const {},
     this.deliveryEfficiency,
     this.hyperLocalRisk,
     this.hyperLocalAnalysis = const {},
@@ -45,6 +49,8 @@ class RiskModel {
       'risk_score',
       'risk_level',
       'expected_income_loss',
+      'expected_income_loss_pct',
+      'disruption',
       'delivery_efficiency',
       'hyper_local_risk',
       'hyper_local_analysis',
@@ -72,6 +78,8 @@ class RiskModel {
       riskScore: _asDouble(payload['risk_score']),
       riskLevel: _asString(payload['risk_level']),
       expectedIncomeLoss: _asString(payload['expected_income_loss']),
+      expectedIncomeLossPct: _asInt(payload['expected_income_loss_pct']),
+      disruption: _asMap(payload['disruption']) ?? const {},
       deliveryEfficiency: _asMap(payload['delivery_efficiency']) != null
           ? DeliveryEfficiencyModel.fromJson(
               _asMap(payload['delivery_efficiency'])!,
@@ -99,6 +107,7 @@ class RiskModel {
   bool get hasData =>
       riskScore != null ||
       riskLevel != null ||
+      expectedIncomeLossPct != null ||
       deliveryEfficiency != null ||
       timeSlotRisk.isNotEmpty ||
       activeTriggers.isNotEmpty ||
@@ -123,6 +132,13 @@ class RiskModel {
   static double? _asDouble(Object? value) {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static int? _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
     return null;
   }
 
