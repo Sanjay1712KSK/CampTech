@@ -8,10 +8,13 @@ except ImportError:  # pragma: no cover - depends on local environment
 
 logger = logging.getLogger('gig_insurance_backend.notifications')
 
-MAILTRAP_TOKEN = '60dd0cc51ffb85ec041d1ece8a75df28'
-MAILTRAP_SENDER_EMAIL = 'hello@demomailtrap.co'
-MAILTRAP_SENDER_NAME = 'Mailtrap Test'
-DEMO_EMAIL_REDIRECT = os.getenv('DEMO_EMAIL_REDIRECT', 'demo-actors@demomailtrap.co')
+MAILTRAP_TOKEN = os.getenv('MAILTRAP_TOKEN', '').strip()
+MAILTRAP_SENDER_EMAIL = os.getenv('MAILTRAP_SENDER_EMAIL', 'hello@demomailtrap.co').strip()
+MAILTRAP_SENDER_NAME = os.getenv('MAILTRAP_SENDER_NAME', 'Mailtrap Test').strip()
+DEMO_EMAIL_REDIRECT = os.getenv(
+    'MAILTRAP_DEMO_REDIRECT_EMAIL',
+    os.getenv('DEMO_EMAIL_REDIRECT', 'demo-actors@demomailtrap.co'),
+).strip()
 
 
 def _mask_email(email: str) -> str:
@@ -43,6 +46,8 @@ def _resolve_mailtrap_recipient(email: str) -> tuple[str, str]:
 def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> tuple[bool, str | None]:
     if mt is None:
         return False, 'Mailtrap package is not installed on the backend environment'
+    if not MAILTRAP_TOKEN:
+        return False, 'MAILTRAP_TOKEN is not configured on the backend environment'
 
     resolved_email, _ = _resolve_mailtrap_recipient(to_email)
 
