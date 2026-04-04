@@ -1,43 +1,210 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
-import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
+import 'package:guidewire_gig_ins/services/api_service.dart';
 
-class ClaimsTab extends StatelessWidget {
-  const ClaimsTab({Key? key}) : super(key: key);
+class ClaimsTab extends ConsumerStatefulWidget {
+  const ClaimsTab({super.key});
 
-  static const List<Map<String, dynamic>> _claims = [
-    {'status': 'Triggered', 'reason': 'Rain Disruption', 'amount': '₹400', 'date': '18 Mar', 'isPaid': false},
-    {'status': 'Paid', 'reason': 'AQI Spike', 'amount': '₹250', 'date': '12 Mar', 'isPaid': true},
-    {'status': 'Paid', 'reason': 'Traffic Disruption', 'amount': '₹350', 'date': '05 Mar', 'isPaid': true},
-    {'status': 'Pending', 'reason': 'Heavy Rain', 'amount': '₹180', 'date': '28 Feb', 'isPaid': false},
-  ];
+  @override
+  ConsumerState<ClaimsTab> createState() => _ClaimsTabState();
+}
+
+class _ClaimsTabState extends ConsumerState<ClaimsTab> {
+  bool _isSubmitting = false;
+
+  Future<void> _submitClaim(int userId, double lat, double lon) async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await ref.read(claimProvider.notifier).submitClaim(
+            userId: userId,
+            lat: lat,
+            lon: lon,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Claim processed successfully')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    if (l10n == null) return const SizedBox.shrink();
+    final user = ref.watch(userProvider);
+    final claimState = ref.watch(claimProvider);
+    final location = ref.watch(locationProvider);
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+    if (user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(todayIncomeProvider);
+            ref.invalidate(baselineIncomeProvider);
+            ref.invalidate(riskProvider);
+            ref.read(claimProvider.notifier).reset();
+            setState(() {});
+          },
+          child: FutureBuilder<InsuranceSummaryModel>(
+            future: ApiService.getInsuranceSummary(user.userId),
+            builder: (context, snapshot) {
+              final summary = snapshot.data;
+              final claim = claimState.valueOrNull;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                children: [
+                  const _Header(
+                    title: 'Claims',
+                    subtitle: 'Track your claim result, fraud checks, payout, and trust signals in one place.',
+                  ),
+                  const SizedBox(height: 18),
+                  _StatusCard(
+                    status: (claim?['claim_status'] as String?) ?? (summary?.latestClaimStatus ?? 'No claim yet'),
+                    reason: (claim?['reason'] as String?) ?? (summary?.claimMessage ?? 'Your latest claim result will appear here.'),
+                  ),
+                  const SizedBox(height: 18),
+                  _ValueCard(
+                    loss: ((claim?['loss'] as num?)?.toDouble() ?? 0.0),
+                    payout: ((claim?['payout'] as num?)?.toDouble() ?? (summary?.lastPayout ?? 0.0)),
+                  ),
+                  const SizedBox(height: 18),
+                  _FraudCard(
+                    fraudScore: ((claim?['fraud_score'] as num?)?.toDouble() ?? 0.0),
+                    status: (claim?['claim_status'] as String?) ?? 'PENDING',
+                  ),
+                  const SizedBox(height: 18),
+                  _FlowCard(
+                    claim: claim,
+                    hasPolicy: (summary?.policyStatus ?? '') == 'ACTIVE' || (summary?.claimReady ?? false),
+                  ),
+                  const SizedBox(height: 18),
+                  _Section(
+                    title: 'Blockchain record',
+                    subtitle: '🔒 Recorded securely on blockchain',
+                    child: Text(
+                      (claim?['payout_blockchain_txn_id'] as String?) ??
+                          (claim?['blockchain_txn_id'] as String?) ??
+                          'A blockchain record will appear here after a claim or payout is processed.',
+                      style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _Section(
+                    title: 'Claim action',
+                    subtitle: 'Use the live backend engine to process your latest disruption claim.',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => _submitClaim(user.userId, location.lat, location.lon),
+                        child: Text(_isSubmitting ? 'Processing claim...' : 'Check Claim & Payout'),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _Header({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, height: 1.5)),
+      ],
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  final String status;
+  final String reason;
+
+  const _StatusCard({
+    required this.status,
+    required this.reason,
+  });
+
+  Color get _statusColor {
+    switch (status.toUpperCase()) {
+      case 'APPROVED':
+        return AppTheme.successColor;
+      case 'REJECTED':
+        return AppTheme.errorColor;
+      case 'FLAGGED':
+        return AppTheme.warningColor;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.claims, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            const Text('Your claim history', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
-            const SizedBox(height: 28),
-            ..._claims.map((c) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _ClaimCard(
-                status: c['status'] as String,
-                reason: c['reason'] as String,
-                amount: c['amount'] as String,
-                date: c['date'] as String,
-                isPaid: c['isPaid'] as bool,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _statusColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(999),
               ),
-            )),
+              child: Text(
+                status.toUpperCase(),
+                style: TextStyle(color: _statusColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              reason,
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, height: 1.5),
+            ),
           ],
         ),
       ),
@@ -45,87 +212,200 @@ class ClaimsTab extends StatelessWidget {
   }
 }
 
-class _ClaimCard extends StatelessWidget {
-  final String status;
-  final String reason;
-  final String amount;
-  final String date;
-  final bool isPaid;
+class _ValueCard extends StatelessWidget {
+  final double loss;
+  final double payout;
 
-  const _ClaimCard({
-    Key? key,
-    required this.status,
-    required this.reason,
-    required this.amount,
-    required this.date,
-    required this.isPaid,
-  }) : super(key: key);
+  const _ValueCard({
+    required this.loss,
+    required this.payout,
+  });
 
-  Color get _statusColor {
-    switch (status) {
-      case 'Paid': return AppTheme.successColor;
-      case 'Triggered': return AppTheme.warningColor;
-      default: return AppTheme.textSecondary;
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(child: _Metric(label: 'Loss', value: '₹ ${loss.toStringAsFixed(0)}')),
+            const SizedBox(width: 12),
+            Expanded(child: _Metric(label: 'Payout', value: '₹ ${payout.toStringAsFixed(0)}')),
+          ],
+        ),
+      ),
+    );
   }
+}
 
-  IconData get _statusIcon {
-    switch (status) {
-      case 'Paid': return Icons.check_circle_rounded;
-      case 'Triggered': return Icons.warning_amber_rounded;
-      default: return Icons.hourglass_empty_rounded;
-    }
-  }
+class _Metric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _Metric({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _statusColor.withOpacity(0.2)),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _statusColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(_statusIcon, color: _statusColor, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(reason, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                const SizedBox(height: 3),
-                Text(date, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 3),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(fontSize: 10, color: _statusColor, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FraudCard extends StatelessWidget {
+  final double fraudScore;
+  final String status;
+
+  const _FraudCard({
+    required this.fraudScore,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = status.toUpperCase() == 'APPROVED'
+        ? 'Low fraud concern'
+        : status.toUpperCase() == 'FLAGGED'
+            ? 'Needs review'
+            : status.toUpperCase() == 'REJECTED'
+                ? 'High fraud concern'
+                : 'Waiting for claim review';
+    return _Section(
+      title: 'Fraud check',
+      subtitle: '🤖 Fraud score and ML review',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            fraudScore.toStringAsFixed(2),
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowCard extends StatelessWidget {
+  final Map<String, dynamic>? claim;
+  final bool hasPolicy;
+
+  const _FlowCard({
+    required this.claim,
+    required this.hasPolicy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final approved = (claim?['claim_status'] as String? ?? '').toUpperCase() == 'APPROVED';
+    return _Section(
+      title: 'Process flow',
+      subtitle: 'Follow how the system reached its decision.',
+      child: Column(
+        children: [
+          _StepTile(label: 'Disruption detected', done: hasPolicy),
+          _StepTile(label: 'Income verified', done: claim != null),
+          _StepTile(label: 'Fraud check', done: claim?['fraud_score'] != null),
+          _StepTile(label: 'Payout processed', done: approved),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTile extends StatelessWidget {
+  final String label;
+  final bool done;
+
+  const _StepTile({
+    required this.label,
+    required this.done,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(
+            done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            color: done ? AppTheme.successColor : AppTheme.textSecondary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: AppTheme.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _Section({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, height: 1.45)),
+            const SizedBox(height: 18),
+            child,
+          ],
+        ),
       ),
     );
   }

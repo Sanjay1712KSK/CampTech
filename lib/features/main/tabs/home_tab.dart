@@ -1,167 +1,42 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
-import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
-import 'package:guidewire_gig_ins/features/insurance/screens/claim_flow_screen.dart';
-import 'package:guidewire_gig_ins/features/insurance/screens/premium_purchase_screen.dart';
-import 'package:guidewire_gig_ins/features/main/tabs/risk_tab.dart';
-import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
-import 'package:guidewire_gig_ins/services/api_service.dart';
-import 'package:guidewire_gig_ins/services/bank_service.dart';
 
-class HomeTab extends ConsumerStatefulWidget {
+class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
 
-  @override
-  ConsumerState<HomeTab> createState() => _HomeTabState();
-}
-
-class _HomeTabState extends ConsumerState<HomeTab> {
-  late DateTime _now;
-  late Timer _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _now = DateTime.now();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  Future<void> _refresh() async {
-    ref.invalidate(todayIncomeProvider);
-    ref.invalidate(baselineIncomeProvider);
+  Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(riskProvider);
     ref.invalidate(environmentProvider);
+    ref.invalidate(todayIncomeProvider);
     ref.invalidate(premiumProvider);
   }
 
-  String _greeting() {
-    final hour = _now.hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
-
-  String _formatDateTime() {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hour =
-        _now.hour > 12 ? _now.hour - 12 : (_now.hour == 0 ? 12 : _now.hour);
-    final minute = _now.minute.toString().padLeft(2, '0');
-    final period = _now.hour >= 12 ? 'PM' : 'AM';
-    return '${_now.day} ${months[_now.month - 1]}  $hour:$minute $period';
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProvider);
-    if (user == null) return const Center(child: CircularProgressIndicator());
-
-    final todayAsync = ref.watch(todayIncomeProvider);
     final riskAsync = ref.watch(riskProvider);
-    final environmentAsync = ref.watch(environmentProvider);
+
+    if (user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+          onRefresh: () => _refresh(ref),
+          child: riskAsync.when(
+            data: (riskData) => _HomeContent(
+              userName: user.userName,
+              riskData: riskData,
+              city: ref.watch(locationProvider).city,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _HomeHeader(
-                  greeting: _greeting(),
-                  userName: user.userName,
-                  dateTime: _formatDateTime(),
-                  city: ref.watch(locationProvider).city,
-                  environmentAsync: environmentAsync,
-                ),
-                const SizedBox(height: 20),
-                const _SectionTitle('Policy Status'),
-                const SizedBox(height: 12),
-                FutureBuilder<BankSummary>(
-                  future: BankService.getSummary(),
-                  builder: (context, snapshot) {
-                    final bank = snapshot.data;
-                    return _PolicyStatusCard(bank: bank);
-                  },
-                ),
-                const SizedBox(height: 20),
-                const _SectionTitle('Today Snapshot'),
-                const SizedBox(height: 12),
-                todayAsync.when(
-                  data: (today) => _TodaySnapshotCard(today: today),
-                  loading: () => const _SkeletonCard(height: 150),
-                  error: (_, __) =>
-                      const _InlineErrorCard('Unable to load today snapshot'),
-                ),
-                const SizedBox(height: 20),
-                const _SectionTitle('Risk Summary'),
-                const SizedBox(height: 12),
-                riskAsync.when(
-                  data: (riskData) => _RiskSummaryCard(riskData: riskData),
-                  loading: () => const _SkeletonCard(height: 150),
-                  error: (_, __) =>
-                      const _InlineErrorCard('Unable to load risk summary'),
-                ),
-                const SizedBox(height: 20),
-                const _SectionTitle('Quick Actions'),
-                const SizedBox(height: 12),
-                _QuickActions(
-                  onBuyPolicy: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PremiumPurchaseScreen(),
-                    ),
-                  ),
-                  onClaim: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ClaimFlowScreen(),
-                    ),
-                  ),
-                  onConnectGig: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ConnectGigScreen(),
-                    ),
-                  ),
-                  onVerify: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DigilockerVerificationScreen(),
-                    ),
-                  ),
-                ),
-              ],
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _RiskErrorState(
+              message: error.toString().replaceFirst('Exception: ', ''),
+              onRetry: () => ref.invalidate(riskProvider),
             ),
           ),
         ),
@@ -170,473 +45,306 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   }
 }
 
-class _HomeHeader extends StatelessWidget {
-  final String greeting;
+class _HomeContent extends StatelessWidget {
   final String userName;
-  final String dateTime;
-  final String city;
-  final AsyncValue<EnvironmentModel> environmentAsync;
-
-  const _HomeHeader({
-    required this.greeting,
-    required this.userName,
-    required this.dateTime,
-    required this.city,
-    required this.environmentAsync,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF262F1C), Color(0xFF191F17)],
-        ),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'GigShield',
-            style: TextStyle(
-              color: AppTheme.primaryColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(greeting, style: const TextStyle(color: AppTheme.textSecondary)),
-          const SizedBox(height: 6),
-          Text(
-            userName,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            dateTime,
-            style: const TextStyle(color: AppTheme.textSecondary),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            city,
-            style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Built by CampTech',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-          ),
-          const SizedBox(height: 18),
-          environmentAsync.when(
-            data: (env) => LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 360;
-                if (compact) {
-                  return Column(
-                    children: [
-                      _HeaderChip(
-                        label: 'Weather',
-                        value: '${env.weather.temperature.toStringAsFixed(1)} C',
-                        icon: Icons.wb_sunny_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      _HeaderChip(
-                        label: 'AQI',
-                        value: '${env.aqi.aqi}',
-                        icon: Icons.air_rounded,
-                      ),
-                    ],
-                  );
-                }
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _HeaderChip(
-                        label: 'Weather',
-                        value: '${env.weather.temperature.toStringAsFixed(1)} C',
-                        icon: Icons.wb_sunny_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _HeaderChip(
-                        label: 'AQI',
-                        value: '${env.aqi.aqi}',
-                        icon: Icons.air_rounded,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            loading: () => const _SkeletonCard(height: 64),
-            error: (_, __) => const Text(
-              'Weather and AQI unavailable right now',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeaderChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _HeaderChip({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.primaryColor),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PolicyStatusCard extends StatelessWidget {
-  final BankSummary? bank;
-
-  const _PolicyStatusCard({required this.bank});
-
-  String _formatDate(DateTime? value) {
-    if (value == null) return '--';
-    return '${value.day}/${value.month}/${value.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final status = bank?.policyStatus ?? 'NOT PURCHASED';
-    final color = status == 'ACTIVE'
-        ? AppTheme.successColor
-        : status == 'EXPIRED'
-            ? AppTheme.warningColor
-            : AppTheme.textSecondary;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Text(
-                bank?.claimReady == true ? 'Ready to claim' : (bank?.claimMessage ?? 'Not purchased'),
-                softWrap: true,
-                style: TextStyle(
-                  color: bank?.claimReady == true
-                      ? AppTheme.successColor
-                      : AppTheme.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Policy Period',
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${_formatDate(bank?.policyStart)} -> ${_formatDate(bank?.policyEnd)}',
-            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            bank?.claimMessage ?? 'Buy weekly insurance to activate claims',
-            style: const TextStyle(color: AppTheme.textSecondary, height: 1.4),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TodaySnapshotCard extends StatelessWidget {
-  final TodayIncomeModel today;
-
-  const _TodaySnapshotCard({required this.today});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 420;
-          final tileWidth = compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3;
-          return Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SizedBox(
-                width: tileWidth,
-                child: _MetricTile('Earnings today', 'Rs ${today.earnings.toInt()}', Icons.currency_rupee_rounded),
-              ),
-              SizedBox(
-                width: tileWidth,
-                child: _MetricTile('Orders completed', '${today.ordersCompleted}', Icons.inventory_2_outlined),
-              ),
-              SizedBox(
-                width: tileWidth,
-                child: _MetricTile('Hours worked', today.hoursWorked.toStringAsFixed(1), Icons.schedule_rounded),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _RiskSummaryCard extends StatelessWidget {
   final Map<String, dynamic> riskData;
+  final String city;
 
-  const _RiskSummaryCard({required this.riskData});
+  const _HomeContent({
+    required this.userName,
+    required this.riskData,
+    required this.city,
+  });
 
   @override
   Widget build(BuildContext context) {
     final risk = (riskData['risk'] as Map<String, dynamic>?) ?? riskData;
     final level = (risk['risk_level'] as String? ?? 'LOW').toUpperCase();
-    final score = ((risk['risk_score'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
-    final recommendation = risk['recommendation'] as String? ?? 'No recommendation';
-    final color = level == 'HIGH'
-        ? AppTheme.errorColor
-        : level == 'MEDIUM'
-            ? AppTheme.warningColor
-            : AppTheme.successColor;
+    final expectedLoss = risk['expected_income_loss']?.toString() ?? '0%';
+    final reasons = (risk['reasons'] as List? ?? const []).map((item) => '$item').toList();
+    final triggers = (risk['active_triggers'] as List? ?? const []).map((item) => '$item').toList();
+    final environment = riskData['environment'] as Map<String, dynamic>? ?? const {};
+    final lastUpdated = DateTime.now();
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.24)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      children: [
+        _HeroCard(
+          userName: userName,
+          city: city,
+          riskLevel: level,
+          expectedLoss: expectedLoss,
+          lastUpdated: lastUpdated,
+          insight: reasons.isNotEmpty ? reasons.first : 'Risk is being monitored using live local conditions.',
+        ),
+        const SizedBox(height: 18),
+        _SectionCard(
+          title: 'Why this matters right now',
+          subtitle: 'A simple view of what is affecting your deliveries today.',
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  level,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold),
-                ),
+              _InfoRow(
+                emoji: '🌧',
+                title: 'Weather',
+                value: '${((environment['snapshot'] as Map?)?['rain_estimate'] ?? 0).toString()} mm rain estimate',
               ),
-              Text(
-                score.toStringAsFixed(2),
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+              const _InfoRow(
+                emoji: '🚦',
+                title: 'Traffic',
+                value: 'Congestion is affecting route time',
+              ),
+              const _InfoRow(
+                emoji: '🌫',
+                title: 'Air Quality',
+                value: 'AQI is part of your work comfort score',
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(recommendation, style: const TextStyle(color: AppTheme.textPrimary)),
+        ),
+        const SizedBox(height: 18),
+        _SectionCard(
+          title: 'AI-powered dynamic risk analysis',
+          subtitle: 'The system combines live environment signals and your earning context to explain risk in plain language.',
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: const [
+              _Badge(label: '🤖 Dynamic AI risk'),
+              _Badge(label: '⚡ Trigger-aware'),
+              _Badge(label: '📍 Hyper-local'),
+            ],
+          ),
+        ),
+        if (triggers.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _SectionCard(
+            title: 'Active triggers',
+            subtitle: 'These conditions are currently pushing your income risk higher.',
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: triggers.map(_triggerLabel).map((label) => _TriggerChip(label: label)).toList(),
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _QuickActions extends StatelessWidget {
-  final VoidCallback onBuyPolicy;
-  final VoidCallback onClaim;
-  final VoidCallback onConnectGig;
-  final VoidCallback onVerify;
-
-  const _QuickActions({
-    required this.onBuyPolicy,
-    required this.onClaim,
-    required this.onConnectGig,
-    required this.onVerify,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.35,
-      children: [
-        _ActionCard(
-          icon: Icons.shield_outlined,
-          title: 'Premium Engine',
-          subtitle: 'Open premium, coverage, and pricing view',
-          onTap: onBuyPolicy,
-        ),
-        _ActionCard(
-          icon: Icons.payments_outlined,
-          title: 'Claim Insurance',
-          subtitle: 'Run claim precheck and payout flow',
-          onTap: onClaim,
-        ),
-        _ActionCard(
-          icon: Icons.link_rounded,
-          title: 'Connect Gig Account',
-          subtitle: 'Sync earnings and disruptions',
-          onTap: onConnectGig,
-        ),
-        _ActionCard(
-          icon: Icons.verified_user_outlined,
-          title: 'Verify Identity',
-          subtitle: 'Complete DigiLocker verification',
-          onTap: onVerify,
+        const SizedBox(height: 18),
+        _SectionCard(
+          title: 'How it works',
+          subtitle: 'See how all engines connect behind the scenes.',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const [
+              _PipelinePill('Environment'),
+              _PipelinePill('Risk'),
+              _PipelinePill('Premium'),
+              _PipelinePill('Policy'),
+              _PipelinePill('Claim'),
+              _PipelinePill('Payout'),
+            ],
+          ),
         ),
       ],
     );
   }
+
+  String _triggerLabel(String raw) {
+    switch (raw.toUpperCase()) {
+      case 'RAIN_TRIGGER':
+        return 'Rain';
+      case 'TRAFFIC_TRIGGER':
+        return 'Traffic';
+      case 'AQI_TRIGGER':
+        return 'AQI';
+      case 'HEAT_TRIGGER':
+        return 'Heat';
+      case 'COMBINED_TRIGGER':
+        return 'Combined';
+      default:
+        return raw.replaceAll('_', ' ');
+    }
+  }
 }
 
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
+class _HeroCard extends StatelessWidget {
+  final String userName;
+  final String city;
+  final String riskLevel;
+  final String expectedLoss;
+  final DateTime lastUpdated;
+  final String insight;
 
-  const _MetricTile(this.label, this.value, this.icon);
+  const _HeroCard({
+    required this.userName,
+    required this.city,
+    required this.riskLevel,
+    required this.expectedLoss,
+    required this.lastUpdated,
+    required this.insight,
+  });
+
+  Color get _riskColor {
+    switch (riskLevel) {
+      case 'HIGH':
+        return AppTheme.errorColor;
+      case 'MEDIUM':
+        return AppTheme.warningColor;
+      default:
+        return AppTheme.successColor;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF143126), Color(0xFF0F1E1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.primaryColor, size: 18),
+          Text(
+            'Hello, $userName',
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'What’s happening right now',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 10),
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(
+            '$city risk is being checked using live local conditions.',
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+          ),
+          const SizedBox(height: 22),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _HeroMetric(
+                label: 'Risk level',
+                value: riskLevel,
+                color: _riskColor,
+              ),
+              _HeroMetric(
+                label: 'Income loss',
+                value: expectedLoss,
+                color: AppTheme.primaryColor,
+              ),
+              _HeroMetric(
+                label: 'Last updated',
+                value: '${lastUpdated.hour.toString().padLeft(2, '0')}:${lastUpdated.minute.toString().padLeft(2, '0')}',
+                color: Colors.white70,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Text(
+              insight,
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.45),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+class _HeroMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
 
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
+  const _HeroMetric({
+    required this.label,
+    required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(18),
-        ),
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.surfaceColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppTheme.primaryColor),
-            const Spacer(),
             Text(
               title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               subtitle,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+              style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
             ),
+            const SizedBox(height: 18),
+            child,
           ],
         ),
       ),
@@ -644,47 +352,172 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
+  final String emoji;
   final String title;
-  const _SectionTitle(this.title);
+  final String value;
+
+  const _InfoRow({
+    required this.emoji,
+    required this.title,
+    required this.value,
+  });
 
   @override
-  Widget build(BuildContext context) => Text(
-        title,
-        style: const TextStyle(
-          color: AppTheme.textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      );
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(color: AppTheme.textSecondary)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _InlineErrorCard extends StatelessWidget {
+class _Badge extends StatelessWidget {
+  final String label;
+
+  const _Badge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _TriggerChip extends StatelessWidget {
+  final String label;
+
+  const _TriggerChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '⚡ $label',
+        style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class _PipelinePill extends StatelessWidget {
+  final String label;
+
+  const _PipelinePill(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+          ),
+        ),
+        if (label != 'Payout')
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+          ),
+      ],
+    );
+  }
+}
+
+class _RiskErrorState extends StatelessWidget {
   final String message;
-  const _InlineErrorCard(this.message);
+  final VoidCallback onRetry;
+
+  const _RiskErrorState({
+    required this.message,
+    required this.onRetry,
+  });
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(18),
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Card(
+            color: AppTheme.surfaceColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Icon(Icons.cloud_off_rounded, color: AppTheme.warningColor, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'We could not load the risk dashboard',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton(
+                    onPressed: onRetry,
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        child: Text(message, style: const TextStyle(color: AppTheme.textSecondary)),
-      );
-}
-
-class _SkeletonCard extends StatelessWidget {
-  final double height;
-  const _SkeletonCard({required this.height});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(18),
-        ),
-      );
+      ],
+    );
+  }
 }

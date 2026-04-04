@@ -136,6 +136,6 @@ class _DashboardLoaderState extends ConsumerState<DashboardLoader> {
       );
     }
 
-    return const MainShell(initialIndex: 2);
+    return const MainShell(initialIndex: 0);
   }
 }
