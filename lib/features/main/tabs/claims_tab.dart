@@ -64,7 +64,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
             future: ApiService.getInsuranceSummary(user.userId),
             builder: (context, snapshot) {
               final summary = snapshot.data;
-              final claim = claimState.valueOrNull;
+              final claim = claimState.asData?.value;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
