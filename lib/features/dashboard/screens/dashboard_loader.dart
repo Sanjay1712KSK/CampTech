@@ -4,7 +4,7 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/connect_gig_screen.dart';
-import 'package:guidewire_gig_ins/features/risk/screens/risk_dashboard_screen.dart';
+import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class DashboardLoader extends ConsumerStatefulWidget {
@@ -136,6 +136,6 @@ class _DashboardLoaderState extends ConsumerState<DashboardLoader> {
       );
     }
 
-    return RiskDashboardScreen(userId: user.userId);
+    return const MainShell(initialIndex: 2);
   }
 }
