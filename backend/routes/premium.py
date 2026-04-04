@@ -15,7 +15,9 @@ def calculate_premium_root_endpoint(
     lon: float = Query(..., ge=-180.0, le=180.0),
     db: Session = Depends(get_db),
 ):
-    return calculate_weekly_premium(user_id=user_id, lat=lat, lon=lon, db=db)
+    result = calculate_weekly_premium(user_id=user_id, lat=lat, lon=lon, db=db)
+    db.commit()
+    return result
 
 
 @router.get('/calculate', response_model=PremiumCalculationResponse)
@@ -25,4 +27,6 @@ def calculate_premium_endpoint(
     lon: float = Query(..., ge=-180.0, le=180.0),
     db: Session = Depends(get_db),
 ):
-    return calculate_weekly_premium(user_id=user_id, lat=lat, lon=lon, db=db)
+    result = calculate_weekly_premium(user_id=user_id, lat=lat, lon=lon, db=db)
+    db.commit()
+    return result

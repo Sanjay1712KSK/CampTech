@@ -79,23 +79,34 @@ def _persist_income_summary(user_id: int, baseline: float, city: str | None, pla
     total_hours = _round(sum(float(item.hours_worked) for item in recent_records))
     total_orders = sum(int(item.orders_completed) for item in recent_records)
     disruption_days = sum(1 for item in recent_records if str(item.disruption_type or 'none') != 'none')
-    summary = IncomeSummary(
-        user_id=int(user_id),
-        summary_date=max((item.date for item in recent_records), default=date.today()),
-        summary_type='baseline_30d',
-        platform=platform,
-        city=city,
-        total_income=total_income,
-        average_income=_round(baseline),
-        total_hours=total_hours,
-        total_orders=total_orders,
-        disruption_days=disruption_days,
-        summary_metadata={
-            'window_days': len(recent_records),
-            'baseline_income': _round(baseline),
-        },
+    summary_date = max((item.date for item in recent_records), default=date.today())
+    summary = (
+        db.query(IncomeSummary)
+        .filter(
+            IncomeSummary.user_id == int(user_id),
+            IncomeSummary.summary_date == summary_date,
+            IncomeSummary.summary_type == 'baseline_30d',
+        )
+        .first()
     )
-    db.add(summary)
+    if summary is None:
+        summary = IncomeSummary(
+            user_id=int(user_id),
+            summary_date=summary_date,
+            summary_type='baseline_30d',
+        )
+        db.add(summary)
+    summary.platform = platform
+    summary.city = city
+    summary.total_income = total_income
+    summary.average_income = _round(baseline)
+    summary.total_hours = total_hours
+    summary.total_orders = total_orders
+    summary.disruption_days = disruption_days
+    summary.summary_metadata = {
+        'window_days': len(recent_records),
+        'baseline_income': _round(baseline),
+    }
     db.flush()
     return summary
 
