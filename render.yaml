@@ -2,7 +2,7 @@ services:
   - name: guidewire-gig-ins-backend
     type: web
     runtime: python
-    plan: starter
+    plan: free
     region: singapore
     rootDir: backend
     buildCommand: pip install -r requirements.txt
@@ -43,4 +43,3 @@ databases:
     region: singapore
     databaseName: gig_insurance
     postgresMajorVersion: "17"
-
