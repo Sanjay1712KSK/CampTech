@@ -21,7 +21,8 @@ SIMULATED_USERS = {
         'email': 'good.actor@gigshield.demo',
         'phone': '+919100000001',
         'username': 'good_actor',
-        'name': 'Good Actor',
+        'name': 'Arjun Kumar',
+        'persona': 'Trusted Professional',
         'platform': 'swiggy',
         'city': 'Chennai',
         'worker_id': 'SWG-GOOD-001',
@@ -32,7 +33,8 @@ SIMULATED_USERS = {
         'email': 'bad.actor@gigshield.demo',
         'phone': '+919100000002',
         'username': 'bad_actor',
-        'name': 'Bad Actor',
+        'name': 'Ravi Sharma',
+        'persona': 'System Gamer',
         'platform': 'zomato',
         'city': 'Bengaluru',
         'worker_id': 'ZMT-BAD-002',
@@ -43,7 +45,8 @@ SIMULATED_USERS = {
         'email': 'edge.case@gigshield.demo',
         'phone': '+919100000003',
         'username': 'edge_case',
-        'name': 'Edge Case',
+        'name': 'Meena Das',
+        'persona': 'Uncertain Case',
         'platform': 'swiggy',
         'city': 'Mumbai',
         'worker_id': 'SWG-EDGE-003',
@@ -54,7 +57,8 @@ SIMULATED_USERS = {
         'email': 'low.risk@gigshield.demo',
         'phone': '+919100000004',
         'username': 'low_risk',
-        'name': 'Low Risk',
+        'name': 'Karthik Nair',
+        'persona': 'Normal Day',
         'platform': 'zomato',
         'city': 'Hyderabad',
         'worker_id': 'ZMT-LOW-004',
@@ -100,6 +104,10 @@ def _latest_simulation_profile(db: Session, user_id: int) -> str | None:
         if user.username == config['username']:
             return user_type
     return None
+
+
+def has_simulated_profile(db: Session, user_id: int) -> bool:
+    return _latest_simulation_profile(db, user_id) is not None
 
 
 def get_simulated_environment(user_type: str, lat: float | None = None, lon: float | None = None) -> dict:
@@ -292,6 +300,7 @@ def _ensure_profile_and_settings(db: Session, user: User, user_type: str) -> Non
         'allow_model_training': True,
         'simulation_user': True,
         'user_type': user_type,
+        'persona': config.get('persona'),
     }
 
     account = (
@@ -319,6 +328,7 @@ def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
             behavior_metadata={
                 'user_type': user_type,
                 'simulation_source': 'input_only',
+                'persona': SIMULATED_USERS[user_type].get('persona'),
             },
         )
     )
@@ -342,6 +352,7 @@ def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
                 'avg_loss': 0.0,
                 'work_pattern': work_pattern,
                 'source': 'simulation_input',
+                'persona': SIMULATED_USERS[user_type].get('persona'),
             },
         )
     )
