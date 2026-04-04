@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 from models.gig_income import GigIncome
 from services.environment_service import get_environment
 from services.fraud_engine import validate_claim
+from services.ml_service import record_claim_learning, update_model_weights, update_user_behavior
 from services.policy_service import create_claim_record, get_claimable_policy
 from services.premium_engine import baseline_value, resolve_city_from_coordinates
+from services.risk_engine import calculate_risk
 
 
 def _round(value: float) -> float:
@@ -123,8 +125,11 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
     environment_data['city'] = resolve_city_from_coordinates(lat, lon)
     today_income = _today_income_payload(user_id, db)
     baseline = baseline_value(user_id, db)
+    risk_result = calculate_risk(environment_data, user_id=user_id, db=db, today_income=today_income)
     week_records = _week_records(user_id, db, policy.start_date, policy.end_date)
     actual_week_income = sum(record.earnings for record in week_records)
+    active_triggers = [str(item) for item in (risk_result.get('active_triggers') or [])]
+    claim_date = policy.end_date
 
     fraud_result = validate_claim(
         user_id=user_id,
@@ -146,6 +151,25 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             status=status,
             reasons=reasons,
         )
+        record_claim_learning(
+            db,
+            user_id=user_id,
+            policy_id=policy.id,
+            risk_snapshot_id=None,
+            claim_date=claim_date,
+            status=status,
+            risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
+            baseline_income=baseline * 7,
+            actual_loss=0.0,
+            approved_payout=0.0,
+            triggers=active_triggers,
+            reasons=reasons,
+            fraud_score=float(fraud_result['fraud_score']),
+            review_notes='Fraud validation blocked approval',
+        )
+        update_model_weights(db, user_id=user_id)
+        update_user_behavior(db, user_id=user_id)
+        db.commit()
         return {
             'status': status,
             'claim_id': f'claim_{claim.id}',
@@ -165,6 +189,25 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             status='REJECTED',
             reasons=['No eligible weekly loss detected'],
         )
+        record_claim_learning(
+            db,
+            user_id=user_id,
+            policy_id=policy.id,
+            risk_snapshot_id=None,
+            claim_date=claim_date,
+            status='REJECTED',
+            risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
+            baseline_income=baseline * 7,
+            actual_loss=0.0,
+            approved_payout=0.0,
+            triggers=active_triggers,
+            reasons=['No eligible weekly loss detected'],
+            fraud_score=float(fraud_result['fraud_score']),
+            review_notes='Actual loss was zero after completed policy period',
+        )
+        update_model_weights(db, user_id=user_id)
+        update_user_behavior(db, user_id=user_id)
+        db.commit()
         return {
             'status': 'REJECTED',
             'claim_id': f'claim_{claim.id}',
@@ -183,6 +226,25 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
         status='APPROVED',
         reasons=[],
     )
+    record_claim_learning(
+        db,
+        user_id=user_id,
+        policy_id=policy.id,
+        risk_snapshot_id=None,
+        claim_date=claim_date,
+        status='APPROVED',
+        risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
+        baseline_income=baseline * 7,
+        actual_loss=weekly_loss,
+        approved_payout=payout,
+        triggers=active_triggers,
+        reasons=[],
+        fraud_score=float(fraud_result['fraud_score']),
+        review_notes='Approved claim used for adaptive learning',
+    )
+    update_model_weights(db, user_id=user_id)
+    update_user_behavior(db, user_id=user_id)
+    db.commit()
     return {
         'status': 'APPROVED',
         'claim_id': f'claim_{claim.id}',
