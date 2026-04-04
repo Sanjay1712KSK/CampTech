@@ -223,8 +223,10 @@ class _DashboardContent extends StatelessWidget {
         _ProfileCard(
           name: user.userName,
           persona: persona.title,
+          focusLabel: persona.focusLabel,
           protectedStatus: policyProtected ? 'Protected' : 'Not Protected',
           premiumStatus: premiumPaid ? 'Paid' : 'Not Paid',
+          accentColor: accent,
         ),
         const SizedBox(height: 18),
         _SectionCard(
@@ -233,8 +235,14 @@ class _DashboardContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(label: 'Scenario', value: personaStory.scenario),
+              _StoryCallout(
+                title: persona.headline,
+                body: personaStory.scenario,
+                accentColor: accent,
+              ),
+              const SizedBox(height: 14),
               _InfoRow(label: 'System behavior', value: personaStory.behavior),
+              _InfoRow(label: 'Best demo angle', value: persona.demoAngle),
               _InfoRow(label: 'Expected outcome', value: personaStory.outcome),
             ],
           ),
