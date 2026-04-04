@@ -700,13 +700,6 @@ As of the current Phase 2 build, the system includes:
 - redesigned multi-tab Flutter UX
 - deployment preparation for backend and web
 
-## Demo Strategy
-
-For short demo videos and judging:
-
-- use `bad_actor` to show fraud prevention
-- use `premium_success` to show real insured value and payout
-
 This creates the clearest contrast:
 
 - one claim is blocked
