@@ -740,8 +740,11 @@ class ApiService {
     throw _asException(response);
   }
 
-  static Future<EnvironmentModel> getEnvironment(double lat, double lon) async {
-    final body = await _getJson('/environment?lat=$lat&lon=$lon');
+  static Future<EnvironmentModel> getEnvironment(double lat, double lon, {int? userId}) async {
+    final query = userId == null
+        ? '/environment?lat=$lat&lon=$lon'
+        : '/environment?lat=$lat&lon=$lon&user_id=$userId';
+    final body = await _getJson(query);
     return EnvironmentModel.fromJson(body);
   }
 

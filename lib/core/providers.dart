@@ -187,7 +187,8 @@ final locationProvider = NotifierProvider<LocationNotifier, LocationState>(Locat
 // Environment Data Provider
 final environmentProvider = FutureProvider<EnvironmentModel>((ref) async {
   final loc = ref.watch(locationProvider);
-  return await ApiService.getEnvironment(loc.lat, loc.lon);
+  final user = ref.watch(userProvider);
+  return await ApiService.getEnvironment(loc.lat, loc.lon, userId: user?.userId);
 });
 
 // Risk Provider  (Requires user_id, lat, lon)

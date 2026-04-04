@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get('/environment', response_model=EnvironmentResponse)
 def environment(params: CoordinatesQuery = Depends(), db: Session = Depends(get_db)):
     try:
-        response = get_environment(params.lat, params.lon, db=db)
+        response = get_environment(params.lat, params.lon, db=db, user_id=params.user_id)
         return EnvironmentResponse.model_validate(response).model_dump()
     except Exception as exc:
         logger.exception('environment endpoint error: %s', exc)

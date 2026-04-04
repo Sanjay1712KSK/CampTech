@@ -8,6 +8,7 @@ class CoordinatesQuery(BaseModel):
 
     lat: float = Field(..., ge=-90, le=90, examples=[13.0827])
     lon: float = Field(..., ge=-180, le=180, examples=[80.2707])
+    user_id: int | None = Field(default=None, ge=1)
 
 
 class WeatherHourlyPoint(BaseModel):
