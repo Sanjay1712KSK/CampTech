@@ -150,6 +150,20 @@ It also supports:
 - hourly forecast
 - recent local comparison
 
+Logic:
+
+- pulls current and hourly weather data from Open-Meteo
+- pulls AQI from OpenWeather
+- derives traffic context from OpenRouteService
+- normalizes everything into one environment snapshot:
+  - temperature
+  - humidity
+  - wind speed
+  - rain estimate
+  - AQI
+  - traffic index
+- stores or compares this snapshot for hyperlocal analysis
+
 ### 2. Disruption Model
 
 Transforms environmental conditions into operational effects:
@@ -158,6 +172,18 @@ Transforms environmental conditions into operational effects:
 - working hours factor
 
 This is the bridge between weather data and delivery economics.
+
+Logic:
+
+- rain and traffic primarily reduce `delivery_capacity`
+- AQI, heat, and wind primarily reduce `working_hours_factor`
+- penalties are bounded using clamp functions so disruption stays interpretable
+- the model exposes a factor breakdown:
+  - rain penalty
+  - traffic penalty
+  - AQI penalty
+  - heat penalty
+  - wind penalty
 
 ### 3. Risk Engine
 
@@ -174,13 +200,61 @@ Turns environmental disruption into:
 
 This is the single source of disruption truth used by the rest of the system.
 
+Logic:
+
+- uses the normalized environment snapshot
+- computes factor scores for:
+  - rain
+  - traffic
+  - AQI
+  - wind / heat
+- computes disruption using the disruption model
+- computes delivery efficiency using:
+  - `efficiency_score = delivery_capacity * working_hours_factor`
+- computes:
+  - `expected_income_loss = 1 - efficiency_score`
+- combines:
+  - weighted environmental factors
+  - expected income loss
+  - hyperlocal multiplier
+- outputs:
+  - final risk score
+  - risk level
+  - triggers
+  - reasons
+  - recommendation
+
+Current risk-score structure:
+
+- 65% weighted environmental factor contribution
+- 35% delivery-efficiency-derived income loss contribution
+- hyperlocal risk then adjusts the final score within a bounded range
+
 ### 4. Hyperlocal Engine
 
 Compares current conditions against recent local history to determine whether today's disruption is unusually severe.
 
+Logic:
+
+- compares current snapshot against recent local averages or snapshots
+- increases confidence when disruption is significantly above local norm
+- produces:
+  - `hyper_local_risk`
+  - a textual insight
+  - a baseline comparison snapshot
+
 ### 5. Predictive Engine
 
 Uses forecast data to estimate near-future risk trends, especially the next 6 hours.
+
+Logic:
+
+- reads hourly forecast from environment data
+- estimates next-6-hour disruption severity
+- classifies trend as:
+  - increasing
+  - decreasing
+  - stable
 
 ### 6. Trigger Engine
 
@@ -191,6 +265,17 @@ Activates parametric triggers such as:
 - `AQI_TRIGGER`
 - `HEAT_TRIGGER`
 - `COMBINED_TRIGGER`
+
+Logic:
+
+- activates triggers when thresholds are crossed
+- examples:
+  - high rain -> `RAIN_TRIGGER`
+  - heavy congestion -> `TRAFFIC_TRIGGER`
+  - poor air quality -> `AQI_TRIGGER`
+  - high heat -> `HEAT_TRIGGER`
+- `COMBINED_TRIGGER` activates when multiple disruption drivers are simultaneously strong
+- outputs overall trigger severity used later by the Premium Engine
 
 ### 7. Premium Engine
 
@@ -211,9 +296,35 @@ Outputs:
 
 No duplicate risk logic is used here.
 
+Logic:
+
+- calculates baseline income from recent top earning days
+- computes:
+  - `weekly_income = baseline_income * 7`
+- reuses the Risk Engine result directly
+- applies pricing:
+  - `premium = weekly_income * risk_score * 0.07`
+- applies adjustments:
+  - high trigger severity increases premium
+  - combined trigger applies another multiplier
+- computes:
+  - `coverage = weekly_income * 0.8`
+- stores:
+  - premium snapshot
+  - linked risk context
+
 ### 8. Policy Engine
 
 Creates weekly policy periods and links pricing context to the insured period.
+
+Logic:
+
+- creates 7-day policy windows
+- ties premium payment to policy activation
+- makes the system claim-aware by distinguishing:
+  - active policy
+  - completed claimable policy week
+  - already settled claim period
 
 ### 9. Claim Engine
 
@@ -234,6 +345,26 @@ It evaluates:
 - fraud score
 - payout eligibility
 
+Logic:
+
+- fetches the claimable policy
+- gets expected income from baseline
+- gets actual income from gig data
+- calculates:
+  - `loss = expected_income - actual_income`
+- rejects when:
+  - no completed policy week exists
+  - no active triggers exist
+  - no real loss exists
+  - the week was already claimed and paid
+- approved payout logic:
+  - `payout = loss * 0.8`
+  - capped by coverage when needed
+- writes:
+  - claim record
+  - learning record
+  - blockchain adapter record
+
 ### 10. Fraud / ML Layer
 
 Uses anomaly-style logic, not heavy training infrastructure.
@@ -251,6 +382,19 @@ It produces:
 - confidence
 - decision support for approve / flag / reject
 
+Logic:
+
+- starts from:
+  - `predicted_loss = risk_score * baseline_income`
+- compares predicted loss vs actual loss
+- checks deviation from stored user behavior
+- checks whether active triggers support the claim
+- computes anomaly-oriented fraud score
+- decision bands:
+  - low score -> approve
+  - medium score -> flag
+  - high score -> reject
+
 ### 11. Adaptive Learning Layer
 
 Stores and updates:
@@ -260,6 +404,56 @@ Stores and updates:
 - claim learning history
 
 This makes the system ML-ready while staying hackathon-practical.
+
+Logic:
+
+- stores claim learning records after claim processing
+- keeps model weights in the database rather than in a static config
+- updates user behavior snapshots from:
+  - average income
+  - average loss
+  - work pattern
+  - city pattern
+  - claim frequency
+- updates factor weights using recent claim error patterns
+
+This means the system can adapt which factors matter most over time, for example:
+
+- if rain repeatedly explains real loss better than traffic, rain weight increases slightly
+- if AQI becomes more important in loss outcomes, AQI weight rises in future scoring
+
+Training only occurs when user settings allow model training.
+
+### 12. ML Pipeline Used In The Engines
+
+The project uses a lightweight database-driven ML pipeline rather than heavy model training infrastructure.
+
+Pipeline steps:
+
+1. Risk Engine calculates a risk score from environmental disruption.
+2. Expected loss model estimates:
+   - `predicted_loss = risk_score * baseline_income`
+3. Claim Engine measures:
+   - actual loss
+   - payout outcome
+4. Claim history stores:
+   - predicted loss
+   - actual loss
+   - active triggers
+   - fraud score
+5. Adaptive layer updates:
+   - model weights
+   - user behavior
+6. Future risk and fraud decisions reuse these updated signals.
+
+This creates a closed learning loop:
+
+`live environment -> decision -> claim outcome -> learning record -> updated weights -> better future decisions`
+
+Optional ML hook:
+
+- a lightweight regression-style hook exists for future model-backed efficiency prediction
+- when unavailable, the system safely falls back to rule-based logic
 
 ### 12. Blockchain Adapter Layer
 
@@ -483,6 +677,7 @@ What makes it different:
 - real-time environmental APIs drive core decisions
 - premium and claims both reuse the same risk engine
 - claim logic is explainable instead of opaque
+- engine logic is explicit and auditable, not hidden in black-box prompts
 - persona-driven simulation proves different outcomes on the same stack
 - adaptive ML logic exists without heavyweight model infrastructure
 - blockchain is integrated through a safe adapter layer instead of vendor lock-in
