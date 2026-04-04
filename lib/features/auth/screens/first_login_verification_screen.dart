@@ -4,7 +4,7 @@ import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/core/widgets/custom_text_field.dart';
 import 'package:guidewire_gig_ins/core/widgets/primary_button.dart';
 import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
-import 'package:guidewire_gig_ins/features/auth/screens/post_auth_gate_screen.dart';
+import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class FirstLoginVerificationScreen extends ConsumerStatefulWidget {
@@ -85,7 +85,7 @@ class _FirstLoginVerificationScreenState extends ConsumerState<FirstLoginVerific
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const PostAuthGateScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardLoader()),
         (route) => false,
       );
     } catch (error) {
