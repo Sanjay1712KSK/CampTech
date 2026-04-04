@@ -67,6 +67,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
               final persona = resolvePersonaStory(user);
               final summary = snapshot.data;
               final claim = claimState.asData?.value;
+              final canClaim = summary?.claimReady ?? false;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -118,10 +119,16 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isSubmitting
+                        onPressed: _isSubmitting || !canClaim
                             ? null
                             : () => _submitClaim(user.userId, location.lat, location.lon),
-                        child: Text(_isSubmitting ? 'Processing claim...' : 'Check Claim & Payout'),
+                        child: Text(
+                          _isSubmitting
+                              ? 'Processing claim...'
+                              : canClaim
+                                  ? 'Check Claim & Payout'
+                                  : (summary?.claimMessage ?? 'Claim unavailable'),
+                        ),
                       ),
                     ),
                   ),

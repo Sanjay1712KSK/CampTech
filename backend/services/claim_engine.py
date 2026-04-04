@@ -3,7 +3,8 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
-from models.models import PremiumSnapshot
+from models.models import ClaimHistory, PremiumSnapshot
+from models.profile import Profile
 from services.environment_service import get_environment
 from services.fraud_engine import validate_claim
 from services.ml_service import (
@@ -45,6 +46,16 @@ def _today_income_payload(user_id: int, db: Session) -> dict:
         'disruption_type': record.disruption_type,
         'platform': record.platform,
     }
+
+
+def _claim_city(user_id: int, db: Session, environment_data: dict, lat: float, lon: float) -> str:
+    simulation_meta = (environment_data or {}).get('simulation_meta') or {}
+    if simulation_meta:
+        profile = db.query(Profile).filter(Profile.user_id == int(user_id)).first()
+        if profile and profile.city:
+            return str(profile.city)
+
+    return resolve_city_from_coordinates(lat, lon)
 
 
 def check_user_eligibility(user_id: int, db: Session) -> dict:
@@ -206,8 +217,32 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             confidence=1.0,
         )
 
+    settled_claim = (
+        db.query(ClaimHistory)
+        .filter(
+            ClaimHistory.user_id == int(user_id),
+            ClaimHistory.policy_id == policy.id,
+            ClaimHistory.status == 'APPROVED',
+            ClaimHistory.approved_payout > 0,
+        )
+        .order_by(ClaimHistory.claim_date.desc(), ClaimHistory.id.desc())
+        .first()
+    )
+    if settled_claim is not None:
+        return _reject_response(
+            status='REJECTED',
+            reason='Previous completed week was already claimed and paid',
+            claim_id=settled_claim.claim_reference,
+            expected_income=None,
+            actual_income=None,
+            predicted_loss=None,
+            fraud_score=float(settled_claim.fraud_score or 0.0),
+            confidence=1.0,
+            reasons=['Previous completed week was already claimed and paid'],
+        )
+
     environment_data = get_environment(lat, lon, db=db, user_id=user_id)
-    environment_data['city'] = resolve_city_from_coordinates(lat, lon)
+    environment_data['city'] = _claim_city(user_id, db, environment_data, lat, lon)
     today_income = _today_income_payload(user_id, db)
     expected_income = _round(baseline_value(user_id, db))
     actual_income = _round(float(today_income.get('earnings', 0.0) or 0.0))

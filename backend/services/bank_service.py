@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from models.bank_account import BankAccount, BankTransaction
 from models.insurance import Claim
+from models.models import ClaimHistory
 from models.user_model import User
 from services.policy_service import get_claimable_policy, get_latest_policy
 
@@ -146,6 +147,16 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         .order_by(Claim.created_at.desc(), Claim.id.desc())
         .first()
     )
+    settled_claim = (
+        db.query(ClaimHistory)
+        .filter(
+            ClaimHistory.user_id == int(user_id),
+            ClaimHistory.status == 'APPROVED',
+            ClaimHistory.approved_payout > 0,
+        )
+        .order_by(ClaimHistory.claim_date.desc(), ClaimHistory.id.desc())
+        .first()
+    )
     recent_transactions = (
         db.query(BankTransaction)
         .filter(BankTransaction.user_id == int(user_id))
@@ -173,6 +184,10 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         policy_start = policy.start_date
         policy_end = policy.end_date
 
+    if settled_claim is not None or (latest_claim and latest_claim.status == 'APPROVED' and last_payout):
+        claim_ready = False
+        claim_message = 'Previous completed week was already claimed and paid'
+
     return {
         'user_id': int(user_id),
         'bank_linked': account is not None,
@@ -187,7 +202,7 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         'claim_ready': claim_ready,
         'claim_message': claim_message,
         'last_payout': _round(last_payout.amount) if last_payout else 0.0,
-        'latest_claim_status': latest_claim.status if latest_claim else None,
+        'latest_claim_status': settled_claim.status if settled_claim else (latest_claim.status if latest_claim else None),
         'recent_remarks': [
             (
                 json.loads(txn.metadata_json).get('remark')

@@ -348,6 +348,13 @@ def _ensure_profile_and_settings(db: Session, user: User, user_type: str) -> Non
 
 
 def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
+    avg_loss_by_user_type = {
+        'good_actor': 210.0,
+        'bad_actor': 35.0,
+        'edge_case': 135.0,
+        'low_risk': 18.0,
+        'premium_success': 390.0,
+    }
     db.add(
         UserBehavior(
             user_id=user.id,
@@ -377,8 +384,8 @@ def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
             event_value=work_pattern,
             confidence_score=0.92,
             behavior_metadata={
-                'avg_income': 0.0,
-                'avg_loss': 0.0,
+                'avg_income': _round(float(getattr(user.profile, 'avg_income', 0.0) or 0.0)),
+                'avg_loss': avg_loss_by_user_type.get(user_type, 0.0),
                 'work_pattern': work_pattern,
                 'source': 'simulation_input',
                 'persona': SIMULATED_USERS[user_type].get('persona'),
@@ -596,7 +603,18 @@ def _seed_premium_success_story(db: Session, user: User) -> None:
         claimed_loss=_round(loss_amount),
         approved_payout=_round(payout_amount),
         fraud_score=fraud_score,
-        trigger_snapshot=['RAIN_TRIGGER', 'COMBINED_TRIGGER'],
+        trigger_snapshot={
+            'active_triggers': ['RAIN_TRIGGER', 'COMBINED_TRIGGER'],
+            'trigger_flags': {
+                'rain': 1.0,
+                'traffic': 0.0,
+                'aqi': 0.0,
+                'heat': 0.0,
+                'combined': 1.0,
+            },
+            'risk_score': 0.64,
+            'baseline_income': baseline_income,
+        },
         reasons=[
             'Protected worker experienced a real disruption after paying premium',
             'Weather anomaly matched reduced earnings',

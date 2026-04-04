@@ -326,8 +326,14 @@ class _DashboardContent extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isClaiming ? null : onClaim,
-                  child: Text(isClaiming ? 'Processing claim...' : 'Run Claim Check'),
+                  onPressed: isClaiming || summary?.claimReady != true ? null : onClaim,
+                  child: Text(
+                    isClaiming
+                        ? 'Processing claim...'
+                        : summary?.claimReady == true
+                            ? 'Run Claim Check'
+                            : (summary?.claimMessage ?? 'Claim unavailable'),
+                  ),
                 ),
               ),
             ],
