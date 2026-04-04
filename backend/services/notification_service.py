@@ -1,4 +1,5 @@
 import logging
+import os
 
 try:
     import mailtrap as mt
@@ -10,6 +11,7 @@ logger = logging.getLogger('gig_insurance_backend.notifications')
 MAILTRAP_TOKEN = '60dd0cc51ffb85ec041d1ece8a75df28'
 MAILTRAP_SENDER_EMAIL = 'hello@demomailtrap.co'
 MAILTRAP_SENDER_NAME = 'Mailtrap Test'
+DEMO_EMAIL_REDIRECT = os.getenv('DEMO_EMAIL_REDIRECT', 'demo-actors@demomailtrap.co')
 
 
 def _mask_email(email: str) -> str:
@@ -27,13 +29,26 @@ def _mask_phone(phone: str) -> str:
     return f"{phone[:3]}***{phone[-3:]}"
 
 
+def _is_demo_email(email: str) -> bool:
+    return email.strip().lower().endswith('@gigshield.demo')
+
+
+def _resolve_mailtrap_recipient(email: str) -> tuple[str, str]:
+    normalized = email.strip().lower()
+    if _is_demo_email(normalized):
+        return DEMO_EMAIL_REDIRECT, 'sandbox_redirect'
+    return normalized, 'direct'
+
+
 def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> tuple[bool, str | None]:
     if mt is None:
         return False, 'Mailtrap package is not installed on the backend environment'
 
+    resolved_email, _ = _resolve_mailtrap_recipient(to_email)
+
     mail = mt.Mail(
         sender=mt.Address(email=MAILTRAP_SENDER_EMAIL, name=MAILTRAP_SENDER_NAME),
-        to=[mt.Address(email=to_email)],
+        to=[mt.Address(email=resolved_email)],
         subject=subject,
         text=text,
         category=category,
@@ -76,6 +91,7 @@ def send_email_otp(email: str, otp: str, purpose: str) -> dict:
         )
         category = 'Reset OTP'
 
+    resolved_email, delivery_mode = _resolve_mailtrap_recipient(email)
     success, error_message = _deliver_mailtrap_email(
         to_email=email,
         subject=subject,
@@ -89,6 +105,8 @@ def send_email_otp(email: str, otp: str, purpose: str) -> dict:
     return {
         'channel': 'email',
         'destination': _mask_email(email),
+        'delivery_mode': delivery_mode,
+        'redirected_to': _mask_email(resolved_email) if delivery_mode == 'sandbox_redirect' else None,
         'status': 'sent' if success else 'failed',
         'error_message': error_message,
         'mock_otp': None,
@@ -112,6 +130,7 @@ def send_confirmation_email(email: str, confirmation_link: str, app_confirmation
         if app_confirmation_link
         else ''
     )
+    resolved_email, delivery_mode = _resolve_mailtrap_recipient(email)
     success, error_message = _deliver_mailtrap_email(
         to_email=email,
         subject='GigShield account confirmation',
@@ -132,6 +151,8 @@ def send_confirmation_email(email: str, confirmation_link: str, app_confirmation
     return {
         'channel': 'email',
         'destination': _mask_email(email),
+        'delivery_mode': delivery_mode,
+        'redirected_to': _mask_email(resolved_email) if delivery_mode == 'sandbox_redirect' else None,
         'status': 'sent' if success else 'failed',
         'error_message': error_message,
         'confirmation_link': confirmation_link,
