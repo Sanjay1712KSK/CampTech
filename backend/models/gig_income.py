@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy.orm import relationship
 
 from database.db import Base
 
@@ -48,3 +49,5 @@ class GigIncome(Base):
     city = Column(String(100), nullable=False, default='Chennai')
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship('User', back_populates='gig_incomes')

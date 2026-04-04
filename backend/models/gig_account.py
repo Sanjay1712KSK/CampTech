@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy.orm import relationship
 
 from database.db import Base
 
@@ -15,3 +16,5 @@ class GigAccount(Base):
     platform = Column(String(50), nullable=False, index=True)
     worker_id = Column(String(64), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship('User', back_populates='gig_accounts')

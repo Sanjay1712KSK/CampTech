@@ -53,6 +53,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, futu
 Base = declarative_base()
 
 
+def _load_model_metadata() -> None:
+    import models  # noqa: F401
+
+
 if DATABASE_URL.startswith('sqlite'):
     @event.listens_for(engine, 'connect')
     def _set_sqlite_pragma(dbapi_connection, connection_record):
@@ -78,6 +82,7 @@ def get_db():
 
 def reset_database():
     """Drop all tables and recreate schema. Development-only helper."""
+    _load_model_metadata()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
@@ -107,6 +112,7 @@ def _sqlite_has_column(table_name: str, column_name: str) -> bool:
 
 def ensure_schema():
     """Ensure DB schema matches models; reset in development if mismatch."""
+    _load_model_metadata()
     if not DATABASE_URL.startswith('sqlite'):
         Base.metadata.create_all(bind=engine)
         return
@@ -126,7 +132,15 @@ def ensure_schema():
             'verified_at',
         ],
         'profiles': ['user_id', 'platform', 'city', 'avg_income'],
+        'user_settings': ['user_id', 'ml_consent', 'data_sharing_consent', 'notification_preferences'],
         'gig_accounts': ['user_id', 'platform', 'worker_id', 'created_at'],
+        'income_summary': ['user_id', 'summary_date', 'summary_type', 'total_income', 'summary_metadata'],
+        'risk_snapshots': ['user_id', 'lat', 'lon', 'risk_score', 'active_triggers', 'environment_context'],
+        'premium_snapshots': ['user_id', 'risk_snapshot_id', 'weekly_income', 'weekly_premium', 'coverage', 'pricing_metadata'],
+        'claim_history': ['user_id', 'claim_reference', 'claim_date', 'status', 'trigger_snapshot', 'reasons'],
+        'user_behavior': ['user_id', 'event_type', 'behavior_metadata', 'observed_at'],
+        'model_weights': ['model_name', 'version', 'rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight'],
+        'blockchain_records': ['transaction_type', 'transaction_hash', 'status', 'payload'],
         'adaptive_risk_weights': ['rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight', 'sample_count', 'updated_at'],
         'environment_snapshots': ['bucket_lat', 'bucket_lon', 'temperature', 'wind_speed', 'humidity', 'rain_estimate', 'aqi', 'traffic_index', 'observed_at'],
         'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],
