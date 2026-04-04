@@ -268,3 +268,15 @@ def update_user_behavior(
     db.flush()
     logger.info('user behavior updated user_id=%s snapshot=%s', user_id, snapshot)
     return snapshot
+
+
+def get_latest_user_behavior(db: Session, *, user_id: int) -> dict:
+    record = (
+        db.query(UserBehavior)
+        .filter(UserBehavior.user_id == int(user_id), UserBehavior.event_type == 'behavior_snapshot')
+        .order_by(UserBehavior.observed_at.desc(), UserBehavior.id.desc())
+        .first()
+    )
+    if record is None:
+        return {}
+    return dict(record.behavior_metadata or {})

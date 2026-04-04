@@ -74,6 +74,7 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
         'payout': result['payout'],
         'predicted_loss': result.get('predicted_loss'),
         'fraud_score': result['fraud_score'],
+        'confidence': result.get('confidence'),
         'reasons': result.get('reasons'),
     }
 
