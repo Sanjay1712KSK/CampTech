@@ -4,7 +4,7 @@ import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
-import 'package:guidewire_gig_ins/features/auth/screens/post_auth_gate_screen.dart';
+import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_screen.dart';
 import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
@@ -90,7 +90,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
           if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const PostAuthGateScreen()),
+            MaterialPageRoute(builder: (_) => const DashboardLoader()),
             (route) => false,
           );
         }
@@ -104,7 +104,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
       if (widget.redirectToRiskOnSuccess) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 2)),
+          MaterialPageRoute(builder: (_) => const DashboardLoader()),
           (route) => false,
         );
         return;
@@ -141,7 +141,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Connect your income source',
+                'Connect Your Gig Account',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -149,13 +149,12 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                widget.isOnboardingFlow
-                    ? 'Final onboarding step: link a gig platform and we will generate 30 days of earnings history.'
-                    : 'Link your delivery partner account to refresh your earnings data.',
-                style: const TextStyle(
+              const Text(
+                'To calculate your income risk, we need your delivery data.',
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
+                  height: 1.5,
                 ),
               ),
               const SizedBox(height: 24),
@@ -224,7 +223,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                                   color: Colors.black,
                                 ),
                               )
-                            : Text(widget.isOnboardingFlow ? 'Finish onboarding' : 'Connect account'),
+                            : Text(widget.isOnboardingFlow ? 'Connect Now' : 'Connect Now'),
                       ),
                     ),
                   ],
