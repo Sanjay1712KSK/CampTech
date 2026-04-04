@@ -402,6 +402,29 @@ Logic:
   - medium score -> flag
   - high score -> reject
 
+### Fraud Engine Design
+
+The fraud engine is designed to be explainable rather than opaque.
+
+It does not rely on one single binary check. Instead, it combines multiple fraud-relevant signals:
+
+- predicted loss from the risk engine
+- actual observed loss from gig income
+- user behavior deviation from recent history
+- trigger mismatch between claim story and environmental evidence
+- policy and claim-window validity
+
+This means fraudulent or unsupported claims are not rejected blindly. They are evaluated through a layered anomaly score that can:
+
+- approve
+- flag for caution
+- reject
+
+The system therefore protects both sides:
+
+- honest workers are not punished by static rules
+- insurers are not exposed to unsupported payouts
+
 ### 11. Adaptive Learning Layer
 
 Stores and updates:
@@ -461,6 +484,46 @@ Optional ML hook:
 
 - a lightweight regression-style hook exists for future model-backed efficiency prediction
 - when unavailable, the system safely falls back to rule-based logic
+
+## Why It Is Dynamic
+
+This system is designed to behave differently as conditions change.
+
+It is dynamic because:
+
+- live weather, AQI, and traffic APIs continuously change the environment context
+- risk is recalculated from current inputs rather than hardcoded categories
+- premium reuses live risk output instead of static pricing slabs
+- claim reasoning changes depending on:
+  - trigger activation
+  - actual income loss
+  - policy state
+  - user behavior pattern
+- the simulation layer changes only the inputs, so the same backend logic produces different outcomes across personas
+- adaptive learning updates model weights and user behavior snapshots over time
+
+This allows the system to generate:
+
+- different pricing for different risk conditions
+- different claim decisions for different workers
+- different fraud outcomes for different behavioral patterns
+
+## Why It Is Fail-Safe
+
+The system is intentionally guarded so that one failure or one missing condition does not break the product logic.
+
+Fail-safe behaviors include:
+
+- claims are blocked when no completed claimable policy week exists
+- claims are blocked when no active disruption triggers exist
+- duplicate already-paid claim weeks are blocked
+- fraud scoring can flag cases instead of forcing a binary approve/reject
+- blockchain writes happen through an adapter, so blockchain failure does not stop core business logic
+- external API absence can fall back gracefully instead of crashing the entire flow
+- SQLite is used locally, while the backend is already PostgreSQL-ready for deployment
+- biometric and deep-link flows degrade safely for unsupported platforms such as web
+
+This makes the platform more reliable in both demo and deployment scenarios.
 
 ### 12. Blockchain Adapter Layer
 
