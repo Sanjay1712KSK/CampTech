@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/main/tabs/claims_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/home_tab.dart';
-import 'package:guidewire_gig_ins/features/main/tabs/insights_tab.dart'; // Earnings
-import 'package:guidewire_gig_ins/features/main/tabs/risk_tab.dart';
-import 'package:guidewire_gig_ins/features/main/tabs/ai_engine_tab.dart';
+import 'package:guidewire_gig_ins/features/main/tabs/insights_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/profile_tab.dart';
+import 'package:guidewire_gig_ins/features/main/tabs/policy_tab.dart';
 
-class MainShell extends ConsumerStatefulWidget {
+class MainShell extends StatefulWidget {
   final int initialIndex;
 
-  const MainShell({Key? key, this.initialIndex = 0}) : super(key: key);
+  const MainShell({super.key, this.initialIndex = 0});
 
   @override
-  ConsumerState<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends State<MainShell> {
   late int _currentIndex;
-  bool _isVisible = true;
 
   @override
   void initState() {
@@ -27,56 +24,52 @@ class _MainShellState extends ConsumerState<MainShell> {
     _currentIndex = widget.initialIndex;
   }
 
-  void _onNavTap(int index) => setState(() => _currentIndex = index);
-
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.reverse) {
-        if (_isVisible) setState(() => _isVisible = false);
-      } else if (notification.direction == ScrollDirection.forward) {
-        if (!_isVisible) setState(() => _isVisible = true);
-      }
-    }
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
       const HomeTab(),
-      const InsightsTab(), // Serves as Earnings Tab
-      const RiskTab(),
-      const AIEngineTab(),
+      const InsightsTab(),
+      const PolicyTab(),
+      const ClaimsTab(),
       const ProfileTab(),
     ];
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-        child: IndexedStack(index: _currentIndex, children: pages),
-      ),
-      bottomNavigationBar: AnimatedSlide(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        offset: _isVisible ? Offset.zero : const Offset(0, 1.0),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onNavTap,
-          backgroundColor: AppTheme.surfaceColor,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: AppTheme.textSecondary,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 10),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 10),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: 'Earnings'),
-            BottomNavigationBarItem(icon: Icon(Icons.security_rounded), label: 'Risk'),
-            BottomNavigationBarItem(icon: Icon(Icons.hub_rounded), label: 'AI Engine'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-          ],
-        ),
+      body: IndexedStack(index: _currentIndex, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        backgroundColor: AppTheme.surfaceColor,
+        indicatorColor: AppTheme.primaryColor.withOpacity(0.14),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.show_chart_outlined),
+            selectedIcon: Icon(Icons.show_chart_rounded),
+            label: 'Earnings',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shield_outlined),
+            selectedIcon: Icon(Icons.shield_rounded),
+            label: 'Insurance',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
+            label: 'Claims',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
