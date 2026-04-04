@@ -107,6 +107,18 @@ Important claim note:
 
 ## Good Actor
 
+### Persona
+
+- Demo name: `Arjun Kumar`
+- Persona: `Trusted Professional`
+- Profile: consistent, disciplined delivery partner
+
+### Behavior
+
+- works daily for around 6 to 8 hours
+- pays premium every week
+- stable income pattern
+
 ### What this actor means
 
 This user represents a genuine worker facing real disruption.
@@ -146,6 +158,29 @@ This user represents a genuine worker facing real disruption.
 - fraud score should usually look lower than bad_actor
 - if the policy window is not yet claimable, the screen still shows the correct guarded behavior
 
+### Demo scenario
+
+- heavy rain
+- high traffic
+- real disruption
+
+### System behavior
+
+- risk -> `HIGH`
+- eligible for insurance
+- premium -> paid
+- claim -> auto-detected when claim conditions are valid
+- fraud -> low
+
+### Outcome
+
+- auto payout path is the intended story for this actor
+- bank can be credited once the policy and claim timing conditions are satisfied
+
+### Demo line
+
+Arjun is a consistent worker who pays his weekly premium on time. When a real disruption occurs, our system automatically detects income loss and credits his payout without any manual claim.
+
 ### Why this actor matters
 
 This is the best example of the intended product story:
@@ -153,6 +188,18 @@ This is the best example of the intended product story:
 Environment -> Risk -> Premium -> Claim -> Payout
 
 ## Bad Actor
+
+### Persona
+
+- Demo name: `Ravi Sharma`
+- Persona: `System Gamer`
+- Profile: irregular worker who tries to exploit the system
+
+### Behavior
+
+- inconsistent work pattern
+- no real disruption
+- claims high loss
 
 ### What this actor means
 
@@ -190,6 +237,27 @@ This user is meant to represent suspicious or weakly supported claims.
 - if this user tries to claim under calm conditions, the claim engine should lean toward rejection or a fraud concern
 - this actor helps show why the system does not blindly pay claims
 
+### Demo scenario
+
+- normal weather
+- no meaningful triggers
+- fake loss story
+
+### System behavior
+
+- risk -> `LOW`
+- no triggers
+- ML detects anomaly
+
+### Outcome
+
+- claim rejected is the intended story
+- fraud score should appear high relative to the other actors
+
+### Demo line
+
+Ravi attempts to claim high loss without any real disruption. Our system detects this mismatch using AI and prevents fraudulent payouts.
+
 ### Why this actor matters
 
 This is the best actor for explaining:
@@ -200,6 +268,17 @@ This is the best actor for explaining:
 - behavior-based review
 
 ## Edge Case
+
+### Persona
+
+- Demo name: `Meena Das`
+- Persona: `Uncertain Case`
+- Profile: semi-consistent worker with mixed signal quality
+
+### Behavior
+
+- moderate activity
+- slight income fluctuation
 
 ### What this actor means
 
@@ -237,6 +316,25 @@ This user represents an ambiguous middle case.
 - useful for explaining flagged or borderline review behavior
 - this actor is good for showing that the system handles gray areas instead of just approve/reject extremes
 
+### Demo scenario
+
+- mild rain
+- moderate traffic
+
+### System behavior
+
+- risk -> `MEDIUM`
+- loss -> borderline
+- fraud score -> medium
+
+### Outcome
+
+- this actor is best used for a flagged or review-needed explanation
+
+### Demo line
+
+Meena represents the real-world gray zone. Conditions are not fully normal and not fully severe, so the system explains the risk, prices carefully, and can flag the case for review instead of making a blind decision.
+
 ### Why this actor matters
 
 This is the best actor for explaining:
@@ -246,6 +344,12 @@ This is the best actor for explaining:
 - real-world ambiguity in insurtech decisions
 
 ## Low Risk
+
+### Persona
+
+- Demo name: `Karthik Nair`
+- Persona: `Normal Day`
+- Profile: stable working conditions
 
 ### What this actor means
 
@@ -283,6 +387,25 @@ This user represents calm, favorable working conditions.
 - likely weaker claim support under current conditions
 - useful for showing why not every user should expect a payout
 
+### Demo scenario
+
+- no disruption
+
+### System behavior
+
+- risk -> `LOW`
+- insurance may not feel necessary
+- premium should stay low
+
+### Outcome
+
+- no claim story
+- low premium story
+
+### Demo line
+
+Karthik shows the fairness side of the platform. On calm days with stable work conditions, risk remains low, premium stays lower, and the system avoids unnecessary claim or payout behavior.
+
 ### Why this actor matters
 
 This is the best actor for explaining:
@@ -290,6 +413,35 @@ This is the best actor for explaining:
 - fair pricing under calm conditions
 - low-risk product behavior
 - premium differences across users
+
+## Premium Success Persona
+
+### Persona
+
+- Demo name: `Suresh Patel`
+- Persona: `Premium Success User`
+- Profile: paid user who experiences a real disruption after being protected
+
+### Scenario
+
+- paid last week premium
+- rain disruption occurred
+
+### Intended system story
+
+- premium paid -> `₹150`
+- payout received -> `₹320`
+- auto payout
+- blockchain record stored
+- bank credited
+
+### How to show this in the current demo
+
+There is not a separately seeded fifth login user at the moment. Use `good_actor` to tell this premium-success story, because that actor is the closest match to a real protected user under disruption.
+
+### Demo line
+
+Suresh shows the full value of the system. After paying his weekly premium, a real disruption affects his earnings, and the platform automatically validates the event, records it securely, and credits the payout.
 
 ## How To Explain The System During Demo
 
