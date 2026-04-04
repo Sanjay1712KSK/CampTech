@@ -147,6 +147,15 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         .order_by(Claim.created_at.desc(), Claim.id.desc())
         .first()
     )
+
+    latest_claim_reason = None
+    if latest_claim and latest_claim.reasons_json:
+        try:
+            parsed_reasons = json.loads(latest_claim.reasons_json)
+            if isinstance(parsed_reasons, list) and parsed_reasons:
+                latest_claim_reason = str(parsed_reasons[0])
+        except json.JSONDecodeError:
+            latest_claim_reason = None
     settled_claim = (
         db.query(ClaimHistory)
         .filter(
@@ -187,6 +196,9 @@ def insurance_summary(db: Session, user_id: int) -> dict:
     if settled_claim is not None or (latest_claim and latest_claim.status == 'APPROVED' and last_payout):
         claim_ready = False
         claim_message = 'Previous completed week was already claimed and paid'
+    elif latest_claim and latest_claim.status in {'REJECTED', 'FLAGGED'} and latest_claim_reason:
+        claim_ready = False
+        claim_message = latest_claim_reason
 
     return {
         'user_id': int(user_id),

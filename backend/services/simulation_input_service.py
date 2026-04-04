@@ -348,9 +348,16 @@ def _ensure_profile_and_settings(db: Session, user: User, user_type: str) -> Non
 
 
 def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
+    avg_income_by_user_type = {
+        'good_actor': 945.0,
+        'bad_actor': 802.0,
+        'edge_case': 768.0,
+        'low_risk': 692.0,
+        'premium_success': 928.0,
+    }
     avg_loss_by_user_type = {
         'good_actor': 210.0,
-        'bad_actor': 35.0,
+        'bad_actor': 42.0,
         'edge_case': 135.0,
         'low_risk': 18.0,
         'premium_success': 390.0,
@@ -384,13 +391,212 @@ def _record_user_behavior(db: Session, user: User, user_type: str) -> None:
             event_value=work_pattern,
             confidence_score=0.92,
             behavior_metadata={
-                'avg_income': _round(float(getattr(user.profile, 'avg_income', 0.0) or 0.0)),
+                'avg_income': avg_income_by_user_type.get(user_type, 0.0),
                 'avg_loss': avg_loss_by_user_type.get(user_type, 0.0),
                 'work_pattern': work_pattern,
                 'source': 'simulation_input',
                 'persona': SIMULATED_USERS[user_type].get('persona'),
             },
         )
+    )
+
+
+def _clear_policy_state(db: Session, user: User) -> None:
+    db.query(BlockchainRecord).filter(BlockchainRecord.user_id == user.id).delete(synchronize_session=False)
+    db.query(ClaimHistory).filter(ClaimHistory.user_id == user.id).delete(synchronize_session=False)
+    db.query(Claim).filter(Claim.user_id == user.id).delete(synchronize_session=False)
+    db.query(BankTransaction).filter(BankTransaction.user_id == user.id).delete(synchronize_session=False)
+    db.query(Policy).filter(Policy.user_id == user.id).delete(synchronize_session=False)
+
+
+def _seed_good_actor_story(db: Session, user: User) -> None:
+    account = link_account(
+        db,
+        user_id=user.id,
+        account_number='50123456789001',
+        ifsc='HDFC0001001',
+        opening_balance=11600.0,
+    )
+    policy = create_policy(user_id=user.id, db=db, start_date=date.today() - timedelta(days=2))
+    refresh_policy_status(policy)
+    premium_amount = 185.0
+    log_transaction(
+        db,
+        user_id=user.id,
+        transaction_type='PREMIUM_PAYMENT',
+        amount=premium_amount,
+        reference_id=f'premium_{user.id}_{policy.id}',
+        metadata={'remark': f'Weekly premium paid for policy #{policy.id}', 'scenario': 'good_actor'},
+    )
+    create_policy_record(user_id=user.id, premium=premium_amount, baseline_income=945.0, policy_id=policy.id, db=db)
+    account.balance = _round(account.balance - premium_amount)
+
+
+def _seed_bad_actor_story(db: Session, user: User) -> None:
+    account = link_account(
+        db,
+        user_id=user.id,
+        account_number='50123456789002',
+        ifsc='HDFC0001002',
+        opening_balance=10950.0,
+    )
+    policy = create_policy(user_id=user.id, db=db, start_date=date.today() - timedelta(days=7))
+    refresh_policy_status(policy)
+    premium_amount = 82.0
+    fraud_score = 0.86
+    claim_reference = f'CLAIM-RAVI-{policy.id}'
+    log_transaction(
+        db,
+        user_id=user.id,
+        transaction_type='PREMIUM_PAYMENT',
+        amount=premium_amount,
+        reference_id=f'premium_{user.id}_{policy.id}',
+        metadata={'remark': f'Weekly premium paid for policy #{policy.id}', 'scenario': 'bad_actor'},
+    ).created_at = _utcnow() - timedelta(days=7)
+    claim = Claim(
+        user_id=user.id,
+        week=policy.start_date.strftime('%G-W%V'),
+        loss=280.0,
+        payout=0.0,
+        fraud_score=fraud_score,
+        status='REJECTED',
+        reasons_json=json.dumps(
+            [
+                'No strong disruption triggers were active',
+                'Claimed loss did not match the environment pattern',
+            ]
+        ),
+        created_at=_utcnow(),
+    )
+    db.add(claim)
+    db.flush()
+    db.add(
+        ClaimHistory(
+            user_id=user.id,
+            policy_id=policy.id,
+            claim_reference=claim_reference,
+            claim_date=date.today(),
+            status='REJECTED',
+            predicted_loss=55.0,
+            actual_loss=280.0,
+            claimed_loss=280.0,
+            approved_payout=0.0,
+            fraud_score=fraud_score,
+            trigger_snapshot={
+                'active_triggers': [],
+                'trigger_flags': {'rain': 0.0, 'traffic': 0.0, 'aqi': 0.0, 'heat': 0.0, 'combined': 0.0},
+                'risk_score': 0.09,
+                'baseline_income': 802.0,
+            },
+            reasons=[
+                'Claimed loss is inconsistent with live disruption data',
+                'User behavior deviates from the expected loss pattern',
+            ],
+            review_notes='Rejected system gamer demo case',
+        )
+    )
+    create_policy_record(user_id=user.id, premium=premium_amount, baseline_income=802.0, policy_id=policy.id, db=db)
+    log_claim(
+        claim_id=claim_reference,
+        details={
+            'user_id': user.id,
+            'policy_id': policy.id,
+            'loss': 280.0,
+            'payout': 0.0,
+            'status': 'REJECTED',
+            'fraud_score': fraud_score,
+        },
+        db=db,
+    )
+    account.balance = _round(account.balance - premium_amount)
+
+
+def _seed_edge_case_story(db: Session, user: User) -> None:
+    account = link_account(
+        db,
+        user_id=user.id,
+        account_number='50123456789003',
+        ifsc='HDFC0001003',
+        opening_balance=11150.0,
+    )
+    policy = create_policy(user_id=user.id, db=db, start_date=date.today() - timedelta(days=7))
+    refresh_policy_status(policy)
+    premium_amount = 118.0
+    fraud_score = 0.56
+    claim_reference = f'CLAIM-MEENA-{policy.id}'
+    log_transaction(
+        db,
+        user_id=user.id,
+        transaction_type='PREMIUM_PAYMENT',
+        amount=premium_amount,
+        reference_id=f'premium_{user.id}_{policy.id}',
+        metadata={'remark': f'Weekly premium paid for policy #{policy.id}', 'scenario': 'edge_case'},
+    ).created_at = _utcnow() - timedelta(days=7)
+    claim = Claim(
+        user_id=user.id,
+        week=policy.start_date.strftime('%G-W%V'),
+        loss=170.0,
+        payout=0.0,
+        fraud_score=fraud_score,
+        status='FLAGGED',
+        reasons_json=json.dumps(
+            [
+                'Moderate disruption was detected, but the loss pattern is borderline',
+                'Manual review is recommended',
+            ]
+        ),
+        created_at=_utcnow(),
+    )
+    db.add(claim)
+    db.flush()
+    db.add(
+        ClaimHistory(
+            user_id=user.id,
+            policy_id=policy.id,
+            claim_reference=claim_reference,
+            claim_date=date.today(),
+            status='FLAGGED',
+            predicted_loss=140.0,
+            actual_loss=170.0,
+            claimed_loss=170.0,
+            approved_payout=0.0,
+            fraud_score=fraud_score,
+            trigger_snapshot={
+                'active_triggers': ['RAIN_TRIGGER'],
+                'trigger_flags': {'rain': 1.0, 'traffic': 0.0, 'aqi': 0.0, 'heat': 0.0, 'combined': 0.0},
+                'risk_score': 0.37,
+                'baseline_income': 768.0,
+            },
+            reasons=[
+                'Loss pattern is plausible but not strong enough for auto approval',
+                'This case should be reviewed manually',
+            ],
+            review_notes='Flagged uncertain demo case',
+        )
+    )
+    create_policy_record(user_id=user.id, premium=premium_amount, baseline_income=768.0, policy_id=policy.id, db=db)
+    log_claim(
+        claim_id=claim_reference,
+        details={
+            'user_id': user.id,
+            'policy_id': policy.id,
+            'loss': 170.0,
+            'payout': 0.0,
+            'status': 'FLAGGED',
+            'fraud_score': fraud_score,
+        },
+        db=db,
+    )
+    account.balance = _round(account.balance - premium_amount)
+
+
+def _seed_low_risk_story(db: Session, user: User) -> None:
+    link_account(
+        db,
+        user_id=user.id,
+        account_number='50123456789004',
+        ifsc='HDFC0001004',
+        opening_balance=10480.0,
     )
 
 
@@ -673,8 +879,17 @@ def simulate_inputs(db: Session, *, enable_simulation: bool = True, regenerate_i
     for user_type in SIMULATED_USERS:
         user = _ensure_user(db, user_type)
         _ensure_profile_and_settings(db, user, user_type)
-        _record_user_behavior(db, user, user_type)
         _generate_income_inputs(db, user, user_type, days=days, regenerate_income=regenerate_income)
+        _record_user_behavior(db, user, user_type)
+        _clear_policy_state(db, user)
+        if user_type == 'good_actor':
+            _seed_good_actor_story(db, user)
+        elif user_type == 'bad_actor':
+            _seed_bad_actor_story(db, user)
+        elif user_type == 'edge_case':
+            _seed_edge_case_story(db, user)
+        elif user_type == 'low_risk':
+            _seed_low_risk_story(db, user)
         if user_type == 'premium_success':
             _seed_premium_success_story(db, user)
         config = SIMULATED_USERS[user_type]
