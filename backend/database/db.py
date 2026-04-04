@@ -10,7 +10,7 @@ from sqlalchemy.pool import NullPool
 
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'), override=False)
 
 logger = logging.getLogger('gig_insurance_backend.db')
 
@@ -37,6 +37,10 @@ def _resolve_database_url(raw_url: str | None) -> str:
 
 
 DATABASE_URL = _resolve_database_url(os.getenv('DATABASE_URL'))
+logger.info(
+    'Database configuration resolved. driver=%s',
+    DATABASE_URL.split(':', 1)[0],
+)
 
 engine_kwargs = {
     'echo': False,

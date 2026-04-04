@@ -25,10 +25,21 @@ logger = logging.getLogger('gig_insurance_backend')
 
 app = FastAPI(title='Gig Insurance API', version='1.0.0')
 
+
+def _allowed_origins() -> list[str]:
+    configured = os.getenv('ALLOWED_ORIGINS', '*').strip()
+    if not configured or configured == '*':
+        return ['*']
+    return [origin.strip() for origin in configured.split(',') if origin.strip()]
+
+
+allowed_origins = _allowed_origins()
+allow_credentials = allowed_origins != ['*']
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=allow_credentials,
     allow_methods=['*'],
     allow_headers=['*'],
 )
@@ -48,7 +59,11 @@ app.include_router(simulation_router.router)
 
 @app.on_event('startup')
 def on_startup():
-    logger.info('Starting service and creating database tables if needed')
+    logger.info(
+        'Starting service and ensuring database schema. cors_origins=%s allow_credentials=%s',
+        allowed_origins,
+        allow_credentials,
+    )
     db.ensure_schema()
 
 

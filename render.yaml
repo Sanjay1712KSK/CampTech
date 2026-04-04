@@ -14,8 +14,16 @@ services:
         fromDatabase:
           name: guidewire-gig-ins-db
           property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.8"
       - key: API_PUBLIC_BASE_URL
         sync: false
+      - key: APP_CONFIRM_BASE_URL
+        value: gigshield://confirm-email
+      - key: JWT_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*"
       - key: OPENWEATHER_API_KEY
         sync: false
       - key: ORS_API_KEY
