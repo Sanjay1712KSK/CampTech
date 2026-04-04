@@ -6,7 +6,6 @@ import 'package:guidewire_gig_ins/features/auth/auth_flow_helper.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification_screen.dart';
 import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_screen.dart';
-import 'package:guidewire_gig_ins/features/main/main_shell.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 
 class ConnectGigScreen extends ConsumerStatefulWidget {
