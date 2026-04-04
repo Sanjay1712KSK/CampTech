@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:app_links/app_links.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/email_confirmation_result_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
@@ -12,6 +14,7 @@ import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:guidewire_gig_ins/services/auth_storage_service.dart';
 
 ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('en'));
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +40,7 @@ class MyApp extends StatelessWidget {
           title: 'Gig Worker Insurance',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
+          navigatorKey: rootNavigatorKey,
           locale: locale,
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -53,10 +57,58 @@ class MyApp extends StatelessWidget {
             Locale('te'),
             Locale('ur'),
           ],
-          home: const _AuthBootstrapScreen(),
+          home: const _DeepLinkHost(),
         );
       },
     );
+  }
+}
+
+class _DeepLinkHost extends StatefulWidget {
+  const _DeepLinkHost();
+
+  @override
+  State<_DeepLinkHost> createState() => _DeepLinkHostState();
+}
+
+class _DeepLinkHostState extends State<_DeepLinkHost> {
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkSubscription = _appLinks.uriLinkStream.listen(_handleUri);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        _handleUri(initialUri);
+      }
+    });
+  }
+
+  void _handleUri(Uri uri) {
+    if (uri.scheme != 'gigshield' || uri.host != 'confirm-email') {
+      return;
+    }
+    final navigator = rootNavigatorKey.currentState;
+    if (navigator == null) return;
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => EmailConfirmationResultScreen(link: uri),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const _AuthBootstrapScreen();
   }
 }
 

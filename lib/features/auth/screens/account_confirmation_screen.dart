@@ -13,6 +13,7 @@ class AccountConfirmationScreen extends StatefulWidget {
   final String phone;
   final String confirmationToken;
   final String confirmationLink;
+  final String? appConfirmationLink;
 
   const AccountConfirmationScreen({
     super.key,
@@ -23,6 +24,7 @@ class AccountConfirmationScreen extends StatefulWidget {
     required this.phone,
     required this.confirmationToken,
     required this.confirmationLink,
+    this.appConfirmationLink,
   });
 
   @override
@@ -134,7 +136,7 @@ class _AccountConfirmationScreenState extends State<AccountConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'We sent the account confirmation link to ${widget.email}. Open that email on your phone, tap the link, then come back here to continue onboarding.',
+                  'We sent the account confirmation link to ${widget.email}. Open that email on your phone, tap the link, and this app will confirm the same email before you continue onboarding.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -151,6 +153,20 @@ class _AccountConfirmationScreenState extends State<AccountConfirmationScreen> {
                     style: TextStyle(color: AppTheme.textPrimary),
                   ),
                 ),
+                if (widget.appConfirmationLink != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'App confirmation link:\n${widget.appConfirmationLink}',
+                      style: const TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 PrimaryButton(
                   text: _isLoading ? 'Confirming...' : 'Use demo confirm here',

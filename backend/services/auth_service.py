@@ -1,6 +1,7 @@
 import os
 import random
 import re
+from urllib.parse import quote
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
@@ -28,6 +29,7 @@ ACCESS_TOKEN_EXPIRY_SECONDS = 12 * 60 * 60
 CONFIRMATION_TOKEN_EXPIRY_SECONDS = 30 * 60
 RESET_TOKEN_EXPIRY_SECONDS = 15 * 60
 PUBLIC_BASE_URL = os.getenv('API_PUBLIC_BASE_URL', 'http://127.0.0.1:8000')
+APP_CONFIRM_BASE_URL = os.getenv('APP_CONFIRM_BASE_URL', 'gigshield://confirm-email')
 
 
 def _utcnow() -> datetime:
@@ -48,6 +50,11 @@ def normalize_phone(country_code: str, phone_number: str) -> str:
 
 def _generate_otp() -> str:
     return f'{random.randint(0, 999999):06d}'
+
+
+def _build_app_confirmation_link(*, token: str, email: str) -> str:
+    separator = '&' if '?' in APP_CONFIRM_BASE_URL else '?'
+    return f'{APP_CONFIRM_BASE_URL}{separator}token={quote(token)}&email={quote(email)}'
 
 
 def _user_or_404(db: Session, user_id: int) -> User:
@@ -288,14 +295,17 @@ def verify_signup_otp(db: Session, user_id: int, email_otp: str, phone_otp: str)
         expires_in_seconds=CONFIRMATION_TOKEN_EXPIRY_SECONDS,
     )
     confirmation_link = f'{PUBLIC_BASE_URL}/auth/confirm?token={confirmation_token}'
-    send_confirmation_email(user.email, confirmation_link)
+    app_confirmation_link = _build_app_confirmation_link(token=confirmation_token, email=user.email)
     db.commit()
+    send_confirmation_email(user.email, confirmation_link, app_confirmation_link)
 
     return {
         'email_verified': True,
         'phone_verified': True,
+        'email': user.email,
         'confirmation_token': confirmation_token,
         'confirmation_link': confirmation_link,
+        'app_confirmation_link': app_confirmation_link,
         'next_step': 'account_confirmation',
     }
 
@@ -313,6 +323,8 @@ def confirm_account(db: Session, token: str) -> dict:
     db.commit()
 
     return {
+        'user_id': user.id,
+        'email': user.email,
         'account_confirmed': True,
         'next_step': 'digilocker_verification',
         'message': 'Account confirmed successfully',
@@ -367,23 +379,24 @@ def authenticate_user(db: Session, identifier: str, password: str) -> dict:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Account confirmation is still pending')
     if not user.is_digilocker_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Complete DigiLocker verification before login')
-    if not user.has_completed_first_login_2fa:
-        challenge_token = encode_token(
-            {'sub': str(user.id), 'purpose': 'first_login_challenge'},
-            expires_in_seconds=OTP_EXPIRY_SECONDS,
-        )
-        return {
-            'requires_two_factor': True,
-            'access_token': None,
-            'token_type': None,
-            'expires_in': None,
-            'user': None,
-            'two_factor_token': challenge_token,
-            'available_channels': ['email', 'phone'],
-            'message': 'Choose email or phone for first-time login verification',
-        }
-
-    return _issue_access_session(user)
+    challenge_token = encode_token(
+        {'sub': str(user.id), 'purpose': 'first_login_challenge'},
+        expires_in_seconds=OTP_EXPIRY_SECONDS,
+    )
+    return {
+        'requires_two_factor': True,
+        'access_token': None,
+        'token_type': None,
+        'expires_in': None,
+        'user': None,
+        'two_factor_token': challenge_token,
+        'available_channels': ['email', 'phone'],
+        'message': (
+            'Choose email or phone for first-time login verification'
+            if not user.has_completed_first_login_2fa
+            else 'Choose email or phone to verify this login'
+        ),
+    }
 
 
 def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dict:
@@ -393,8 +406,6 @@ def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dic
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     user = _user_or_404(db, int(payload['sub']))
-    if user.has_completed_first_login_2fa:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='First-login verification is already complete')
     if channel not in {'email', 'phone'}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Unsupported verification channel')
 
@@ -430,7 +441,7 @@ def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dic
         else send_sms_otp(user.phone, otp, 'first_login')
     )
     return {
-        'message': 'First-login OTP sent',
+        'message': 'Login verification OTP sent',
         'purpose': 'first_login',
         'expires_in_seconds': OTP_EXPIRY_SECONDS,
         'retry_limit': OTP_RETRY_LIMIT,
@@ -445,9 +456,6 @@ def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     user = _user_or_404(db, int(payload['sub']))
-    if user.has_completed_first_login_2fa:
-        return _issue_access_session(user)
-
     enforce_rate_limit(f'otp-verify:first_login:{channel}:{user.id}', limit=6, window_seconds=10 * 60)
     record = _active_verification(db, user.id, 'first_login', channel)
     _validate_otp_record(db, record, otp, channel)

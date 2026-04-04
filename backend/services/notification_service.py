@@ -1,7 +1,5 @@
 import logging
 
-from fastapi import HTTPException, status
-
 try:
     import mailtrap as mt
 except ImportError:  # pragma: no cover - depends on local environment
@@ -29,12 +27,9 @@ def _mask_phone(phone: str) -> str:
     return f"{phone[:3]}***{phone[-3:]}"
 
 
-def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> None:
+def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> tuple[bool, str | None]:
     if mt is None:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail='Mailtrap package is not installed on the backend environment',
-        )
+        return False, 'Mailtrap package is not installed on the backend environment'
 
     mail = mt.Mail(
         sender=mt.Address(email=MAILTRAP_SENDER_EMAIL, name=MAILTRAP_SENDER_NAME),
@@ -46,12 +41,10 @@ def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category:
     client = mt.MailtrapClient(token=MAILTRAP_TOKEN)
     try:
         client.send(mail)
+        return True, None
     except Exception as exc:  # pragma: no cover - external network/service
         logger.exception('Mailtrap email delivery failed for %s: %s', to_email, exc)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail='Unable to send email OTP right now',
-        ) from exc
+        return False, 'Unable to send email right now'
 
 
 def send_email_otp(email: str, otp: str, purpose: str) -> dict:
@@ -83,16 +76,21 @@ def send_email_otp(email: str, otp: str, purpose: str) -> dict:
         )
         category = 'Reset OTP'
 
-    _deliver_mailtrap_email(
+    success, error_message = _deliver_mailtrap_email(
         to_email=email,
         subject=subject,
         text=text,
         category=category,
     )
-    logger.info('Mailtrap email OTP sent to %s [%s]', email, purpose)
+    if success:
+        logger.info('Mailtrap email OTP sent to %s [%s]', email, purpose)
+    else:
+        logger.warning('Mailtrap email OTP failed for %s [%s]: %s', email, purpose, error_message)
     return {
         'channel': 'email',
         'destination': _mask_email(email),
+        'status': 'sent' if success else 'failed',
+        'error_message': error_message,
         'mock_otp': None,
     }
 
@@ -102,25 +100,40 @@ def send_sms_otp(phone: str, otp: str, purpose: str) -> dict:
     return {
         'channel': 'phone',
         'destination': _mask_phone(phone),
+        'status': 'sent',
+        'error_message': None,
         'mock_otp': otp,
     }
 
 
-def send_confirmation_email(email: str, confirmation_link: str) -> dict:
-    _deliver_mailtrap_email(
+def send_confirmation_email(email: str, confirmation_link: str, app_confirmation_link: str | None = None) -> dict:
+    app_line = (
+        f'Open in the app:\n{app_confirmation_link}\n\n'
+        if app_confirmation_link
+        else ''
+    )
+    success, error_message = _deliver_mailtrap_email(
         to_email=email,
         subject='GigShield account confirmation',
         text=(
             'Your contact verification is complete.\n\n'
-            'Click the confirmation link below to activate your GigShield account:\n'
+            'Tap the app confirmation link below to activate your GigShield account in the mobile app:\n'
+            f'{app_line}'
+            'Fallback web confirmation link:\n'
             f'{confirmation_link}\n\n'
             'If you did not request this, please ignore the email.'
         ),
         category='Account Confirmation',
     )
-    logger.info('Mailtrap confirmation email sent to %s', email)
+    if success:
+        logger.info('Mailtrap confirmation email sent to %s', email)
+    else:
+        logger.warning('Mailtrap confirmation email failed for %s: %s', email, error_message)
     return {
         'channel': 'email',
         'destination': _mask_email(email),
+        'status': 'sent' if success else 'failed',
+        'error_message': error_message,
         'confirmation_link': confirmation_link,
+        'app_confirmation_link': app_confirmation_link,
     }

@@ -116,12 +116,12 @@ class _FirstLoginVerificationScreenState extends ConsumerState<FirstLoginVerific
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'First-time login verification',
+                'Login verification',
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 12),
               Text(
-                'Choose one channel for your one-time first login verification.',
+                'Choose email or phone for this login verification.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -158,9 +158,11 @@ class _FirstLoginVerificationScreenState extends ConsumerState<FirstLoginVerific
                 child: delivery == null
                     ? const Text('Send an OTP to your chosen channel to continue.')
                     : Text(
-                        delivery.channel == 'phone'
-                            ? 'Phone OTP sent to ${delivery.destination}\nDemo OTP: ${delivery.mockOtp ?? ""}'
-                            : 'Email OTP sent to ${delivery.destination}',
+                        delivery.status == 'failed'
+                            ? '${delivery.channel == 'email' ? 'Email' : 'Phone'} OTP could not be sent to ${delivery.destination}. ${delivery.errorMessage ?? 'Please retry.'}'
+                            : delivery.channel == 'phone'
+                                ? 'Phone OTP sent to ${delivery.destination}\nDemo OTP: ${delivery.mockOtp ?? ""}'
+                                : 'Email OTP sent to ${delivery.destination}',
                         style: const TextStyle(color: AppTheme.textPrimary),
                       ),
               ),

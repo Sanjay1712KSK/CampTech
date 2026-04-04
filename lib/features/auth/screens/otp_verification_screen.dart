@@ -93,6 +93,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             phone: widget.phone,
             confirmationToken: result.confirmationToken,
             confirmationLink: result.confirmationLink,
+            appConfirmationLink: result.appConfirmationLink,
           ),
         ),
       );
@@ -159,7 +160,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Text(
-                                'Email OTP sent to ${emailDelivery.destination}',
+                                emailDelivery.status == 'sent'
+                                    ? 'Email OTP sent to ${emailDelivery.destination}'
+                                    : 'Email OTP could not be sent to ${emailDelivery.destination}. ${emailDelivery.errorMessage ?? 'Please retry.'}',
                                 style: const TextStyle(color: AppTheme.textPrimary),
                               ),
                             ),

@@ -174,7 +174,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       if (emailDelivery != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: Text('Email OTP sent to ${emailDelivery.destination}'),
+                          child: Text(
+                            emailDelivery.status == 'sent'
+                                ? 'Email OTP sent to ${emailDelivery.destination}'
+                                : 'Email OTP could not be sent to ${emailDelivery.destination}. ${emailDelivery.errorMessage ?? 'Please retry.'}',
+                          ),
                         ),
                       if (phoneDelivery != null)
                         Text('Phone OTP sent to ${phoneDelivery.destination}\nDemo OTP: ${phoneDelivery.mockOtp ?? ""}'),

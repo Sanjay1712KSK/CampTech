@@ -27,11 +27,15 @@ class AvailabilityResult {
 class DeliveryPreview {
   final String channel;
   final String destination;
+  final String status;
+  final String? errorMessage;
   final String? mockOtp;
 
   const DeliveryPreview({
     required this.channel,
     required this.destination,
+    required this.status,
+    this.errorMessage,
     this.mockOtp,
   });
 
@@ -39,6 +43,8 @@ class DeliveryPreview {
     return DeliveryPreview(
       channel: json['channel'] as String? ?? '',
       destination: json['destination'] as String? ?? '',
+      status: json['status'] as String? ?? 'sent',
+      errorMessage: json['error_message'] as String?,
       mockOtp: json['mock_otp'] as String? ?? '',
     );
   }
@@ -106,22 +112,51 @@ class SendOtpResult {
 class VerifyOtpResult {
   final bool emailVerified;
   final bool phoneVerified;
+  final String email;
   final String confirmationToken;
   final String confirmationLink;
+  final String? appConfirmationLink;
 
   const VerifyOtpResult({
     required this.emailVerified,
     required this.phoneVerified,
+    required this.email,
     required this.confirmationToken,
     required this.confirmationLink,
+    this.appConfirmationLink,
   });
 
   factory VerifyOtpResult.fromJson(Map<String, dynamic> json) {
     return VerifyOtpResult(
       emailVerified: json['email_verified'] as bool? ?? false,
       phoneVerified: json['phone_verified'] as bool? ?? false,
+      email: json['email'] as String? ?? '',
       confirmationToken: json['confirmation_token'] as String? ?? '',
       confirmationLink: json['confirmation_link'] as String? ?? '',
+      appConfirmationLink: json['app_confirmation_link'] as String?,
+    );
+  }
+}
+
+class ConfirmAccountResult {
+  final int userId;
+  final String email;
+  final bool accountConfirmed;
+  final String message;
+
+  const ConfirmAccountResult({
+    required this.userId,
+    required this.email,
+    required this.accountConfirmed,
+    required this.message,
+  });
+
+  factory ConfirmAccountResult.fromJson(Map<String, dynamic> json) {
+    return ConfirmAccountResult(
+      userId: json['user_id'] as int? ?? 0,
+      email: json['email'] as String? ?? '',
+      accountConfirmed: json['account_confirmed'] as bool? ?? false,
+      message: json['message'] as String? ?? 'Account confirmed',
     );
   }
 }
@@ -508,10 +543,10 @@ class ApiService {
     return VerifyOtpResult.fromJson(body);
   }
 
-  static Future<String> confirmAccount(String token) async {
+  static Future<ConfirmAccountResult> confirmAccount(String token) async {
     final encoded = Uri.encodeQueryComponent(token);
     final body = await _getJson('/auth/confirm?token=$encoded');
-    return body['message'] as String? ?? 'Account confirmed';
+    return ConfirmAccountResult.fromJson(body);
   }
 
   static Future<OnboardingStatusResult> getOnboardingStatus(int userId) async {

@@ -63,6 +63,8 @@ class SendOtpRequest(BaseModel):
 class OtpDeliveryPreview(BaseModel):
     channel: Literal['email', 'phone']
     destination: str
+    status: Literal['sent', 'failed'] = 'sent'
+    error_message: str | None = None
     mock_otp: str | None = None
 
 
@@ -85,12 +87,16 @@ class VerifyOtpRequest(BaseModel):
 class VerifyOtpResponse(BaseModel):
     email_verified: bool
     phone_verified: bool
+    email: EmailStr
     confirmation_token: str
     confirmation_link: str
+    app_confirmation_link: str | None = None
     next_step: Literal['account_confirmation']
 
 
 class ConfirmAccountResponse(BaseModel):
+    user_id: int
+    email: EmailStr
     account_confirmed: bool
     next_step: Literal['digilocker_verification']
     message: str
