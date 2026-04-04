@@ -603,7 +603,7 @@ This allows the exact same app and backend to produce different outcomes per wor
 
 See:
 
-- [actor_demo_guide.md](/s:/flutter/guidewire_gig_ins/backend/docs/demo/actor_demo_guide.md)
+- [actor_demo_guide.md](backend/docs/demo/actor_demo_guide.md)
 
 ## Two Highlight Personas For Phase 2
 
@@ -654,13 +654,20 @@ The demo also includes persona-specific UI explanation banners so the story chan
 
 ## Visual Walkthrough
 
-The screenshot library is available in [Demo/Screenshots](/s:/flutter/guidewire_gig_ins/Demo/Screenshots) and is grouped into:
+The screenshot library is available in [Demo/Screenshots](Demo/Screenshots) and is grouped into:
 
 - `Real User`
 - `Good Mock Up User`
 - `Bad Mock Up User`
 
 Below is a tighter visual walkthrough using the strongest screens only, so the README stays focused.
+
+Screenshot note:
+
+- the screens were captured on a Samsung Galaxy S20 Ultra
+- exported images in this repository are portrait mobile captures
+- most screenshot files are resized / compressed exports in an approximate range of `378-386 px` width and `845-855 px` height
+- small dimension differences across files are due to cropping and export variation, not UI inconsistency
 
 ### Onboarding Flow
 
@@ -863,8 +870,8 @@ Prepared for Render deployment with:
 
 See:
 
-- [render.yaml](/s:/flutter/guidewire_gig_ins/render.yaml)
-- [deployment_web.md](/s:/flutter/guidewire_gig_ins/backend/docs/deployment_web.md)
+- [render.yaml](render.yaml)
+- [deployment_web.md](backend/docs/deployment_web.md)
 
 ### Frontend
 
@@ -882,24 +889,24 @@ This allows the same codebase to support:
 
 ### Backend
 
-- [backend/main.py](/s:/flutter/guidewire_gig_ins/backend/main.py)
-- [backend/routes](/s:/flutter/guidewire_gig_ins/backend/routes)
-- [backend/services](/s:/flutter/guidewire_gig_ins/backend/services)
-- [backend/core](/s:/flutter/guidewire_gig_ins/backend/core)
-- [backend/models](/s:/flutter/guidewire_gig_ins/backend/models)
-- [backend/schemas](/s:/flutter/guidewire_gig_ins/backend/schemas)
+- [backend/main.py](backend/main.py)
+- [backend/routes](backend/routes)
+- [backend/services](backend/services)
+- [backend/core](backend/core)
+- [backend/models](backend/models)
+- [backend/schemas](backend/schemas)
 
 ### Frontend
 
-- [lib/main.dart](/s:/flutter/guidewire_gig_ins/lib/main.dart)
-- [lib/features](/s:/flutter/guidewire_gig_ins/lib/features)
-- [lib/services](/s:/flutter/guidewire_gig_ins/lib/services)
-- [lib/core](/s:/flutter/guidewire_gig_ins/lib/core)
+- [lib/main.dart](lib/main.dart)
+- [lib/features](lib/features)
+- [lib/services](lib/services)
+- [lib/core](lib/core)
 
 ## API And Demo Docs
 
-- [api_spec.md](/s:/flutter/guidewire_gig_ins/backend/docs/api_spec.md)
-- [actor_demo_guide.md](/s:/flutter/guidewire_gig_ins/backend/docs/demo/actor_demo_guide.md)
+- [api_spec.md](backend/docs/api_spec.md)
+- [actor_demo_guide.md](backend/docs/demo/actor_demo_guide.md)
 
 ## What Makes This Stand Out
 
