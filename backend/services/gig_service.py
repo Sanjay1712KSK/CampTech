@@ -403,6 +403,39 @@ def income_history(user_id: int, db: Session | None = None) -> list[dict]:
             session.close()
 
 
+def gig_status(user_id: int, db: Session | None = None) -> dict:
+    session = db or SessionLocal()
+    owns_session = db is None
+    try:
+        _ensure_user_exists(session, user_id)
+        account = (
+            session.query(GigAccount)
+            .filter(GigAccount.user_id == int(user_id))
+            .order_by(GigAccount.created_at.desc(), GigAccount.id.desc())
+            .first()
+        )
+        if account is not None:
+            return {
+                'connected': True,
+                'platform': account.platform,
+                'worker_id': account.worker_id,
+            }
+
+        has_income = (
+            session.query(GigIncome.id)
+            .filter(GigIncome.user_id == int(user_id))
+            .first()
+        )
+        return {
+            'connected': has_income is not None,
+            'platform': None,
+            'worker_id': None,
+        }
+    finally:
+        if owns_session:
+            session.close()
+
+
 def debug_all_records(db: Session | None = None) -> list[dict]:
     session = db or SessionLocal()
     owns_session = db is None

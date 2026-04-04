@@ -6,6 +6,7 @@ from schemas.gig_schema import (
     BaselineIncomeResponse,
     GigConnectRequest,
     GigConnectResponse,
+    GigStatusResponse,
     GenerateGigDataRequest,
     GenerateGigDataResponse,
     GigIncomeHistoryItem,
@@ -17,6 +18,7 @@ from services.gig_service import (
     connect_gig_account,
     debug_all_records,
     generate_data,
+    gig_status,
     income_history,
     today_income,
     weekly_summary,
@@ -50,6 +52,11 @@ def connect_gig_account_endpoint(payload: GigConnectRequest, db: Session = Depen
 @router.get('/income-history', response_model=list[GigIncomeHistoryItem])
 def income_history_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
     return income_history(user_id=user_id, db=db)
+
+
+@router.get('/status', response_model=GigStatusResponse)
+def gig_status_endpoint(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
+    return gig_status(user_id=user_id, db=db)
 
 
 @router.get('/debug-all', response_model=list[dict])

@@ -87,6 +87,12 @@ class GigConnectResponse(BaseModel):
     generated: int
 
 
+class GigStatusResponse(BaseModel):
+    connected: bool
+    platform: str | None = None
+    worker_id: str | None = None
+
+
 class GigIncomeHistoryItem(BaseModel):
     date: date
     income: float
