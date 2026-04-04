@@ -24,7 +24,7 @@ Traditional insurance products do not fit this reality well. They are usually:
 - not aligned to weekly cash flow
 - slow to validate disruption-led income loss
 
-IncomePulse is designed as an intelligent, modular, and explainable protection system for this exact problem space.
+GigSHIELD is designed as an intelligent, modular, and explainable protection system for this exact problem space.
 
 ## Phase 2 Positioning
 
