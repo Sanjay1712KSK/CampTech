@@ -131,6 +131,13 @@ Main UX surfaces:
 - OpenRouteService
 - Mailtrap
 
+### ML / Intelligence Stack
+
+- Heuristic + weighted decision models
+- Anomaly-based fraud scoring
+- Database-driven adaptive learning
+- Regression-ready prediction hook
+
 ## Backend Engines
 
 ### 1. Environment Engine
