@@ -204,8 +204,9 @@ class _DashboardContent extends StatelessWidget {
     final policyProtected = (summary?.policyStatus ?? '').toUpperCase() == 'ACTIVE';
     final premiumPaid = (summary?.totalPaid ?? 0.0) > 0;
     final eligibleForInsurance = riskScore >= 0.05 && weeklyPremium > 0;
-    final persona = _personaFor(user.userName);
-    final personaStory = _personaStoryFor(user.userName);
+    final personaKey = _personaKeyForUser(user);
+    final persona = _personaFor(personaKey);
+    final personaStory = _personaStoryFor(personaKey);
     final claimStatus = (claim?['claim_status'] as String?) ?? (summary?.latestClaimStatus ?? 'NOT STARTED');
     final fraudScore = ((claim?['fraud_score'] as num?)?.toDouble() ?? 0.0);
     final payout = ((claim?['payout'] as num?)?.toDouble() ?? (summary?.lastPayout ?? 0.0));
@@ -213,6 +214,7 @@ class _DashboardContent extends StatelessWidget {
     final blockchainId = (claim?['payout_blockchain_txn_id'] as String?) ??
         (claim?['blockchain_txn_id'] as String?) ??
         'Available after a policy, claim, or payout write';
+    final accent = _personaAccent(personaKey);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
