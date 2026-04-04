@@ -3,6 +3,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
+from models.models import PremiumSnapshot
 from services.environment_service import get_environment
 from services.fraud_engine import validate_claim
 from services.ml_service import (
@@ -11,6 +12,7 @@ from services.ml_service import (
     record_claim_learning,
     update_model_weights,
     update_user_behavior,
+    user_allows_model_training,
 )
 from services.policy_service import create_claim_record, get_claimable_policy
 from services.premium_engine import baseline_value, calculate_weekly_premium, resolve_city_from_coordinates
@@ -211,7 +213,15 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
     actual_income = _round(float(today_income.get('earnings', 0.0) or 0.0))
 
     risk_result = calculate_risk(environment_data, user_id=user_id, db=db, today_income=today_income)
-    premium_result = calculate_weekly_premium(user_id=user_id, lat=lat, lon=lon, db=db)
+    premium_result = calculate_weekly_premium(
+        user_id=user_id,
+        lat=lat,
+        lon=lon,
+        db=db,
+        environment_data=environment_data,
+        risk_result=risk_result,
+        persist_snapshots=True,
+    )
     fraud_result = validate_claim(
         user_id=user_id,
         db=db,
@@ -227,6 +237,12 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
     )
     claim_date = policy.end_date
     behavior_snapshot = get_latest_user_behavior(db, user_id=user_id)
+    training_enabled = user_allows_model_training(db, user_id=user_id)
+    premium_snapshot_id = premium_result.get('premium_snapshot_id')
+    latest_premium_snapshot = None
+    if premium_snapshot_id:
+        latest_premium_snapshot = db.query(PremiumSnapshot).filter(PremiumSnapshot.id == int(premium_snapshot_id)).first()
+    risk_snapshot_id = premium_result.get('risk_snapshot_id')
     fraud_assessment = _compute_fraud_assessment(
         baseline_income=expected_income,
         predicted_loss=predicted_loss,
@@ -252,7 +268,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             db,
             user_id=user_id,
             policy_id=policy.id,
-            risk_snapshot_id=None,
+            risk_snapshot_id=risk_snapshot_id,
             claim_date=claim_date,
             status='REJECTED',
             risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
@@ -264,8 +280,11 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             fraud_score=float(fraud_assessment['fraud_score']),
             review_notes='Claim rejected because no active triggers were present',
         )
-        update_model_weights(db, user_id=user_id)
-        update_user_behavior(db, user_id=user_id)
+        if latest_premium_snapshot is not None and latest_premium_snapshot.policy_id is None:
+            latest_premium_snapshot.policy_id = policy.id
+        if training_enabled:
+            update_model_weights(db, user_id=user_id)
+            update_user_behavior(db, user_id=user_id)
         db.commit()
         return _reject_response(
             status='REJECTED',
@@ -296,7 +315,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             db,
             user_id=user_id,
             policy_id=policy.id,
-            risk_snapshot_id=None,
+            risk_snapshot_id=risk_snapshot_id,
             claim_date=claim_date,
             status=status,
             risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
@@ -308,8 +327,11 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             fraud_score=float(fraud_assessment['fraud_score']),
             review_notes='Anomaly-based fraud scoring blocked approval',
         )
-        update_model_weights(db, user_id=user_id)
-        update_user_behavior(db, user_id=user_id)
+        if latest_premium_snapshot is not None and latest_premium_snapshot.policy_id is None:
+            latest_premium_snapshot.policy_id = policy.id
+        if training_enabled:
+            update_model_weights(db, user_id=user_id)
+            update_user_behavior(db, user_id=user_id)
         db.commit()
         return _reject_response(
             status=status,
@@ -339,7 +361,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             db,
             user_id=user_id,
             policy_id=policy.id,
-            risk_snapshot_id=None,
+            risk_snapshot_id=risk_snapshot_id,
             claim_date=claim_date,
             status='REJECTED',
             risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
@@ -351,8 +373,11 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
             fraud_score=float(fraud_assessment['fraud_score']),
             review_notes='Expected income was not higher than actual income',
         )
-        update_model_weights(db, user_id=user_id)
-        update_user_behavior(db, user_id=user_id)
+        if latest_premium_snapshot is not None and latest_premium_snapshot.policy_id is None:
+            latest_premium_snapshot.policy_id = policy.id
+        if training_enabled:
+            update_model_weights(db, user_id=user_id)
+            update_user_behavior(db, user_id=user_id)
         db.commit()
         return _reject_response(
             status='REJECTED',
@@ -383,7 +408,7 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
         db,
         user_id=user_id,
         policy_id=policy.id,
-        risk_snapshot_id=None,
+        risk_snapshot_id=risk_snapshot_id,
         claim_date=claim_date,
         status='APPROVED',
         risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
@@ -395,8 +420,11 @@ def process_claim(user_id: int, db: Session, lat: float, lon: float) -> dict:
         fraud_score=float(fraud_assessment['fraud_score']),
         review_notes='Approved claim used for adaptive learning',
     )
-    update_model_weights(db, user_id=user_id)
-    update_user_behavior(db, user_id=user_id)
+    if latest_premium_snapshot is not None and latest_premium_snapshot.policy_id is None:
+        latest_premium_snapshot.policy_id = policy.id
+    if training_enabled:
+        update_model_weights(db, user_id=user_id)
+        update_user_behavior(db, user_id=user_id)
     db.commit()
     return {
         'claim_status': 'APPROVED',
