@@ -1,6 +1,7 @@
 import logging
 import os
 from uuid import uuid4
+from datetime import UTC, datetime
 
 import requests
 from dotenv import load_dotenv
@@ -135,6 +136,7 @@ def store_on_blockchain(record_type: str, data: dict, db: Session | None = None)
         'network': result.get('network'),
         'raw': result.get('raw'),
         'record_id': record.id if record else None,
+        'timestamp': datetime.now(UTC).replace(tzinfo=None).isoformat(),
     }
     if result.get('error'):
         response['error'] = result.get('error')

@@ -260,6 +260,17 @@ def calculate_weekly_premium(
         'risk_snapshot_id': risk_snapshot.id if risk_snapshot else None,
         'premium_snapshot_id': premium_snapshot.id if premium_snapshot else None,
         'income_summary_id': income_summary.id if income_summary else None,
+        'eligible': bool(baseline > 0 and weekly_income > 0),
+        'reason': 'Eligible for premium quote' if baseline > 0 and weekly_income > 0 else 'Insufficient gig history for pricing',
+        'last_updated': (environment or {}).get('last_updated'),
+        'breakdown': {
+            'base_rate': 0.07,
+            'trigger_severity': trigger_severity,
+            'active_triggers': active_triggers,
+            'severity_multiplier': 1.15 if trigger_severity == 'HIGH' else 1.0,
+            'combined_trigger_multiplier': 1.10 if 'COMBINED_TRIGGER' in active_triggers else 1.0,
+            'final_formula': 'weekly_income * risk_score * base_rate * severity_multiplier * combined_trigger_multiplier',
+        },
     }
 
     logger.info(
