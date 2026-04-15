@@ -1170,4 +1170,12 @@ This creates the clearest contrast:
 
 ## Team
 
-Built by Team CampTech for the Guidewire / DevTrails hackathon.
+### Built by Team CampTech  
+For the **Guidewire / DevTrails Hackathon**
+
+#### Team Members
+
+- [**Astha Bhatia**](https://github.com/asthabhatia1) – Team Leader  
+- [**Jahanvi**](https://github.com/Jahanvisaini3135)  
+- [**Surbhi Kaushal**](https://github.com/SurbhiKaushal)  
+- [**Sanjay Kumar S**](https://github.com/Sanjay1712KSK)  
