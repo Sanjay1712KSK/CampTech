@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:guidewire_gig_ins/config.dart';
@@ -429,7 +430,7 @@ class GigStatusResult {
 }
 
 class ApiService {
-  static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _timeout = Duration(seconds: 45);
 
   static Map<String, String> _headers({String? token}) {
     return {
@@ -447,9 +448,16 @@ class ApiService {
     String path, {
     String? token,
   }) async {
-    final response = await http
-        .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
-        .timeout(_timeout);
+    http.Response response;
+    try {
+      response = await http
+          .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+    } on http.ClientException {
+      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -461,13 +469,20 @@ class ApiService {
     required Map<String, dynamic> body,
     String? token,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('${Config.baseUrl}$path'),
-          headers: _headers(token: token),
-          body: jsonEncode(body),
-        )
-        .timeout(_timeout);
+    http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$path'),
+            headers: _headers(token: token),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+    } on http.ClientException {
+      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -707,9 +722,16 @@ class ApiService {
   }
 
   static Future<IncomeHistoryModel> getIncomeHistory(int userId) async {
-    final response = await http
-        .get(Uri.parse('${Config.baseUrl}/gig/income-history?user_id=$userId'))
-        .timeout(_timeout);
+    http.Response response;
+    try {
+      response = await http
+          .get(Uri.parse('${Config.baseUrl}/gig/income-history?user_id=$userId'))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception('Backend timed out while loading income history. Please try again.');
+    } on http.ClientException {
+      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+    }
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
       if (decoded is List) {
@@ -724,9 +746,16 @@ class ApiService {
   }
 
   static Future<GigStatusResult> getGigStatus(int userId) async {
-    final response = await http
-        .get(Uri.parse('${Config.baseUrl}/gig/status?user_id=$userId'))
-        .timeout(_timeout);
+    http.Response response;
+    try {
+      response = await http
+          .get(Uri.parse('${Config.baseUrl}/gig/status?user_id=$userId'))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception('Backend timed out while checking gig status. Please try again.');
+    } on http.ClientException {
+      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+    }
     if (response.statusCode == 200) {
       return GigStatusResult.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,

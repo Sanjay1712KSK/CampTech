@@ -5,7 +5,7 @@ import 'package:guidewire_gig_ins/services/api_service.dart';
 /// Service that fetches live weather, AQI, and traffic from 3rd-party APIs.
 /// Replaces the local backend /environment endpoint.
 class EnvironmentService {
-  static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _timeout = Duration(seconds: 45);
 
   // ── API Keys ────────────────────────────────────────────────────────────────
   static const String _aqiApiKey = '258d64580bceb19f1efcb0a62fb81af6';

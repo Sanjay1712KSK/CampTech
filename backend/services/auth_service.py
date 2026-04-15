@@ -294,7 +294,6 @@ def verify_signup_otp(db: Session, user_id: int, email_otp: str, phone_otp: str)
 
     email_record = _active_verification(db, user.id, 'email', 'email')
     phone_record = _active_verification(db, user.id, 'phone', 'phone')
-
     _validate_otp_record(db, email_record, email_otp, 'email')
     _validate_otp_record(db, phone_record, phone_otp, 'phone')
 

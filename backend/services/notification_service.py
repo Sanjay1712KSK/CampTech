@@ -1,14 +1,19 @@
 import logging
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 try:
     import mailtrap as mt
 except ImportError:  # pragma: no cover - depends on local environment
     mt = None
 
+load_dotenv(Path(__file__).resolve().parent.parent / '.env', override=False)
+
 logger = logging.getLogger('gig_insurance_backend.notifications')
 
-MAILTRAP_TOKEN = os.getenv('MAILTRAP_TOKEN', '').strip()
+MAILTRAP_TOKEN = os.getenv('MAILTRAP_TOKEN', os.getenv('MAILTRAP_API_TOKEN', '')).strip()
 MAILTRAP_SENDER_EMAIL = os.getenv('MAILTRAP_SENDER_EMAIL', 'hello@demomailtrap.co').strip()
 MAILTRAP_SENDER_NAME = os.getenv('MAILTRAP_SENDER_NAME', 'Mailtrap Test').strip()
 DEMO_EMAIL_REDIRECT = os.getenv(

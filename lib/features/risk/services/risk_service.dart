@@ -15,7 +15,7 @@ class RiskServiceException implements Exception {
 }
 
 class RiskService {
-  static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _timeout = Duration(seconds: 45);
 
   Future<RiskModel> fetchRisk({
     required int userId,

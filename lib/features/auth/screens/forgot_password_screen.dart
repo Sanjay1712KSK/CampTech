@@ -64,12 +64,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _verifyOtp() async {
     if (_userId == null) return;
+    final emailOtp = _emailOtpController.text.trim();
+    final phoneOtp = _phoneOtpController.text.trim();
+    if (emailOtp.length != 6 || phoneOtp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter both 6-digit OTP codes.')),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final result = await ApiService.verifyResetOtp(
         userId: _userId!,
-        emailOtp: _emailOtpController.text.trim(),
-        phoneOtp: _phoneOtpController.text.trim(),
+        emailOtp: emailOtp,
+        phoneOtp: phoneOtp,
       );
       if (!mounted) return;
       setState(() {
@@ -124,7 +132,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         phoneDelivery = delivery;
       }
     }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,

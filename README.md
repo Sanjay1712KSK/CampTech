@@ -82,6 +82,98 @@ The platform has five major capabilities:
 4. Dynamic premium, policy, and claim automation
 5. Adaptive fraud, ML learning, and blockchain-backed traceability
 
+## About the Project
+
+Gig workers face a very different kind of financial risk compared to salaried workers. Their income can drop immediately because of rain, traffic congestion, poor air quality, or unsafe working conditions. That inspired us to build **GigSHIELD** as a live protection system that understands *why* income drops instead of reacting only after the loss.
+
+What shaped the project most was a simple question:
+
+> What if insurance for gig workers could understand disruption before claim time?
+
+That idea led us to design one connected system instead of isolated features:
+
+`Environment -> Risk -> Premium -> Policy -> Claim -> Fraud -> Payout`
+
+### What Inspired Us
+
+We wanted to build something grounded in real gig-worker uncertainty:
+
+- delivery capacity changes because of weather and traffic
+- safe working hours change because of heat and AQI
+- weekly income is volatile even when effort stays high
+- traditional claim-heavy insurance does not map well to this reality
+
+### How We Built It
+
+We built a full-stack prototype with:
+
+- Flutter for the client experience
+- FastAPI for backend orchestration
+- SQLAlchemy for relational modeling
+- SQLite for local development
+- PostgreSQL-ready deployment support
+- real-time environment APIs for live disruption signals
+- modular engines for risk, premium, claims, fraud, learning, and blockchain-backed traceability
+
+At the center of the platform is a reasoning pipeline:
+
+$$
+\text{Environment} \rightarrow \text{Disruption} \rightarrow \text{Efficiency} \rightarrow \text{Income Loss} \rightarrow \text{Risk Score}
+$$
+
+The delivery-efficiency layer is modeled as:
+
+$$
+\text{efficiency\_score} = \text{delivery\_capacity} \times \text{working\_hours\_factor}
+$$
+
+Expected income loss is then estimated as:
+
+$$
+\text{expected\_income\_loss} = 1 - \text{efficiency\_score}
+$$
+
+The premium engine reuses the risk output directly:
+
+$$
+\text{weekly\_premium} = \text{weekly\_income} \times \text{risk\_score} \times 0.07
+$$
+
+And the fraud-aware claim layer compares predicted and actual loss:
+
+$$
+\text{predicted\_loss} = \text{risk\_score} \times \text{baseline\_income}
+$$
+
+$$
+\text{fraud\_score} = \frac{\left|\text{actual\_loss} - \text{predicted\_loss}\right|}{\text{baseline\_income}}
+$$
+
+### What We Learned
+
+This project taught us that meaningful products are not built by stacking features, but by connecting the right ideas through one consistent decision flow.
+
+We learned:
+
+- how to make multiple engines reuse the same logic instead of duplicating it
+- how to turn raw environmental signals into understandable financial outcomes
+- how to keep decisions explainable rather than opaque
+- how to balance real-time APIs with mock layers for demo reliability
+- how important UX clarity is in a technically complex domain
+
+### Challenges We Faced
+
+The hardest part was integration. Since the product combines onboarding, gig data, live environment signals, premium pricing, claim automation, fraud scoring, and payout handling, even small inconsistencies could break the full user story.
+
+Key challenges included:
+
+- keeping backend logic consistent across all engines
+- aligning local and deployed environments
+- handling OTP and email-delivery reliability
+- making the demo dynamic without hardcoding outputs
+
+We solved this by simulating only the **inputs** such as income history, user behavior, and environment, while still letting the real engines compute the outputs.
+
 ## Core Product Flow
 
 1. User signs up
@@ -137,6 +229,137 @@ Main UX surfaces:
 - Anomaly-based fraud scoring
 - Database-driven adaptive learning
 - Regression-ready prediction hook
+
+## Run Locally
+
+### Prerequisites
+
+- Python `3.11+` or `3.12`
+- Flutter SDK
+- Android Studio or VS Code with Flutter support
+- A connected Android device or emulator for mobile testing
+
+### 1. Backend setup
+
+From the repository root:
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+The backend uses SQLite locally by default.
+
+- local database file: `backend/gig_insurance.db`
+- if the file does not exist, it is created automatically on startup
+- if the local schema is outdated, the development SQLite flow can recreate the schema automatically
+
+Optional local environment file:
+
+```env
+DATABASE_URL=sqlite:///./gig_insurance.db
+API_PUBLIC_BASE_URL=http://127.0.0.1:8000
+OPENWEATHER_API_KEY=YOUR_OPENWEATHER_KEY
+ORS_API_KEY=YOUR_ORS_KEY
+MAILTRAP_TOKEN=YOUR_MAILTRAP_TOKEN
+MAILTRAP_SENDER_EMAIL=hello@demomailtrap.co
+MAILTRAP_SENDER_NAME=Mailtrap Test
+BLOCKCHAIN_MODE=mock
+```
+
+Start the backend:
+
+```bash
+python main.py
+```
+
+Or, if you prefer:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Quick health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### 2. Seed demo or persona data
+
+After the backend is running, you can seed the simulation layer:
+
+```http
+POST /simulate/input
+Content-Type: application/json
+
+{
+  "enable_simulation": true,
+  "regenerate_income": true,
+  "days": 30
+}
+```
+
+This populates local input data for:
+
+- gig income history
+- user behavior
+- persona-based environment conditions
+
+### 3. Flutter app setup
+
+From the repository root:
+
+```bash
+flutter pub get
+```
+
+For local mobile testing against your laptop backend, launch with:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://YOUR_LOCAL_IP:8000
+```
+
+Examples:
+
+- Android emulator:
+  - `http://10.0.2.2:8000`
+- Real phone on same Wi-Fi:
+  - `http://192.168.x.x:8000`
+
+If you do not pass `API_BASE_URL`, the app falls back to the default value configured in `lib/config.dart`.
+
+### 4. Local OTP behavior
+
+When the backend is run locally, the intended onboarding behavior is strict:
+
+- signup expects both email OTP and phone OTP
+- forgot-password reset expects both email OTP and phone OTP
+- the email OTP field should appear in the UI
+
+Phone OTP is mocked and shown in the UI for demo convenience.
+Email OTP depends on your Mailtrap configuration working locally.
+
+### 5. Recommended local test flow
+
+1. Start the backend
+2. Confirm `/health` works
+3. Seed simulation inputs if you want demo personas
+4. Run the Flutter app with your local backend URL
+5. Test:
+   - signup
+   - OTP verification
+   - DigiLocker
+   - gig connection
+   - risk
+   - premium
+   - claim flow
 
 ## Backend Engines
 
