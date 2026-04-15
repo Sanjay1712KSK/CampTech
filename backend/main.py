@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from database import db
 from routes import auth as auth_router
+from routes import api_routes as api_routes
 from routes import bank as bank_router
 from routes import claim as claim_router
 from routes import digilocker as digilocker_router
@@ -45,6 +46,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router.router)
+app.include_router(api_routes.router)
 app.include_router(bank_router.router)
 app.include_router(claim_router.router)
 app.include_router(digilocker_router.router)

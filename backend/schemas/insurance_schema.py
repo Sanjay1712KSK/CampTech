@@ -64,6 +64,7 @@ class ClaimProcessRequest(BaseModel):
     user_id: int = Field(..., gt=0)
     lat: float = Field(..., ge=-90.0, le=90.0)
     lon: float = Field(..., ge=-180.0, le=180.0)
+    device_id: str | None = Field(default=None, min_length=3, max_length=255)
 
 
 class ClaimProcessResponse(BaseModel):
@@ -77,10 +78,20 @@ class ClaimProcessResponse(BaseModel):
     payout: float | None = None
     predicted_loss: float | None = None
     fraud_score: float | None = Field(default=None, ge=0.0, le=1.0)
-    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    confidence: float | str | None = None
     reasons: list[str] | None = None
     blockchain_txn_id: str | None = None
     payout_blockchain_txn_id: str | None = None
+    fraud: dict | None = None
+    transaction: dict | None = None
+    blockchain: dict | None = None
+    environment: dict | None = None
+    risk: dict | None = None
+    premium: dict | None = None
+    policy: dict | None = None
+    gig: dict | None = None
+    location_status: dict | None = None
+    claim_id: str | None = None
 
 
 class ClaimPayoutRequest(BaseModel):

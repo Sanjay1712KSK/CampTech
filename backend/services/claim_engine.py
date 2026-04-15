@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
@@ -31,7 +32,7 @@ def _round(value: float) -> float:
 def _user_or_404(db: Session, user_id: int) -> User:
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-        raise ValueError('User not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     return user
 
 
