@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from database.db import Base
@@ -18,6 +18,13 @@ class User(Base):
     is_account_confirmed = Column(Boolean, default=False, nullable=False)
     is_digilocker_verified = Column(Boolean, default=False, nullable=False)
     has_completed_first_login_2fa = Column(Boolean, default=False, nullable=False)
+    current_device_id = Column(String(255), nullable=True)
+    session_version = Column(Integer, nullable=False, default=1)
+    device_switch_count = Column(Integer, nullable=False, default=0)
+    last_known_lat = Column(Float, nullable=True)
+    last_known_lon = Column(Float, nullable=True)
+    last_location_at = Column(DateTime(timezone=True), nullable=True)
+    active_city = Column(String(100), nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

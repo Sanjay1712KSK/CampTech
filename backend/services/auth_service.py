@@ -133,13 +133,32 @@ def build_user_session(user: User) -> dict:
         'is_account_confirmed': bool(user.is_account_confirmed),
         'is_digilocker_verified': bool(user.is_digilocker_verified),
         'has_completed_first_login_2fa': bool(user.has_completed_first_login_2fa),
+        'current_device_id': user.current_device_id,
+        'active_city': user.active_city,
         'created_at': user.created_at,
     }
 
 
-def _issue_access_session(user: User) -> dict:
+def _register_device_session(user: User, device_id: str | None) -> None:
+    normalized_device_id = (device_id or '').strip() or None
+    if normalized_device_id is None:
+        return
+    if user.current_device_id and user.current_device_id != normalized_device_id:
+        user.session_version = int(user.session_version or 1) + 1
+        user.device_switch_count = int(user.device_switch_count or 0) + 1
+    user.current_device_id = normalized_device_id
+
+
+def _issue_access_session(user: User, *, device_id: str | None = None) -> dict:
+    _register_device_session(user, device_id)
     token = encode_token(
-        {'sub': str(user.id), 'purpose': 'access', 'username': user.username},
+        {
+            'sub': str(user.id),
+            'purpose': 'access',
+            'username': user.username,
+            'sv': int(user.session_version or 1),
+            'device_id': user.current_device_id,
+        },
         expires_in_seconds=ACCESS_TOKEN_EXPIRY_SECONDS,
     )
     return {
@@ -379,7 +398,7 @@ def _resolve_identifier_query(db: Session, identifier: str) -> User | None:
     )
 
 
-def authenticate_user(db: Session, identifier: str, password: str) -> dict:
+def authenticate_user(db: Session, identifier: str, password: str, device_id: str | None = None) -> dict:
     enforce_rate_limit(f'login:{identifier.strip().lower()}', limit=10, window_seconds=10 * 60)
     user = _resolve_identifier_query(db, identifier)
     if not user or not verify_password(password, user.password_hash):
@@ -389,7 +408,11 @@ def authenticate_user(db: Session, identifier: str, password: str) -> dict:
     if not user.is_digilocker_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Complete DigiLocker verification before login')
     challenge_token = encode_token(
-        {'sub': str(user.id), 'purpose': 'first_login_challenge'},
+        {
+            'sub': str(user.id),
+            'purpose': 'first_login_challenge',
+            'device_id': (device_id or '').strip() or None,
+        },
         expires_in_seconds=OTP_EXPIRY_SECONDS,
     )
     return {
@@ -469,8 +492,10 @@ def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp:
     record = _active_verification(db, user.id, 'first_login', channel)
     _validate_otp_record(db, record, otp, channel)
     user.has_completed_first_login_2fa = True
+    device_id = payload.get('device_id')
+    session_payload = _issue_access_session(user, device_id=device_id)
     db.commit()
-    return _issue_access_session(user)
+    return session_payload
 
 
 def forgot_password(db: Session, identifier: str) -> dict:
@@ -524,4 +549,7 @@ def reset_password(db: Session, reset_token: str, new_password: str) -> dict:
 
 def get_user_from_access_token(db: Session, token: str) -> User:
     payload = decode_token(token, expected_purpose='access')
-    return _user_or_404(db, int(payload['sub']))
+    user = _user_or_404(db, int(payload['sub']))
+    if int(payload.get('sv', user.session_version or 1)) != int(user.session_version or 1):
+        raise ValueError('Session expired due to a device change')
+    return user

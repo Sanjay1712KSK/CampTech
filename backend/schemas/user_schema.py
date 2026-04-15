@@ -117,6 +117,7 @@ class LoginRequest(BaseModel):
     identifier: str | None = None
     email: EmailStr | None = None
     password: str = Field(..., min_length=8)
+    device_id: str | None = Field(default=None, min_length=3, max_length=255)
 
     @model_validator(mode='after')
     def validate_identifier(self):
@@ -153,6 +154,8 @@ class UserSessionResponse(BaseModel):
     is_account_confirmed: bool
     is_digilocker_verified: bool
     has_completed_first_login_2fa: bool
+    current_device_id: str | None = None
+    active_city: str | None = None
     created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)

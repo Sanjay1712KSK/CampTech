@@ -90,7 +90,12 @@ def onboarding_status(user_id: int = Query(..., gt=0), db: Session = Depends(get
 
 @router.post('/login', response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    return auth_service.authenticate_user(db, payload.identifier or '', payload.password)
+    return auth_service.authenticate_user(
+        db,
+        payload.identifier or '',
+        payload.password,
+        device_id=payload.device_id,
+    )
 
 
 @router.post('/send-first-login-otp', response_model=SendOtpResponse)
