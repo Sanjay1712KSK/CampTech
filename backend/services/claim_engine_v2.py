@@ -25,6 +25,7 @@ from services.ml_service import (
 from services.payout_service import process_payout
 from services.policy_service import create_claim_record, get_claimable_policy
 from services.premium_engine import CITY_COORDINATES, baseline_value, calculate_weekly_premium
+from services.prediction_engine import record_claim_prediction_feedback
 from services.risk_engine import calculate_risk
 
 
@@ -365,6 +366,13 @@ def auto_process_claim(
     db.add(fraud_log)
 
     if user_allows_model_training(db, user_id=user_id):
+        record_claim_prediction_feedback(
+            db,
+            user_id=user_id,
+            actual_payout=float(payout.get('amount_paid', 0.0)) if payout else 0.0,
+            actual_claims=1,
+            actual_risk_score=float(risk_data.get('risk_score', 0.0) or 0.0),
+        )
         update_model_weights(db, user_id=user_id)
         update_user_behavior(db, user_id=user_id)
 

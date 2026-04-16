@@ -16,6 +16,7 @@ from models.fraud_log import FraudLog
 from models.insurance import Policy
 from models.models import ClaimHistory, PremiumSnapshot, RiskSnapshot
 from models.user_model import User
+from services.prediction_engine import generate_predictions
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@gigshield.com').strip().lower()
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
@@ -202,86 +203,7 @@ def get_financials(db: Session) -> dict:
 
 
 def get_predictions(db: Session) -> dict:
-    now = _utcnow()
-    last_7d_start = now.date() - timedelta(days=7)
-    prev_7d_start = now.date() - timedelta(days=14)
-
-    claims_last_7 = (
-        db.query(func.count(ClaimHistory.id))
-        .filter(ClaimHistory.claim_date >= last_7d_start)
-        .scalar()
-        or 0
-    )
-    claims_prev_7 = (
-        db.query(func.count(ClaimHistory.id))
-        .filter(ClaimHistory.claim_date >= prev_7d_start, ClaimHistory.claim_date < last_7d_start)
-        .scalar()
-        or 0
-    )
-    avg_payout_last_7 = (
-        db.query(func.coalesce(func.avg(ClaimHistory.approved_payout), 0.0))
-        .filter(ClaimHistory.claim_date >= last_7d_start)
-        .scalar()
-        or 0.0
-    )
-    avg_risk_last_7 = (
-        db.query(func.coalesce(func.avg(RiskSnapshot.risk_score), 0.0))
-        .filter(RiskSnapshot.created_at >= now - timedelta(days=7))
-        .scalar()
-        or 0.0
-    )
-    avg_risk_prev_7 = (
-        db.query(func.coalesce(func.avg(RiskSnapshot.risk_score), 0.0))
-        .filter(
-            RiskSnapshot.created_at >= now - timedelta(days=14),
-            RiskSnapshot.created_at < now - timedelta(days=7),
-        )
-        .scalar()
-        or 0.0
-    )
-    risk_delta = float(avg_risk_last_7 or 0.0) - float(avg_risk_prev_7 or 0.0)
-    if risk_delta > 0.03:
-        risk_trend = 'increasing'
-    elif risk_delta < -0.03:
-        risk_trend = 'decreasing'
-    else:
-        risk_trend = 'stable'
-
-    recent_trigger_counter: Counter[str] = Counter()
-    recent_risks = (
-        db.query(RiskSnapshot.active_triggers)
-        .filter(RiskSnapshot.created_at >= now - timedelta(days=7))
-        .all()
-    )
-    for row in recent_risks:
-        for trigger in (row[0] or []):
-            normalized = str(trigger).replace('_TRIGGER', '').replace('_', ' ').strip().lower()
-            if normalized:
-                recent_trigger_counter[normalized] += 1
-    leading_trigger = recent_trigger_counter.most_common(1)
-    leading_label = leading_trigger[0][0].title() if leading_trigger else 'Risk'
-
-    if claims_prev_7 == 0:
-        next_week_claims = int(claims_last_7)
-    else:
-        growth_factor = claims_last_7 / max(claims_prev_7, 1)
-        next_week_claims = int(round(claims_last_7 * ((1 + growth_factor) / 2)))
-    next_week_claims = max(next_week_claims, 0)
-    expected_payout = _round(next_week_claims * float(avg_payout_last_7 or 0.0))
-
-    if risk_trend == 'increasing':
-        insight = f'{leading_label} increase may lead to higher claims next week'
-    elif risk_trend == 'decreasing':
-        insight = f'{leading_label} pressure is easing, which may reduce claims next week'
-    else:
-        insight = f'{leading_label} conditions look stable, so claims are likely to stay near the recent average'
-
-    return {
-        'next_week_claims': int(next_week_claims),
-        'expected_payout': expected_payout,
-        'risk_trend': risk_trend,
-        'insight': insight,
-    }
+    return generate_predictions(db)
 
 
 def get_payout_stats(db: Session) -> dict:

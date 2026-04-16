@@ -9,6 +9,7 @@ from services.environment_service import get_environment
 from services.fraud_intelligence_engine import build_location_status, get_device_status, update_user_location_state
 from services.gig_service import today_income
 from services.premium_engine import calculate_weekly_premium
+from services.prediction_engine import build_worker_prediction_message
 from services.policy_service import get_latest_policy
 from services.risk_engine import calculate_risk
 from services.auth_service import build_user_session
@@ -75,6 +76,7 @@ async def dashboard_worker(
             'transaction_id': payout_summary.get('payout_transaction_id'),
             'time': payout_summary.get('payout_time'),
         },
+        'prediction': build_worker_prediction_message(db, user_id=user_id),
         'status': {
             'coverage_active': bool(policy and policy.premium_paid and policy.status == 'ACTIVE'),
             'auto_payout_enabled': True,

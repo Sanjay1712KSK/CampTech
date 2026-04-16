@@ -24,6 +24,7 @@ from services.ml_service import (
 from services.policy_service import create_claim_record, get_claimable_policy
 from services.payout_service import execute_instant_payout
 from services.premium_engine import baseline_value, calculate_weekly_premium, resolve_city_from_coordinates
+from services.prediction_engine import record_claim_prediction_feedback
 from services.risk_engine import calculate_risk
 
 
@@ -334,6 +335,13 @@ def process_claim(
     db.add(fraud_log)
 
     if user_allows_model_training(db, user_id=user_id):
+        record_claim_prediction_feedback(
+            db,
+            user_id=user_id,
+            actual_payout=payout_amount if claim_status == 'APPROVED' else 0.0,
+            actual_claims=1 if claim_status in {'APPROVED', 'FLAGGED', 'REJECTED'} else 0,
+            actual_risk_score=float(risk_result.get('risk_score', 0.0) or 0.0),
+        )
         update_model_weights(db, user_id=user_id)
         update_user_behavior(db, user_id=user_id)
 

@@ -61,9 +61,12 @@ class AdminFinancialsResponse(BaseModel):
 
 
 class AdminPredictionsResponse(BaseModel):
+    next_6hr_risk: str
+    predicted_claims: int
     next_week_claims: int
     expected_payout: float
     risk_trend: str
+    insights: list[str]
     insight: str
 
 
