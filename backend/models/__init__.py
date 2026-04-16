@@ -2,6 +2,7 @@ from .adaptive_risk_weight import AdaptiveRiskWeight
 from .bank_account import BankAccount, BankTransaction
 from .digilocker_request import DigiLockerRequest
 from .environment_snapshot import EnvironmentSnapshot
+from .fraud_log import FraudLog
 from .gig_account import GigAccount
 from .gig_income import GigIncome
 from .insurance import Claim, Policy
@@ -28,6 +29,7 @@ __all__ = [
     'ClaimHistory',
     'DigiLockerRequest',
     'EnvironmentSnapshot',
+    'FraudLog',
     'GigAccount',
     'GigIncome',
     'IncomeSummary',

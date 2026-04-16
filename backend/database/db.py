@@ -157,6 +157,7 @@ def ensure_schema():
         'user_behavior': ['user_id', 'event_type', 'behavior_metadata', 'observed_at'],
         'model_weights': ['model_name', 'version', 'rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight'],
         'blockchain_records': ['record_type', 'reference_id', 'tx_hash', 'data', 'transaction_type', 'transaction_hash', 'status', 'payload'],
+        'fraud_logs': ['user_id', 'claim_reference', 'fraud_score', 'decision', 'confidence', 'fraud_types', 'explanation', 'signals'],
         'adaptive_risk_weights': ['rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight', 'sample_count', 'updated_at'],
         'environment_snapshots': ['bucket_lat', 'bucket_lon', 'temperature', 'wind_speed', 'humidity', 'rain_estimate', 'aqi', 'traffic_index', 'observed_at'],
         'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],
@@ -205,21 +206,28 @@ def ensure_schema():
     }
 
     schema_ok = True
+    missing_tables_only = False
     inspector = inspect(engine)
     for table_name, columns in required_columns.items():
         if not inspector.has_table(table_name):
             schema_ok = False
+            missing_tables_only = True
             break
         for column_name in columns:
             if not _sqlite_has_column(table_name, column_name):
                 schema_ok = False
+                missing_tables_only = False
                 break
         if not schema_ok:
             break
 
     if not schema_ok:
-        print('Schema mismatch detected: resetting database schema (dev mode)')
-        _run_sqlite_with_retries(reset_database)
+        if missing_tables_only:
+            print('Missing tables detected: creating new tables without resetting existing data')
+            _run_sqlite_with_retries(lambda: Base.metadata.create_all(bind=engine))
+        else:
+            print('Schema mismatch detected: resetting database schema (dev mode)')
+            _run_sqlite_with_retries(reset_database)
     else:
         _run_sqlite_with_retries(lambda: Base.metadata.create_all(bind=engine))
 

@@ -92,6 +92,7 @@ class ClaimProcessResponse(BaseModel):
     gig: dict | None = None
     location_status: dict | None = None
     claim_id: str | None = None
+    fraud_log_id: int | None = None
 
 
 class ClaimPayoutRequest(BaseModel):

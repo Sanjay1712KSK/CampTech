@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from models.gig_income import GigIncome
+from models.fraud_log import FraudLog
 from models.models import ClaimHistory, PremiumSnapshot
 from models.profile import Profile
 from models.user_model import User
@@ -302,11 +303,25 @@ def process_claim(
         review_notes=fraud['explanation'],
     )
 
+    fraud_log = FraudLog(
+        user_id=int(user_id),
+        claim_reference=f'claim_{claim.id}',
+        fraud_score=float(fraud.get('fraud_score', 0.0)),
+        decision=str(fraud.get('decision', claim_status)),
+        confidence=str(fraud.get('confidence', 'LOW')),
+        fraud_types=fraud.get('fraud_types') or [],
+        explanation=str(fraud.get('explanation', '')),
+        signals=fraud.get('signals') or {},
+    )
+    db.add(fraud_log)
+
     if user_allows_model_training(db, user_id=user_id):
         update_model_weights(db, user_id=user_id)
         update_user_behavior(db, user_id=user_id)
 
     db.commit()
+    if fraud_log.id is None:
+        db.refresh(fraud_log)
 
     return {
         'claim_status': claim_status,
@@ -338,5 +353,6 @@ def process_claim(
         'gig': today_income,
         'location_status': location_status,
         'claim_id': f'claim_{claim.id}',
+        'fraud_log_id': fraud_log.id,
         'reasons': reasons,
     }

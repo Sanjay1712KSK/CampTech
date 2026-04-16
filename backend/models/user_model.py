@@ -45,6 +45,7 @@ class User(Base):
     claim_history = relationship('ClaimHistory', back_populates='user', cascade='all, delete-orphan')
     behavior_events = relationship('UserBehavior', back_populates='user', cascade='all, delete-orphan')
     blockchain_records = relationship('BlockchainRecord', back_populates='user')
+    fraud_logs = relationship('FraudLog', back_populates='user', cascade='all, delete-orphan')
 
     @property
     def is_verified(self) -> bool:
