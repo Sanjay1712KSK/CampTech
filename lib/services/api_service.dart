@@ -531,6 +531,39 @@ class ApiService {
     throw _asException(response);
   }
 
+  static Future<Map<String, dynamic>> _postJsonWithoutSession(
+    String path, {
+    required Map<String, dynamic> body,
+    String? bearerToken,
+  }) async {
+    http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse('${Config.baseUrl}$path'),
+            headers: {
+              'Content-Type': 'application/json',
+              if (bearerToken != null && bearerToken.isNotEmpty)
+                'Authorization': 'Bearer $bearerToken',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception(
+        'Backend timed out while waking up. Please try again in a few seconds.',
+      );
+    } on http.ClientException {
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
+    }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw _asException(response);
+  }
+
   static Future<AvailabilityResult> checkUsernameAvailability(
     String username,
   ) async {
@@ -914,6 +947,47 @@ class ApiService {
         .toList();
   }
 
+  static Future<AdminLoginResult> adminLogin({
+    required String email,
+    required String password,
+  }) async {
+    final body = await _postJsonWithoutSession(
+      '/admin/login',
+      body: {'email': email, 'password': password},
+    );
+    return AdminLoginResult.fromJson(body);
+  }
+
+  static Future<AdminOverviewModel> getAdminOverview(String token) async {
+    final body = await _getJson('/admin/overview', token: token);
+    return AdminOverviewModel.fromJson(body);
+  }
+
+  static Future<AdminFraudStatsModel> getAdminFraudStats(String token) async {
+    final body = await _getJson('/admin/fraud-stats', token: token);
+    return AdminFraudStatsModel.fromJson(body);
+  }
+
+  static Future<AdminClaimsStatsModel> getAdminClaimsStats(String token) async {
+    final body = await _getJson('/admin/claims-stats', token: token);
+    return AdminClaimsStatsModel.fromJson(body);
+  }
+
+  static Future<AdminRiskStatsModel> getAdminRiskStats(String token) async {
+    final body = await _getJson('/admin/risk-stats', token: token);
+    return AdminRiskStatsModel.fromJson(body);
+  }
+
+  static Future<AdminFinancialsModel> getAdminFinancials(String token) async {
+    final body = await _getJson('/admin/financials', token: token);
+    return AdminFinancialsModel.fromJson(body);
+  }
+
+  static Future<AdminPredictionsModel> getAdminPredictions(String token) async {
+    final body = await _getJson('/admin/predictions', token: token);
+    return AdminPredictionsModel.fromJson(body);
+  }
+
   static String? _tryDecodeError(String body) {
     try {
       final map = jsonDecode(body) as Map<String, dynamic>;
@@ -921,6 +995,211 @@ class ApiService {
     } catch (_) {
       return null;
     }
+  }
+}
+
+class AdminLoginResult {
+  final String token;
+  final String role;
+
+  const AdminLoginResult({
+    required this.token,
+    required this.role,
+  });
+
+  factory AdminLoginResult.fromJson(Map<String, dynamic> json) {
+    return AdminLoginResult(
+      token: json['token'] as String? ?? '',
+      role: json['role'] as String? ?? 'insurer',
+    );
+  }
+}
+
+class AdminOverviewModel {
+  final int totalUsers;
+  final int activePolicies;
+  final int totalClaims;
+  final double totalPayouts;
+  final double totalPremiums;
+  final double lossRatio;
+
+  const AdminOverviewModel({
+    required this.totalUsers,
+    required this.activePolicies,
+    required this.totalClaims,
+    required this.totalPayouts,
+    required this.totalPremiums,
+    required this.lossRatio,
+  });
+
+  factory AdminOverviewModel.fromJson(Map<String, dynamic> json) {
+    return AdminOverviewModel(
+      totalUsers: json['total_users'] as int? ?? 0,
+      activePolicies: json['active_policies'] as int? ?? 0,
+      totalClaims: json['total_claims'] as int? ?? 0,
+      totalPayouts: (json['total_payouts'] as num?)?.toDouble() ?? 0.0,
+      totalPremiums: (json['total_premiums'] as num?)?.toDouble() ?? 0.0,
+      lossRatio: (json['loss_ratio'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class AdminFraudTypeModel {
+  final String type;
+  final int count;
+
+  const AdminFraudTypeModel({
+    required this.type,
+    required this.count,
+  });
+
+  factory AdminFraudTypeModel.fromJson(Map<String, dynamic> json) {
+    return AdminFraudTypeModel(
+      type: json['type'] as String? ?? '',
+      count: json['count'] as int? ?? 0,
+    );
+  }
+}
+
+class AdminFraudHotspotModel {
+  final String city;
+  final int count;
+
+  const AdminFraudHotspotModel({
+    required this.city,
+    required this.count,
+  });
+
+  factory AdminFraudHotspotModel.fromJson(Map<String, dynamic> json) {
+    return AdminFraudHotspotModel(
+      city: json['city'] as String? ?? '',
+      count: json['count'] as int? ?? 0,
+    );
+  }
+}
+
+class AdminFraudStatsModel {
+  final double fraudRate;
+  final int flaggedClaims;
+  final int rejectedClaims;
+  final List<AdminFraudTypeModel> topFraudTypes;
+  final List<AdminFraudHotspotModel> hotspots;
+
+  const AdminFraudStatsModel({
+    required this.fraudRate,
+    required this.flaggedClaims,
+    required this.rejectedClaims,
+    required this.topFraudTypes,
+    required this.hotspots,
+  });
+
+  factory AdminFraudStatsModel.fromJson(Map<String, dynamic> json) {
+    final rawTypes = json['top_fraud_types'] as List? ?? const [];
+    final rawHotspots = json['hotspots'] as List? ?? const [];
+    return AdminFraudStatsModel(
+      fraudRate: (json['fraud_rate'] as num?)?.toDouble() ?? 0.0,
+      flaggedClaims: json['flagged_claims'] as int? ?? 0,
+      rejectedClaims: json['rejected_claims'] as int? ?? 0,
+      topFraudTypes: rawTypes
+          .whereType<Map<String, dynamic>>()
+          .map(AdminFraudTypeModel.fromJson)
+          .toList(),
+      hotspots: rawHotspots
+          .whereType<Map<String, dynamic>>()
+          .map(AdminFraudHotspotModel.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class AdminClaimsStatsModel {
+  final int approved;
+  final int rejected;
+  final int flagged;
+  final double avgPayout;
+  final double avgLoss;
+
+  const AdminClaimsStatsModel({
+    required this.approved,
+    required this.rejected,
+    required this.flagged,
+    required this.avgPayout,
+    required this.avgLoss,
+  });
+
+  factory AdminClaimsStatsModel.fromJson(Map<String, dynamic> json) {
+    return AdminClaimsStatsModel(
+      approved: json['approved'] as int? ?? 0,
+      rejected: json['rejected'] as int? ?? 0,
+      flagged: json['flagged'] as int? ?? 0,
+      avgPayout: (json['avg_payout'] as num?)?.toDouble() ?? 0.0,
+      avgLoss: (json['avg_loss'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class AdminRiskStatsModel {
+  final int highRiskUsers;
+  final double avgRiskScore;
+  final List<String> topTriggers;
+
+  const AdminRiskStatsModel({
+    required this.highRiskUsers,
+    required this.avgRiskScore,
+    required this.topTriggers,
+  });
+
+  factory AdminRiskStatsModel.fromJson(Map<String, dynamic> json) {
+    return AdminRiskStatsModel(
+      highRiskUsers: json['high_risk_users'] as int? ?? 0,
+      avgRiskScore: (json['avg_risk_score'] as num?)?.toDouble() ?? 0.0,
+      topTriggers: (json['top_triggers'] as List? ?? const [])
+          .map((e) => '$e')
+          .toList(),
+    );
+  }
+}
+
+class AdminFinancialsModel {
+  final double totalPremiums;
+  final double totalPayouts;
+  final double profit;
+
+  const AdminFinancialsModel({
+    required this.totalPremiums,
+    required this.totalPayouts,
+    required this.profit,
+  });
+
+  factory AdminFinancialsModel.fromJson(Map<String, dynamic> json) {
+    return AdminFinancialsModel(
+      totalPremiums: (json['total_premiums'] as num?)?.toDouble() ?? 0.0,
+      totalPayouts: (json['total_payouts'] as num?)?.toDouble() ?? 0.0,
+      profit: (json['profit'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class AdminPredictionsModel {
+  final int nextWeekClaims;
+  final double expectedPayout;
+  final String riskTrend;
+  final String insight;
+
+  const AdminPredictionsModel({
+    required this.nextWeekClaims,
+    required this.expectedPayout,
+    required this.riskTrend,
+    required this.insight,
+  });
+
+  factory AdminPredictionsModel.fromJson(Map<String, dynamic> json) {
+    return AdminPredictionsModel(
+      nextWeekClaims: json['next_week_claims'] as int? ?? 0,
+      expectedPayout: (json['expected_payout'] as num?)?.toDouble() ?? 0.0,
+      riskTrend: json['risk_trend'] as String? ?? 'stable',
+      insight: json['insight'] as String? ?? '',
+    );
   }
 }
 
