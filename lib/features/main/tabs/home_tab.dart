@@ -721,3 +721,535 @@ class _ContextPill extends StatelessWidget {
     );
   }
 }
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? tone;
+
+  const _MetricTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.tone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 100),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: tone ?? AppTheme.primaryColor, size: 20),
+          const SizedBox(height: 10),
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: tone ?? AppTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImpactStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool highlight;
+
+  const _ImpactStat({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: highlight ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: highlight ? AppTheme.primaryColor.withOpacity(0.22) : Colors.white.withOpacity(0.03),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: highlight ? AppTheme.primaryColor : AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExplainBar extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _ExplainBar({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.primaryColor, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowStep extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool isLast;
+
+  const _FlowStep({
+    required this.icon,
+    required this.title,
+    required this.description,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 18, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionRow extends StatelessWidget {
+  final Map<String, dynamic> transaction;
+
+  const _TransactionRow({required this.transaction});
+
+  @override
+  Widget build(BuildContext context) {
+    final type = _readString(transaction['type'], fallback: 'transaction');
+    final amount = _readDouble(transaction['amount']) ?? 0.0;
+    final timestamp = _formatDateTime(_readString(transaction['created_at']));
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _readString(
+                    transaction['remark'],
+                    fallback: _titleCase(type),
+                  ),
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                'Rs ${amount.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Transaction ID: ${_readString(transaction['transaction_id'], fallback: '--')}',
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Time: $timestamp',
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: AppTheme.textSecondary),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        SizedBox(height: 180),
+        Center(child: CircularProgressIndicator()),
+      ],
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
+
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 120),
+        const Icon(Icons.cloud_off_rounded, size: 34, color: AppTheme.textSecondary),
+        const SizedBox(height: 14),
+        const Text(
+          'Dashboard unavailable',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+        ),
+        const SizedBox(height: 18),
+        ElevatedButton(
+          onPressed: onRetry,
+          child: const Text('Try again'),
+        ),
+      ],
+    );
+  }
+}
+
+Map<String, dynamic> _asMap(Object? value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, entryValue) => MapEntry('$key', entryValue));
+  }
+  return const {};
+}
+
+String _displayName(Map<String, dynamic> userPayload, UserState user) {
+  return _readString(
+    userPayload['name'],
+    fallback: _readString(
+      userPayload['username'],
+      fallback: user.userName,
+    ),
+  );
+}
+
+String _displayCity(Map<String, dynamic> environment, Map<String, dynamic> status, String fallbackCity) {
+  final location = _asMap(status['location']);
+  return _readString(
+    environment['city'],
+    fallback: _readString(
+      environment['resolved_city'],
+      fallback: _readString(
+        location['active_city'],
+        fallback: fallbackCity,
+      ),
+    ),
+  );
+}
+
+Map<String, dynamic> _resolvePayout(Map<String, dynamic> dashboard, Map<String, dynamic> claim) {
+  final claimPayout = _asMap(claim['payout']);
+  if (claimPayout.isNotEmpty) {
+    return claimPayout;
+  }
+  return _asMap(dashboard['payout']);
+}
+
+List<String> _asStringList(Object? value) {
+  if (value is! List) return const [];
+  return value.map((item) => '$item').where((item) => item.trim().isNotEmpty).toList();
+}
+
+String _joinExplanation(Object? value) {
+  if (value is List) {
+    return value.map((item) => '$item').where((item) => item.trim().isNotEmpty).join(' ');
+  }
+  return _readString(value);
+}
+
+String _prettifyTrigger(String input) {
+  return _titleCase(input.replaceAll('_', ' ').toLowerCase());
+}
+
+String _titleCase(String input) {
+  return input
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+      .join(' ');
+}
+
+String _readString(Object? value, {String fallback = '--'}) {
+  if (value == null) return fallback;
+  final text = '$value'.trim();
+  return text.isEmpty ? fallback : text;
+}
+
+double? _readDouble(Object? value, {double? fallback}) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.replaceAll('%', '').trim()) ?? fallback;
+  return fallback;
+}
+
+int? _readInt(Object? value, {int? fallback}) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return fallback;
+}
+
+String _percent(double? value) {
+  if (value == null) return '0%';
+  return '${(value * 100).round()}%';
+}
+
+Color _riskTone(String level) {
+  switch (level.toUpperCase()) {
+    case 'HIGH':
+      return AppTheme.errorColor;
+    case 'MEDIUM':
+      return AppTheme.warningColor;
+    default:
+      return AppTheme.successColor;
+  }
+}
+
+Color _claimTone(String status) {
+  switch (status.toUpperCase()) {
+    case 'APPROVED':
+      return AppTheme.successColor;
+    case 'UNDER_REVIEW':
+    case 'PROCESSING':
+    case 'FLAGGED':
+      return AppTheme.warningColor;
+    case 'REJECTED':
+      return AppTheme.errorColor;
+    default:
+      return AppTheme.textPrimary;
+  }
+}
+
+String _formatDateTime(String value) {
+  if (value == '--') return value;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return value;
+  return DateFormat('d MMM, h:mm a').format(parsed.toLocal());
+}
