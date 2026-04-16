@@ -387,3 +387,337 @@ class _DashboardView extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Why This Happened',
+          subtitle: 'A simple explainer that shows the full automated decision flow.',
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              initiallyExpanded: true,
+              title: const Text(
+                'Environment -> Risk -> Claim -> Fraud -> Payout',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: const Text(
+                'Open to see how the system reached its decision.',
+                style: TextStyle(color: AppTheme.textSecondary),
+              ),
+              children: [
+                _FlowStep(
+                  icon: Icons.cloud_outlined,
+                  title: 'Environment',
+                  description:
+                      'Weather, AQI, and traffic were read live from the backend for $currentCity.',
+                ),
+                _FlowStep(
+                  icon: Icons.query_stats_rounded,
+                  title: 'Risk',
+                  description: riskExplanation.isEmpty
+                      ? 'Risk stayed at $riskLevel based on current disruption factors.'
+                      : riskExplanation,
+                ),
+                _FlowStep(
+                  icon: Icons.assignment_turned_in_outlined,
+                  title: 'Claim',
+                  description: _readString(
+                    claim['explanation'],
+                    fallback: 'The zero-touch claim engine checked for trigger-based loss automatically.',
+                  ),
+                ),
+                _FlowStep(
+                  icon: Icons.shield_outlined,
+                  title: 'Fraud',
+                  description: _readString(
+                    _asMap(claim['fraud'])['explanation'],
+                    fallback: 'Fraud checks reviewed device, location, behavior, and context before payout.',
+                  ),
+                ),
+                _FlowStep(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Payout',
+                  description: payoutAmount > 0
+                      ? 'Once the claim passed review, the payout service credited the worker automatically.'
+                      : 'No payout was sent because the claim is not yet approved for credit.',
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Premium Details',
+          subtitle: 'Live pricing linked directly to the same risk engine.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _ImpactStat(
+                      label: 'Weekly premium',
+                      value: 'Rs ${premiumAmount.toStringAsFixed(0)}',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ImpactStat(
+                      label: 'Coverage amount',
+                      value: 'Rs ${coverageAmount.toStringAsFixed(0)}',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ImpactStat(
+                      label: 'Eligibility',
+                      value: premiumEligible ? 'Eligible' : 'Not eligible',
+                      highlight: premiumEligible,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _InfoRow(
+                label: 'Reason',
+                value: _readString(
+                  premium['reason'],
+                  fallback: premiumEligible ? 'Eligible for premium quote' : 'Quote unavailable',
+                ),
+              ),
+              _InfoRow(
+                label: 'Pricing explanation',
+                value: _readString(
+                  premium['explanation'],
+                  fallback: 'Pricing follows live risk, trigger severity, and weekly income.',
+                ),
+              ),
+              _InfoRow(label: 'Policy status', value: policyStatus),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Transaction History',
+          subtitle: 'Recent premium payments and payout activity.',
+          child: bundle.transactions.isEmpty
+              ? const _EmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'No transactions yet',
+                  message: 'Premium payments and payouts will appear here as soon as the system records them.',
+                )
+              : Column(
+                  children: bundle.transactions
+                      .map((transaction) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _TransactionRow(transaction: transaction),
+                          ))
+                      .toList(),
+                ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'System Summary',
+          subtitle: 'A quick worker-facing summary of what the platform is doing right now.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(label: 'Coverage active', value: coverageActive ? 'Yes' : 'No'),
+              _InfoRow(label: 'Auto payout enabled', value: status['auto_payout_enabled'] == true ? 'Yes' : 'No'),
+              _InfoRow(label: 'Active triggers', value: triggerSummary),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroCard extends StatelessWidget {
+  final String name;
+  final double earningsToday;
+  final bool coverageActive;
+  final String city;
+  final String weatherText;
+  final String aqiText;
+  final String trafficText;
+
+  const _HeroCard({
+    required this.name,
+    required this.earningsToday,
+    required this.coverageActive,
+    required this.city,
+    required this.weatherText,
+    required this.aqiText,
+    required this.trafficText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF252B16), Color(0xFF13180F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Worker Dashboard',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: coverageActive
+                            ? AppTheme.successColor.withOpacity(0.18)
+                            : AppTheme.errorColor.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        coverageActive ? 'Coverage Active' : 'Coverage Inactive',
+                        style: TextStyle(
+                          color: coverageActive ? AppTheme.successColor : AppTheme.errorColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.assured_workload_rounded, color: AppTheme.primaryColor, size: 34),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroStat(
+                  label: 'Earnings today',
+                  value: 'Rs ${earningsToday.toStringAsFixed(0)}',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _HeroStat(
+                  label: 'Location',
+                  value: city,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _ContextPill(icon: Icons.umbrella_outlined, label: weatherText),
+              _ContextPill(icon: Icons.air_rounded, label: 'AQI $aqiText'),
+              _ContextPill(icon: Icons.traffic_rounded, label: trafficText),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _HeroStat({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContextPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _ContextPill({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppTheme.primaryColor),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
