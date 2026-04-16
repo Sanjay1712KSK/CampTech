@@ -1,5 +1,4 @@
 import os
-import random
 import re
 from urllib.parse import quote
 from datetime import UTC, datetime, timedelta
@@ -12,6 +11,7 @@ from models.models import UserSettings
 from models.user_model import User
 from models.verification import Verification
 from services.notification_service import send_confirmation_email, send_email_otp, send_sms_otp
+from services.otp_service import OTP_EXPIRY_SECONDS, OTP_RETRY_LIMIT, generate_otp, verify_stored_otp
 from utils.jwt import decode_token, encode_token
 from utils.rate_limiter import enforce_rate_limit
 from utils.security import (
@@ -19,13 +19,10 @@ from utils.security import (
     hash_otp,
     hash_password,
     validate_password_strength,
-    verify_otp,
     verify_password,
 )
 
 
-OTP_EXPIRY_SECONDS = 5 * 60
-OTP_RETRY_LIMIT = 5
 ACCESS_TOKEN_EXPIRY_SECONDS = 12 * 60 * 60
 CONFIRMATION_TOKEN_EXPIRY_SECONDS = 30 * 60
 RESET_TOKEN_EXPIRY_SECONDS = 15 * 60
@@ -47,10 +44,6 @@ def _normalize_username(username: str) -> str:
 
 def normalize_phone(country_code: str, phone_number: str) -> str:
     return f'{country_code.strip()}{phone_number.strip()}'
-
-
-def _generate_otp() -> str:
-    return f'{random.randint(0, 999999):06d}'
 
 
 def _build_app_confirmation_link(*, token: str, email: str) -> str:
@@ -249,8 +242,8 @@ def send_otp(db: Session, user_id: int, purpose: str) -> dict:
     _mark_existing_codes_consumed(db, user.id, purpose)
     email_type, phone_type = _verification_types_for_purpose(purpose)
 
-    email_otp = _generate_otp()
-    phone_otp = _generate_otp()
+    email_otp = generate_otp()
+    phone_otp = generate_otp()
     expires_at = _utcnow() + timedelta(seconds=OTP_EXPIRY_SECONDS)
 
     email_record = Verification(
@@ -289,32 +282,14 @@ def send_otp(db: Session, user_id: int, purpose: str) -> dict:
     }
 
 
-def _validate_otp_record(db: Session, record: Verification | None, otp_value: str, channel_label: str) -> None:
-    if record is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'No active {channel_label} OTP found')
-    if record.is_consumed:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{channel_label.title()} OTP already used')
-    if record.expires_at <= _utcnow():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'{channel_label.title()} OTP expired')
-    if record.attempts >= record.max_attempts:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=f'{channel_label.title()} OTP retry limit reached')
-
-    record.attempts += 1
-    if not verify_otp(otp_value, record.otp_code):
-        db.commit()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Invalid {channel_label} OTP')
-
-    record.is_consumed = True
-
-
 def verify_signup_otp(db: Session, user_id: int, email_otp: str, phone_otp: str) -> dict:
     user = _user_or_404(db, user_id)
     enforce_rate_limit(f'otp-verify:signup:{user.id}', limit=6, window_seconds=10 * 60)
 
     email_record = _active_verification(db, user.id, 'email', 'email')
     phone_record = _active_verification(db, user.id, 'phone', 'phone')
-    _validate_otp_record(db, email_record, email_otp, 'email')
-    _validate_otp_record(db, phone_record, phone_otp, 'phone')
+    verify_stored_otp(db, record=email_record, otp=email_otp, channel_label='email')
+    verify_stored_otp(db, record=phone_record, otp=phone_otp, channel_label='phone')
 
     user.is_email_verified = True
     user.is_phone_verified = True
@@ -453,7 +428,7 @@ def send_first_login_otp(db: Session, challenge_token: str, channel: str) -> dic
         .update({'is_consumed': True}, synchronize_session=False)
     )
 
-    otp = _generate_otp()
+    otp = generate_otp()
     record = Verification(
         user_id=user.id,
         otp_code=hash_otp(otp),
@@ -490,7 +465,7 @@ def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp:
     user = _user_or_404(db, int(payload['sub']))
     enforce_rate_limit(f'otp-verify:first_login:{channel}:{user.id}', limit=6, window_seconds=10 * 60)
     record = _active_verification(db, user.id, 'first_login', channel)
-    _validate_otp_record(db, record, otp, channel)
+    verify_stored_otp(db, record=record, otp=otp, channel_label=channel)
     user.has_completed_first_login_2fa = True
     device_id = payload.get('device_id')
     session_payload = _issue_access_session(user, device_id=device_id)
@@ -518,8 +493,8 @@ def verify_reset_otp(db: Session, user_id: int, email_otp: str, phone_otp: str) 
     email_record = _active_verification(db, user.id, 'reset', 'email')
     phone_record = _active_verification(db, user.id, 'reset', 'phone')
 
-    _validate_otp_record(db, email_record, email_otp, 'email')
-    _validate_otp_record(db, phone_record, phone_otp, 'phone')
+    verify_stored_otp(db, record=email_record, otp=email_otp, channel_label='email')
+    verify_stored_otp(db, record=phone_record, otp=phone_otp, channel_label='phone')
     db.commit()
 
     reset_token = encode_token(

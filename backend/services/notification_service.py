@@ -1,25 +1,13 @@
 import logging
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-try:
-    import mailtrap as mt
-except ImportError:  # pragma: no cover - depends on local environment
-    mt = None
+from services.email_service import send_otp_email, send_transactional_email
 
 load_dotenv(Path(__file__).resolve().parent.parent / '.env', override=False)
 
 logger = logging.getLogger('gig_insurance_backend.notifications')
-
-MAILTRAP_TOKEN = os.getenv('MAILTRAP_TOKEN', os.getenv('MAILTRAP_API_TOKEN', '')).strip()
-MAILTRAP_SENDER_EMAIL = os.getenv('MAILTRAP_SENDER_EMAIL', 'hello@demomailtrap.co').strip()
-MAILTRAP_SENDER_NAME = os.getenv('MAILTRAP_SENDER_NAME', 'Mailtrap Test').strip()
-DEMO_EMAIL_REDIRECT = os.getenv(
-    'MAILTRAP_DEMO_REDIRECT_EMAIL',
-    os.getenv('DEMO_EMAIL_REDIRECT', 'demo-actors@demomailtrap.co'),
-).strip()
 
 
 def _mask_email(email: str) -> str:
@@ -37,106 +25,17 @@ def _mask_phone(phone: str) -> str:
     return f"{phone[:3]}***{phone[-3:]}"
 
 
-def _is_demo_email(email: str) -> bool:
-    return email.strip().lower().endswith('@gigshield.demo')
-
-
-def _resolve_mailtrap_recipient(email: str) -> tuple[str, str]:
-    normalized = email.strip().lower()
-    if _is_demo_email(normalized):
-        return DEMO_EMAIL_REDIRECT, 'sandbox_redirect'
-    return normalized, 'direct'
-
-
-def _extract_provider_error(exc: Exception) -> str:
-    message = str(exc).strip()
-    if message:
-        return message
-
-    errors = getattr(exc, 'errors', None)
-    if errors:
-        return str(errors)
-
-    return exc.__class__.__name__
-
-
-def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> tuple[bool, str | None]:
-    if mt is None:
-        return False, 'Mailtrap package is not installed on the backend environment'
-    if not MAILTRAP_TOKEN:
-        return False, 'MAILTRAP_TOKEN is not configured on the backend environment'
-
-    resolved_email, _ = _resolve_mailtrap_recipient(to_email)
-
-    mail = mt.Mail(
-        sender=mt.Address(email=MAILTRAP_SENDER_EMAIL, name=MAILTRAP_SENDER_NAME),
-        to=[mt.Address(email=resolved_email)],
-        subject=subject,
-        text=text,
-        category=category,
-    )
-    client = mt.MailtrapClient(token=MAILTRAP_TOKEN)
-    try:
-        client.send(mail)
-        return True, None
-    except Exception as exc:  # pragma: no cover - external network/service
-        provider_error = _extract_provider_error(exc)
-        logger.exception(
-            'Mailtrap email delivery failed for recipient=%s resolved_recipient=%s category=%s sender=%s provider_error=%s',
-            to_email,
-            resolved_email,
-            category,
-            MAILTRAP_SENDER_EMAIL,
-            provider_error,
-        )
-        return False, f'Unable to send email right now ({provider_error})'
-
-
 def send_email_otp(email: str, otp: str, purpose: str) -> dict:
-    if purpose == 'signup':
-        subject = 'GigShield registration OTP'
-        text = (
-            'Welcome to GigShield.\n\n'
-            f'Your registration OTP is: {otp}\n'
-            'This OTP is valid for 5 minutes.\n\n'
-            'If you did not start this signup, please ignore this email.'
-        )
-        category = 'Registration OTP'
-    elif purpose == 'first_login':
-        subject = 'GigShield first login verification OTP'
-        text = (
-            'We noticed a first-time sign in to your GigShield account.\n\n'
-            f'Your verification OTP is: {otp}\n'
-            'This OTP is valid for 5 minutes.\n\n'
-            'If this was not you, please secure your account immediately.'
-        )
-        category = 'First Login OTP'
-    else:
-        subject = 'GigShield login recovery OTP'
-        text = (
-            'We received a password reset request for your GigShield account.\n\n'
-            f'Your OTP is: {otp}\n'
-            'This OTP is valid for 5 minutes.\n\n'
-            'If this was not you, please ignore this email.'
-        )
-        category = 'Reset OTP'
-
-    resolved_email, delivery_mode = _resolve_mailtrap_recipient(email)
-    success, error_message = _deliver_mailtrap_email(
-        to_email=email,
-        subject=subject,
-        text=text,
-        category=category,
-    )
+    success, error_message = send_otp_email(email, otp)
     if success:
-        logger.info('Mailtrap email OTP sent to %s [%s]', email, purpose)
+        logger.info('Brevo SMTP email OTP sent to %s [%s]', email, purpose)
     else:
-        logger.warning('Mailtrap email OTP failed for %s [%s]: %s', email, purpose, error_message)
+        logger.warning('Brevo SMTP email OTP failed for %s [%s]: %s', email, purpose, error_message)
     return {
         'channel': 'email',
         'destination': _mask_email(email),
-        'delivery_mode': delivery_mode,
-        'redirected_to': _mask_email(resolved_email) if delivery_mode == 'sandbox_redirect' else None,
+        'delivery_mode': 'smtp',
+        'redirected_to': None,
         'status': 'sent' if success else 'failed',
         'error_message': error_message,
         'mock_otp': None,
@@ -155,34 +54,30 @@ def send_sms_otp(phone: str, otp: str, purpose: str) -> dict:
 
 
 def send_confirmation_email(email: str, confirmation_link: str, app_confirmation_link: str | None = None) -> dict:
-    app_line = (
-        f'Open in the app:\n{app_confirmation_link}\n\n'
-        if app_confirmation_link
-        else ''
+    app_line = f'Open in the app:\n{app_confirmation_link}\n\n' if app_confirmation_link else ''
+    subject = 'GigShield account confirmation'
+    body = (
+        'Your contact verification is complete.\n\n'
+        'Tap the app confirmation link below to activate your GigShield account in the mobile app:\n'
+        f'{app_line}'
+        'Fallback web confirmation link:\n'
+        f'{confirmation_link}\n\n'
+        'If you did not request this, please ignore the email.'
     )
-    resolved_email, delivery_mode = _resolve_mailtrap_recipient(email)
-    success, error_message = _deliver_mailtrap_email(
+    success, error_message = send_transactional_email(
         to_email=email,
-        subject='GigShield account confirmation',
-        text=(
-            'Your contact verification is complete.\n\n'
-            'Tap the app confirmation link below to activate your GigShield account in the mobile app:\n'
-            f'{app_line}'
-            'Fallback web confirmation link:\n'
-            f'{confirmation_link}\n\n'
-            'If you did not request this, please ignore the email.'
-        ),
-        category='Account Confirmation',
+        subject=subject,
+        body=body,
     )
     if success:
-        logger.info('Mailtrap confirmation email sent to %s', email)
+        logger.info('Brevo SMTP confirmation email sent to %s', email)
     else:
-        logger.warning('Mailtrap confirmation email failed for %s: %s', email, error_message)
+        logger.warning('Brevo SMTP confirmation email failed for %s: %s', email, error_message)
     return {
         'channel': 'email',
         'destination': _mask_email(email),
-        'delivery_mode': delivery_mode,
-        'redirected_to': _mask_email(resolved_email) if delivery_mode == 'sandbox_redirect' else None,
+        'delivery_mode': 'smtp',
+        'redirected_to': None,
         'status': 'sent' if success else 'failed',
         'error_message': error_message,
         'confirmation_link': confirmation_link,
