@@ -6,8 +6,6 @@ This repository contains a full-stack insurtech prototype built for the DevTrail
 
 `Environment -> Risk -> Premium -> Policy -> Claim -> Fraud -> Payout -> Blockchain Record`
 
-The product was originally started under the working name `GigShield` in the codebase. For Phase 2 positioning and demo storytelling, the project is presented as `IncomePulse`.
-
 ## Why This Project Exists
 
 Gig workers face day-to-day income volatility caused by real-world disruptions:
