@@ -59,3 +59,9 @@ class AdminPredictionsResponse(BaseModel):
     expected_payout: float
     risk_trend: str
     insight: str
+
+
+class AdminPayoutsResponse(BaseModel):
+    total_payouts: float
+    avg_payout: float
+    payout_success_rate: float

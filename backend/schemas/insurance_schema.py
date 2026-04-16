@@ -131,5 +131,8 @@ class InsuranceSummaryResponse(BaseModel):
     claim_ready: bool
     claim_message: str
     last_payout: float
+    payout_status: str | None = None
+    payout_transaction_id: str | None = None
+    payout_time: str | None = None
     latest_claim_status: str | None = None
     recent_remarks: list[str] = []

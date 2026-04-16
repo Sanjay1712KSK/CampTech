@@ -214,6 +214,9 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         'claim_ready': claim_ready,
         'claim_message': claim_message,
         'last_payout': _round(last_payout.amount) if last_payout else 0.0,
+        'payout_status': last_payout.status if last_payout else None,
+        'payout_transaction_id': last_payout.reference_id if last_payout else None,
+        'payout_time': last_payout.created_at.isoformat() if last_payout and last_payout.created_at else None,
         'latest_claim_status': settled_claim.status if settled_claim else (latest_claim.status if latest_claim else None),
         'recent_remarks': [
             (

@@ -9,6 +9,7 @@ from schemas.admin_schema import (
     AdminLoginRequest,
     AdminLoginResponse,
     AdminOverviewResponse,
+    AdminPayoutsResponse,
     AdminPredictionsResponse,
     AdminRiskStatsResponse,
 )
@@ -19,6 +20,7 @@ from services.admin_service import (
     get_financials,
     get_fraud_stats,
     get_overview,
+    get_payout_stats,
     get_predictions,
     get_risk_stats,
 )
@@ -77,3 +79,11 @@ async def admin_predictions_endpoint(
     _admin: dict = Depends(get_current_admin),
 ):
     return get_predictions(db)
+
+
+@router.get('/payouts', response_model=AdminPayoutsResponse)
+async def admin_payouts_endpoint(
+    db: Session = Depends(get_db),
+    _admin: dict = Depends(get_current_admin),
+):
+    return get_payout_stats(db)

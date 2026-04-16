@@ -272,3 +272,20 @@ def get_predictions(db: Session) -> dict:
         'risk_trend': risk_trend,
         'insight': insight,
     }
+
+
+def get_payout_stats(db: Session) -> dict:
+    payout_query = db.query(BankTransaction).filter(
+        BankTransaction.transaction_type.in_(['CLAIM_PAYOUT', 'MANUAL_CLAIM_PAYOUT'])
+    )
+    total_records = payout_query.count()
+    successful_records = payout_query.filter(BankTransaction.status == 'SUCCESS')
+    total_payouts = successful_records.with_entities(func.coalesce(func.sum(BankTransaction.amount), 0.0)).scalar() or 0.0
+    avg_payout = successful_records.with_entities(func.coalesce(func.avg(BankTransaction.amount), 0.0)).scalar() or 0.0
+    success_count = successful_records.count()
+    payout_success_rate = _round(success_count / total_records, 4) if total_records > 0 else 0.0
+    return {
+        'total_payouts': _round(total_payouts),
+        'avg_payout': _round(avg_payout),
+        'payout_success_rate': payout_success_rate,
+    }
