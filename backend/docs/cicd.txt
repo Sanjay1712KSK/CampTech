@@ -1,5 +1,5 @@
 git add .
 git pull origin main
 git commit -m main
-git commit -m "Risk Engine backend update"
+git commit -m "Addition of ADMIN ui framework along with new features"
 git push origin main
