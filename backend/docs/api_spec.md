@@ -1,6 +1,6 @@
 # Gig Insurance Backend API Specification
 
-This document reflects the FastAPI routes currently mounted in `backend/main.py` and the current onboarding, DigiLocker, gig-income, premium, payment, claim, and support flows.
+This document reflects the FastAPI routes currently mounted in [backend/main.py](s:\flutter\guidewire_gig_ins\backend\main.py). It covers the live backend surface used by the Flutter worker app, the insurer admin dashboard, and the adaptive prediction layer.
 
 ## Base URL
 
@@ -19,7 +19,7 @@ http://<your-laptop-ip>:8000
 Examples:
 
 - `http://192.168.0.6:8000`
-- Android emulator: use `http://10.0.2.2:8000`
+- Android emulator: `http://10.0.2.2:8000`
 
 Health routes:
 
@@ -28,15 +28,17 @@ Health routes:
 
 ## Runtime Notes
 
-- CORS is enabled for all origins so the Flutter app can connect during development.
-- SQLite is used by default in development.
-- Email OTP and account-confirmation emails are sent through Brevo SMTP.
-- SMS OTP is mocked and returned in the API response for demo use.
-- DigiLocker is simulated. The app uses the generated `oauth_state` as the consent code in the mock flow.
+- CORS is enabled for development connectivity.
+- SQLite is the default local database.
+- Email OTP and confirmation mail use Brevo SMTP.
+- SMS OTP is mocked for demo use and can be returned in auth responses.
+- DigiLocker is simulated.
+- Claims support both manual processing and zero-touch parametric auto-processing.
+- Fraud checks, payouts, and predictions are data-driven and feed the worker and admin dashboards.
 
 ## Error Shape
 
-Handled errors use this shape:
+Handled errors generally follow:
 
 ```json
 {
@@ -45,39 +47,25 @@ Handled errors use this shape:
 }
 ```
 
-Typical examples:
+FastAPI validation failures use the default `detail` list shape.
 
-```json
-{
-  "error": true,
-  "message": "Invalid credentials"
-}
-```
-
-```json
-{
-  "error": true,
-  "message": "Account confirmation is still pending"
-}
-```
-
-## API Summary
-
-Route groups:
+## Route Groups
 
 - Auth and onboarding
 - DigiLocker
 - Gig account and income
-- Environment and risk
-- Premium and payment
-- Claims
-- Support
+- Environment, risk, and premium
+- Bank, payment, and policy
+- Claims and payout
+- Worker dashboard APIs
+- Admin dashboard APIs
+- Simulation and support
 
-## 1. Auth And Onboarding APIs
+## 1. Auth And Onboarding
 
 ### `GET /auth/check-username?username=worker.one`
 
-Checks live username availability.
+Checks username availability.
 
 Response:
 
@@ -91,11 +79,11 @@ Response:
 
 ### `GET /auth/check-email?email=worker@example.com`
 
-Checks live email availability.
+Checks email availability.
 
 ### `GET /auth/suggest-usernames?username=worker`
 
-Returns generated alternatives.
+Returns alternative usernames.
 
 Response:
 
@@ -121,18 +109,6 @@ Request:
 }
 ```
 
-Validation rules:
-
-- `email` must be unique
-- `username` must be unique
-- `phone` must be unique after `country_code + phone_number` normalization
-- password must satisfy:
-  - minimum 8 characters
-  - at least 1 uppercase
-  - at least 1 lowercase
-  - at least 1 number
-  - at least 1 special character
-
 Response:
 
 ```json
@@ -148,7 +124,7 @@ Response:
 
 ### `POST /auth/send-otp`
 
-Sends signup or reset OTP to both email and phone.
+Sends OTP to email and phone for signup or reset.
 
 Request:
 
@@ -158,13 +134,6 @@ Request:
   "purpose": "signup"
 }
 ```
-
-Notes:
-
-- OTP expiry: 5 minutes
-- retry limit: 5
-- email OTP is sent by Brevo SMTP
-- phone OTP is mocked and included in the response
 
 Response:
 
@@ -191,7 +160,7 @@ Response:
 
 ### `POST /auth/verify-otp`
 
-Verifies both signup OTPs and triggers the account-confirmation email.
+Verifies both OTPs and prepares account confirmation.
 
 Request:
 
@@ -217,99 +186,19 @@ Response:
 
 ### `GET /auth/confirm?token=...`
 
-Confirms the account after the user clicks the link from their email.
-
-Response:
-
-```json
-{
-  "account_confirmed": true,
-  "next_step": "digilocker_verification",
-  "message": "Account confirmed successfully"
-}
-```
+Confirms account ownership.
 
 ### `GET /auth/onboarding-status?user_id=1`
 
-Returns the current onboarding state for the user.
-
-Response:
-
-```json
-{
-  "user_id": 1,
-  "is_email_verified": true,
-  "is_phone_verified": true,
-  "is_account_confirmed": true,
-  "is_digilocker_verified": false,
-  "next_step": "digilocker_verification"
-}
-```
+Returns current onboarding state.
 
 ### `POST /auth/login`
 
-Logs in using email, username, or phone.
-
-Request:
-
-```json
-{
-  "identifier": "worker.one",
-  "password": "Secure@123"
-}
-```
-
-Login rules:
-
-- blocked if account confirmation is incomplete
-- blocked if DigiLocker is not verified
-- first successful password login requires one-time second-step verification by either email or phone
-
-Possible response for first login:
-
-```json
-{
-  "requires_two_factor": true,
-  "access_token": null,
-  "token_type": null,
-  "expires_in": null,
-  "user": null,
-  "two_factor_token": "<jwt>",
-  "available_channels": ["email", "phone"],
-  "message": "Choose email or phone for first-time login verification"
-}
-```
-
-Possible response after the first-login challenge has already been completed:
-
-```json
-{
-  "requires_two_factor": false,
-  "access_token": "<jwt>",
-  "token_type": "bearer",
-  "expires_in": 43200,
-  "user": {
-    "id": 1,
-    "email": "worker@example.com",
-    "phone": "+919876543210",
-    "username": "worker.one",
-    "name": "worker.one",
-    "is_email_verified": true,
-    "is_phone_verified": true,
-    "is_account_confirmed": true,
-    "is_digilocker_verified": true,
-    "has_completed_first_login_2fa": true,
-    "created_at": "2026-04-03T09:30:00"
-  },
-  "two_factor_token": null,
-  "available_channels": [],
-  "message": "Login successful"
-}
-```
+Logs in using email, username, or phone. If first-login second-step verification is still pending, returns a challenge token instead of an access token.
 
 ### `POST /auth/send-first-login-otp`
 
-Sends the one-time first-login OTP to only one selected channel.
+Sends a one-time first-login OTP to a selected channel.
 
 Request:
 
@@ -322,17 +211,7 @@ Request:
 
 ### `POST /auth/verify-first-login-otp`
 
-Verifies the first-login OTP and returns the access token.
-
-Request:
-
-```json
-{
-  "challenge_token": "<jwt>",
-  "channel": "email",
-  "otp": "555555"
-}
-```
+Verifies the first-login OTP and returns the normal access token payload.
 
 ### `GET /auth/me`
 
@@ -346,60 +225,21 @@ Authorization: Bearer <access_token>
 
 ### `POST /auth/forgot-password`
 
-Starts reset flow by sending OTP to both email and phone.
-
-Request:
-
-```json
-{
-  "identifier": "worker.one"
-}
-```
+Starts password reset by sending OTP to email and phone.
 
 ### `POST /auth/verify-reset-otp`
 
-Verifies both reset OTPs.
-
-Request:
-
-```json
-{
-  "user_id": 1,
-  "email_otp": "333333",
-  "phone_otp": "444444"
-}
-```
-
-Response:
-
-```json
-{
-  "reset_token": "<jwt>",
-  "next_step": "reset_password",
-  "message": "OTP verified. You can set a new password now."
-}
-```
+Verifies reset OTPs and returns a reset token.
 
 ### `POST /auth/reset-password`
 
-Sets the new password.
-
-Request:
-
-```json
-{
-  "reset_token": "<jwt>",
-  "new_password": "NewSecure@123"
-}
-```
+Sets a new password.
 
 ### `POST /auth/verify-identity`
 
-Legacy lightweight verification route used by the older flow. The main onboarding path now uses `/digilocker/*`.
+Legacy lightweight identity verification endpoint kept for compatibility.
 
-## 2. DigiLocker APIs
-
-DigiLocker is mandatory before normal login succeeds.
+## 2. DigiLocker
 
 ### `POST /digilocker/request`
 
@@ -414,21 +254,9 @@ Request:
 }
 ```
 
-Response:
-
-```json
-{
-  "request_id": "6edb0a2e-88f2-4e1e-a9cc-6f6f7b0f38ab",
-  "status": "PENDING",
-  "provider_name": "DigiLocker",
-  "redirect_url": "https://mock.digilocker.local/authorize?request_id=...",
-  "oauth_state": "DL-123456"
-}
-```
-
 ### `POST /digilocker/verify`
 
-Completes the mock DigiLocker verification.
+Completes the mock DigiLocker flow.
 
 Request:
 
@@ -439,56 +267,19 @@ Request:
 }
 ```
 
-Success response:
-
-```json
-{
-  "status": "VERIFIED",
-  "provider_name": "DigiLocker",
-  "verified_name": "Perfect User",
-  "doc_type": "aadhaar",
-  "verified_at": "2026-04-03T11:12:13",
-  "blockchain_txn_id": "MOCK-TXN-123"
-}
-```
-
-Failure response:
-
-```json
-{
-  "status": "FAILED",
-  "reason": "Invalid DigiLocker consent code"
-}
-```
-
 ### `POST /digilocker/consent`
 
-Alias of `/digilocker/verify` kept for compatibility.
+Compatibility alias of `/digilocker/verify`.
 
 ### `GET /digilocker/status?user_id=1`
 
-Returns the latest DigiLocker state.
+Returns the latest DigiLocker status.
 
-Response:
-
-```json
-{
-  "is_verified": true,
-  "provider_name": "DigiLocker",
-  "status": "VERIFIED",
-  "verified_name": "Perfect User",
-  "doc_type": "aadhaar",
-  "verified_at": "2026-04-03T11:12:13",
-  "verification_score": 0.98,
-  "blockchain_txn_id": "MOCK-TXN-123"
-}
-```
-
-## 3. Gig Account And Income APIs
+## 3. Gig Account And Income
 
 ### `POST /gig/connect`
 
-Connects a gig platform and generates 30 days of simulated income history.
+Connects a gig platform and generates simulated income history.
 
 Request:
 
@@ -500,219 +291,551 @@ Request:
 }
 ```
 
-Notes:
+### `POST /gig/generate-data`
 
-- duplicate connection for the same `user_id + platform` is blocked
-- `partner_id` is still accepted as a backward-compatible alias of `worker_id`
-- generated rules:
-  - base income `500-1200`
-  - weekend boost `+100 to +300`
-  - 20% chance of disruption
-  - disruption reduces income by `30-70%`
-  - hours between `6-10`
+Generates synthetic gig data without creating a connected gig account.
 
-Response:
+### `GET /gig/income-history?user_id=1`
+
+Returns gig-income history in reverse chronological order.
+
+### `GET /gig/status?user_id=1`
+
+Returns whether the user has a connected gig account.
+
+### `GET /gig/debug-all`
+
+Development helper that dumps all stored gig-income rows.
+
+### `GET /gig/baseline?user_id=1`
+
+Primary baseline endpoint.
+
+### `GET /gig/baseline-income?user_id=1`
+
+Alias of `/gig/baseline`.
+
+### `GET /gig/today-income?user_id=1`
+
+Returns the latest stored daily gig snapshot.
+
+### `GET /gig/weekly-summary?user_id=1`
+
+Returns recent 7-day income and disruption summary.
+
+## 4. Environment, Risk, And Premium
+
+### `GET /environment?lat=13.0827&lon=80.2707`
+
+Returns environment context, including weather, AQI, traffic, and recent comparison data.
+
+### `GET /risk?lat=13.0827&lon=80.2707&user_id=1`
+
+Returns risk engine output, including:
+
+- `risk_score`
+- `risk_level`
+- `expected_income_loss`
+- `delivery_efficiency`
+- `active_triggers`
+- `reasons`
+- `factors`
+- predictive and hyperlocal context
+
+### `GET /premium?user_id=1&lat=13.0827&lon=80.2707`
+
+Primary premium calculation endpoint.
+
+### `GET /premium/calculate?user_id=1&lat=13.0827&lon=80.2707`
+
+Alias of `/premium`.
+
+Premium response includes:
 
 ```json
 {
-  "message": "Swiggy account connected successfully",
-  "income_generated": true,
-  "status": "CONNECTED",
-  "user_id": 1,
-  "platform": "swiggy",
-  "worker_id": "SWG123",
-  "partner_id": "SWG123",
-  "generated": 30
+  "baseline": 920.0,
+  "weekly_income": 6440.0,
+  "weekly_premium": 126.35,
+  "coverage": 5152.0,
+  "risk_score": 0.28,
+  "risk": {},
+  "explanation": "Premium generated from live risk conditions"
 }
 ```
 
-### `POST /gig/generate-data`
+## 5. Bank, Payment, And Policy
 
-Utility route that generates synthetic gig data without creating a `GigAccount`.
+### `POST /bank/link-account`
+
+Compatibility route for linking a bank account.
+
+### `POST /payment/link-bank`
+
+Primary route for linking a bank account.
 
 Request:
 
 ```json
 {
   "user_id": 1,
+  "account_number": "123456789012",
+  "ifsc": "HDFC0001234"
+}
+```
+
+### `GET /payment/summary?user_id=1`
+
+Returns worker insurance and payout summary.
+
+Important fields:
+
+- `bank_linked`
+- `total_paid`
+- `total_claimed`
+- `policy_status`
+- `claim_ready`
+- `last_payout`
+- `payout_status`
+- `payout_transaction_id`
+- `payout_time`
+- `latest_claim_status`
+
+### `GET /payment/transactions?user_id=1&limit=10`
+
+Returns bank transaction history.
+
+### `POST /payment/pay-premium`
+
+Debits premium, creates a policy, logs a bank transaction, and writes blockchain records.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "amount": 126.35
+}
+```
+
+Response:
+
+```json
+{
+  "status": "SUCCESS",
+  "user_id": 1,
+  "amount": 126.35,
+  "balance": 4873.65,
+  "transaction_id": "txn_123",
+  "blockchain_txn_id": "mock_chain_123"
+}
+```
+
+## 6. Claims And Payout
+
+### `POST /claim/process`
+
+Runs the manual claim pipeline:
+
+Environment -> Risk -> Premium -> Fraud Intelligence -> Claim Decision -> Payout -> Blockchain
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "lat": 13.0827,
+  "lon": 80.2707,
+  "device_id": "android_device_01",
+  "device_metadata": {
+    "model": "Samsung A34",
+    "os": "Android 14",
+    "app_version": "1.0.0"
+  },
+  "location_logs": [
+    {
+      "lat": 13.08,
+      "lon": 80.27,
+      "timestamp": "2026-04-16T10:30:00"
+    }
+  ],
+  "claim_reason": "rain"
+}
+```
+
+Response fields include:
+
+- `claim_status`
+- `status`
+- `reason`
+- `expected_income`
+- `actual_income`
+- `loss`
+- `payout`
+- `predicted_loss`
+- `fraud_score`
+- `confidence`
+- `fraud`
+- `transaction`
+- `blockchain`
+- `environment`
+- `risk`
+- `premium`
+- `policy`
+- `gig`
+- `location_status`
+- `claim_id`
+- `fraud_log_id`
+
+### `POST /claim/auto-process`
+
+Runs the zero-touch parametric claim engine. No manual claim proof is required.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "lat": 13.0827,
+  "lon": 80.2707
+}
+```
+
+Response:
+
+```json
+{
+  "claim_triggered": true,
+  "status": "APPROVED",
+  "loss": 320.0,
+  "confidence": "HIGH",
+  "fraud": {},
+  "payout": {
+    "status": "SUCCESS",
+    "amount_paid": 320.0,
+    "transaction_id": "txn_demo_123",
+    "processing_time": "1.2 seconds",
+    "message": "Payout successfully credited"
+  },
+  "explanation": "Claim triggered due to rain and a 40% drop in earnings compared to the normal baseline during the current monitoring window.",
+  "trigger": "rain",
+  "timestamp": "2026-04-16T12:00:00",
+  "claim_id": "claim_10",
+  "trigger_details": {},
+  "loss_percentage": 0.4,
+  "location_status": {},
+  "blockchain": {
+    "claim": {},
+    "payout": {}
+  }
+}
+```
+
+### `POST /claim/payout`
+
+Manual payout route for approved claims or demo payout simulation.
+
+Request:
+
+```json
+{
+  "user_id": 1,
+  "amount": 320.0,
+  "claim_id": "claim_10"
+}
+```
+
+## 7. Worker Dashboard APIs
+
+These routes are UI-ready and are intended to drive the worker dashboard directly.
+
+### `GET /dashboard/worker?user_id=1&lat=13.0827&lon=80.2707`
+
+Returns the aggregated worker dashboard payload.
+
+Response sections:
+
+- `user`
+- `environment`
+- `risk`
+- `premium`
+- `policy`
+- `payout`
+- `prediction`
+- `status`
+
+Example shape:
+
+```json
+{
+  "user": {},
+  "environment": {},
+  "risk": {},
+  "premium": {},
+  "policy": {},
+  "payout": {
+    "payout_status": "SUCCESS",
+    "amount": 320.0,
+    "transaction_id": "txn_demo_123",
+    "time": "2026-04-16T12:00:00"
+  },
+  "prediction": {
+    "next_6hr_risk": "HIGH",
+    "risk_trend": "increasing",
+    "predicted_risk_score": 0.74,
+    "message": "If current conditions continue, your risk may increase over the next few hours.",
+    "insights": [
+      "Heavy rainfall trend may increase claims in the next cycle"
+    ]
+  },
+  "status": {
+    "coverage_active": true,
+    "auto_payout_enabled": true,
+    "device": {},
+    "location": {}
+  }
+}
+```
+
+### `GET /risk/details?user_id=1&lat=13.0827&lon=80.2707`
+
+Risk-detail response designed for UI cards.
+
+Response fields:
+
+- `risk_score`
+- `factors`
+- `triggers`
+- `risk_level`
+- `explanation`
+- `last_updated`
+
+### `GET /premium/details?user_id=1&lat=13.0827&lon=80.2707`
+
+Premium-detail response designed for UI cards.
+
+Response fields:
+
+- `weekly_income`
+- `risk_score`
+- `premium`
+- `coverage`
+- `breakdown`
+- `eligible`
+- `reason`
+- `explanation`
+- `last_updated`
+
+### `GET /transactions/history?user_id=1&limit=10`
+
+UI-ready transaction history for worker surfaces.
+
+Each item includes:
+
+- `type`
+- `amount`
+- `transaction_id`
+- `status`
+- `created_at`
+- `remark`
+
+### `GET /user/device-status?user_id=1`
+
+Returns device-state information used by fraud and trust surfaces.
+
+### `GET /user/location-status?user_id=1`
+
+Returns current location-state information. If `lat` and `lon` are included, the backend updates the user’s location state and then returns it.
+
+## 8. Admin Dashboard APIs
+
+These routes require:
+
+```text
+Authorization: Bearer admin_token
+```
+
+For demo use, login is static.
+
+### `POST /admin/login`
+
+Request:
+
+```json
+{
+  "email": "admin@gigshield.com",
+  "password": "admin123"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "admin_token",
+  "role": "insurer"
+}
+```
+
+### `GET /admin/overview`
+
+Returns platform summary:
+
+```json
+{
+  "total_users": 20,
+  "active_policies": 8,
+  "total_claims": 14,
+  "total_payouts": 12450.0,
+  "total_premiums": 18200.0,
+  "loss_ratio": 0.6841
+}
+```
+
+### `GET /admin/fraud-stats`
+
+Returns fraud analytics:
+
+- `fraud_rate`
+- `flagged_claims`
+- `rejected_claims`
+- `top_fraud_types`
+- `hotspots`
+
+Example:
+
+```json
+{
+  "fraud_rate": 0.2143,
+  "flagged_claims": 2,
+  "rejected_claims": 1,
+  "top_fraud_types": [
+    {
+      "type": "gps_spoof",
+      "count": 3
+    }
+  ],
+  "hotspots": [
+    {
+      "city": "Chennai",
+      "count": 2
+    }
+  ]
+}
+```
+
+### `GET /admin/claims-stats`
+
+Returns:
+
+- `approved`
+- `rejected`
+- `flagged`
+- `avg_payout`
+- `avg_loss`
+
+### `GET /admin/risk-stats`
+
+Returns:
+
+- `high_risk_users`
+- `avg_risk_score`
+- `top_triggers`
+
+### `GET /admin/financials`
+
+Returns:
+
+- `total_premiums`
+- `total_payouts`
+- `profit`
+
+### `GET /admin/payouts`
+
+Returns payout performance:
+
+- `total_payouts`
+- `avg_payout`
+- `payout_success_rate`
+
+### `GET /admin/predictions`
+
+Returns the lightweight ML and prediction-engine output.
+
+Response fields:
+
+- `next_6hr_risk`
+- `predicted_claims`
+- `next_week_claims`
+- `expected_payout`
+- `risk_trend`
+- `insights`
+- `insight`
+
+Example:
+
+```json
+{
+  "next_6hr_risk": "HIGH",
+  "predicted_claims": 12,
+  "next_week_claims": 12,
+  "expected_payout": 4860.0,
+  "risk_trend": "increasing",
+  "insights": [
+    "Heavy rainfall trend may increase claims in the next cycle",
+    "Rising risk levels indicate higher payouts may be needed soon"
+  ],
+  "insight": "Heavy rainfall trend may increase claims in the next cycle"
+}
+```
+
+## 9. Simulation And Support
+
+### `POST /simulate/input`
+
+Seeds or refreshes simulation inputs used by personas and environment-driven demos.
+
+Typical request:
+
+```json
+{
+  "enable_simulation": true,
+  "regenerate_income": true,
   "days": 30
 }
 ```
 
-### `GET /gig/income-history?user_id=1`
-
-Returns stored gig-income history in reverse chronological order.
-
-Response:
-
-```json
-[
-  {
-    "date": "2026-04-01",
-    "income": 850.0,
-    "hours": 8.0,
-    "earnings": 850.0,
-    "orders_completed": 16,
-    "hours_worked": 8.0,
-    "platform": "swiggy",
-    "disruption_type": "none"
-  }
-]
-```
-
-### `GET /gig/baseline?user_id=1`
-
-Primary baseline endpoint.
-
-Logic:
-
-- take the most recent 30 days
-- sort by highest `earnings`
-- average the top 10 days
-
-Response:
-
-```json
-{
-  "baseline_income": 920.0,
-  "baseline_daily_income": 920.0
-}
-```
-
-### `GET /gig/baseline-income?user_id=1`
-
-Alias of `/gig/baseline` kept for older clients.
-
-### `GET /gig/today-income?user_id=1`
-
-Returns today’s gig income.
-
-Response:
-
-```json
-{
-  "date": "2026-04-03",
-  "income": 780.0,
-  "hours": 7.5,
-  "earnings": 780.0,
-  "orders_completed": 14,
-  "hours_worked": 7.5,
-  "disruption_type": "rain",
-  "platform": "swiggy"
-}
-```
-
-### `GET /gig/weekly-summary?user_id=1`
-
-Returns the recent 7-day summary.
-
-Response:
-
-```json
-{
-  "total_income": 5200.0,
-  "average_daily": 742.86,
-  "avg_daily_earnings": 742.86,
-  "total_orders": 95,
-  "total_hours": 54.2,
-  "total_loss_amount": 930.0,
-  "avg_risk_score": 0.28,
-  "best_day": {
-    "date": "2026-04-01",
-    "earnings": 980.0,
-    "weather_condition": "clear",
-    "traffic_level": "MEDIUM",
-    "disruption_type": "none"
-  },
-  "worst_day": {
-    "date": "2026-03-29",
-    "earnings": 410.0,
-    "weather_condition": "rain",
-    "traffic_level": "HIGH",
-    "disruption_type": "rain"
-  }
-}
-```
-
-### `GET /gig/debug-all`
-
-Development helper that dumps all stored gig-income records.
-
-## 4. Environment And Risk APIs
-
-### `GET /environment?lat=13.0827&lon=80.2707`
-
-Returns weather, AQI, traffic, and time-of-day context.
-
-### `GET /risk?lat=13.0827&lon=80.2707&user_id=1`
-
-Returns calculated risk plus optional gig context for the user.
-
-## 5. Premium And Payment APIs
-
-### `GET /premium?user_id=1`
-
-Primary premium endpoint.
-
-### `GET /premium/calculate?user_id=1`
-
-Alias of the premium calculation endpoint.
-
-Premium logic uses:
-
-- gig baseline income
-- city-resolved environmental context
-- current risk score
-
-### `POST /payment/link-bank`
-
-Links a bank account for premium payments and claim payouts.
-
-### `GET /payment/summary?user_id=1`
-
-Returns insurance, bank, policy, and claim summary details for the user.
-
-### `POST /payment/pay-premium`
-
-Debits premium and creates a policy.
-
-## 6. Bank API
-
-### `POST /bank/link-account`
-
-Compatibility route for linking a bank account.
-
-## 7. Claim APIs
-
-### `POST /claim/process`
-
-Runs the claim engine and returns `APPROVED`, `REJECTED`, or `NEEDS_REVIEW`.
-
-### `POST /claim/payout`
-
-Processes payout for an approved claim.
-
-## 8. Support API
-
 ### `POST /support/chat`
 
-Rule-based support assistant that replies using the user’s latest claim and policy state.
+Rule-based support assistant that responds using the user’s latest claim and policy state.
 
-## Current Main Flow
+Request:
 
-The current happy path in the mobile app is:
+```json
+{
+  "user_id": 1,
+  "query": "Why was my claim rejected?"
+}
+```
+
+## Current Demo Flow
+
+The main worker demo flow is:
 
 1. Signup
-2. Send OTP to both email and phone
-3. Verify both OTPs
-4. Open the account-confirmation link from email
+2. Send OTP to email and phone
+3. Verify OTPs
+4. Confirm account from email
 5. Complete DigiLocker verification
-6. Connect gig account and generate 30 days of income history
-7. First password login triggers one-time 2-step verification by either email or phone
-8. App stores the session and can optionally enable biometric unlock
-9. View premium, pay premium, and later submit a claim
+6. Connect gig account and generate income history
+7. Login and complete first-login OTP challenge if required
+8. View worker dashboard and premium details
+9. Pay premium
+10. Trigger either manual claim processing or zero-touch auto-claim processing
+11. Inspect payout, fraud, transaction history, and admin analytics
 
 ## Notes
 
-- `backend/routes/verification.py` exists but is not mounted in `backend/main.py`.
-- The Flutter app currently uses the live backend routes above and expects the onboarding and gig APIs documented here.
+- [backend/routes/verification.py](s:\flutter\guidewire_gig_ins\backend\routes\verification.py) exists but is not mounted in [backend/main.py](s:\flutter\guidewire_gig_ins\backend\main.py).
+- The worker dashboard consumes the UI-ready APIs documented above rather than reconstructing business logic on the client.
+- The admin dashboard uses the `/admin/*` analytics routes and the lightweight prediction engine for decision-oriented insights.
