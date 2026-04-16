@@ -1125,7 +1125,9 @@ class _ErrorState extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         ElevatedButton(
-          onPressed: onRetry,
+          onPressed: () {
+            onRetry();
+          },
           child: const Text('Try again'),
         ),
       ],
