@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from database.db import get_db
-from services.bank_service import transaction_history
+from services.bank_service import insurance_summary, transaction_history
 from services.environment_service import get_environment
 from services.fraud_intelligence_engine import build_location_status, get_device_status, update_user_location_state
 from services.gig_service import today_income
@@ -44,6 +44,7 @@ async def dashboard_worker(
         persist_snapshots=False,
     )
     policy = get_latest_policy(user_id, db)
+    payout_summary = insurance_summary(db=db, user_id=user_id)
     location_status = update_user_location_state(
         user,
         lat=lat,
@@ -68,6 +69,12 @@ async def dashboard_worker(
             if policy
             else None
         ),
+        'payout': {
+            'payout_status': payout_summary.get('payout_status'),
+            'amount': payout_summary.get('last_payout'),
+            'transaction_id': payout_summary.get('payout_transaction_id'),
+            'time': payout_summary.get('payout_time'),
+        },
         'status': {
             'coverage_active': bool(policy and policy.premium_paid and policy.status == 'ACTIVE'),
             'auto_payout_enabled': True,
