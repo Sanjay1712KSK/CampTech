@@ -1,4 +1,4 @@
 git add .
 git commit -m main
-git commit -m "ML engine Update + addition of new features"
+git commit -m "API documentation updated"
 git push origin main
