@@ -27,11 +27,17 @@ class FraudTypeItem(BaseModel):
     count: int
 
 
+class FraudHotspotItem(BaseModel):
+    city: str
+    count: int
+
+
 class AdminFraudStatsResponse(BaseModel):
     fraud_rate: float
     flagged_claims: int
     rejected_claims: int
     top_fraud_types: list[FraudTypeItem]
+    hotspots: list[FraudHotspotItem] = []
 
 
 class AdminClaimsStatsResponse(BaseModel):

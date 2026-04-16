@@ -122,11 +122,21 @@ def get_fraud_stats(db: Session) -> dict:
     fraudulent_claims = flagged_claims + rejected_claims
     fraud_rate = _round(fraudulent_claims / total_claims, 4) if total_claims > 0 else 0.0
     top_fraud_types = [{'type': fraud_type, 'count': count} for fraud_type, count in counter.most_common(5)]
+    hotspot_rows = (
+        db.query(FraudLog.city, func.count(FraudLog.id))
+        .filter(FraudLog.city.isnot(None), FraudLog.city != '')
+        .group_by(FraudLog.city)
+        .order_by(func.count(FraudLog.id).desc())
+        .limit(5)
+        .all()
+    )
+    hotspots = [{'city': str(city), 'count': int(count)} for city, count in hotspot_rows]
     return {
         'fraud_rate': fraud_rate,
         'flagged_claims': int(flagged_claims),
         'rejected_claims': int(rejected_claims),
         'top_fraud_types': top_fraud_types,
+        'hotspots': hotspots,
     }
 
 
