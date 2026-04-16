@@ -2,8 +2,16 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database.db import get_db
-from schemas.insurance_schema import ClaimPayoutRequest, ClaimProcessRequest, ClaimProcessResponse, PaymentResponse
+from schemas.insurance_schema import (
+    AutoClaimProcessRequest,
+    AutoClaimProcessResponse,
+    ClaimPayoutRequest,
+    ClaimProcessRequest,
+    ClaimProcessResponse,
+    PaymentResponse,
+)
 from services.claim_engine import process_claim
+from services.claim_engine_v2 import auto_process_claim
 from services.payout_service import execute_instant_payout
 from services.blockchain_service import record_payout
 
@@ -21,6 +29,16 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
         device_metadata=payload.device_metadata,
         location_logs=payload.location_logs,
         claim_reason=payload.claim_reason,
+    )
+
+
+@router.post('/auto-process', response_model=AutoClaimProcessResponse)
+def auto_process_claim_endpoint(payload: AutoClaimProcessRequest, db: Session = Depends(get_db)):
+    return auto_process_claim(
+        user_id=payload.user_id,
+        db=db,
+        lat=payload.lat,
+        lon=payload.lon,
     )
 
 

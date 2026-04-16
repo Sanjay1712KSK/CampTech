@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
@@ -316,7 +317,7 @@ def auto_process_claim(
     provisional_claim.payout = _round(float(payout.get('amount_paid', 0.0)) if payout else 0.0)
     provisional_claim.fraud_score = float(round(float(fraud.get('fraud_score', 0.0)), 3))
     provisional_claim.status = final_status
-    provisional_claim.reasons_json = __import__('json').dumps([explanation, fraud['explanation']])
+    provisional_claim.reasons_json = json.dumps([explanation, fraud['explanation']])
 
     blockchain = log_claim(
         claim_id,

@@ -106,6 +106,31 @@ class ClaimPayoutRequest(BaseModel):
     claim_id: str | None = None
 
 
+class AutoClaimProcessRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    lat: float | None = Field(default=None, ge=-90.0, le=90.0)
+    lon: float | None = Field(default=None, ge=-180.0, le=180.0)
+
+
+class AutoClaimProcessResponse(BaseModel):
+    claim_triggered: bool
+    status: str
+    loss: float
+    confidence: str
+    fraud: dict | None = None
+    payout: dict | None = None
+    explanation: str
+    trigger: str | None = None
+    timestamp: str
+    claim_id: str | None = None
+    trigger_details: dict | None = None
+    loss_percentage: float | None = None
+    location_status: dict | None = None
+    blockchain: dict | None = None
+
+
 class SupportChatRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
