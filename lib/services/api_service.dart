@@ -263,7 +263,8 @@ class LoginResult {
     this.message,
   });
 
-  bool get isAuthenticated => !requiresTwoFactor && accessToken.isNotEmpty && user != null;
+  bool get isAuthenticated =>
+      !requiresTwoFactor && accessToken.isNotEmpty && user != null;
 
   factory LoginResult.fromJson(Map<String, dynamic> json) {
     return LoginResult(
@@ -274,7 +275,9 @@ class LoginResult {
           ? AuthUser.fromJson(json['user'] as Map<String, dynamic>)
           : null,
       twoFactorToken: json['two_factor_token'] as String?,
-      availableChannels: (json['available_channels'] as List? ?? const []).map((e) => '$e').toList(),
+      availableChannels: (json['available_channels'] as List? ?? const [])
+          .map((e) => '$e')
+          .toList(),
       message: json['message'] as String?,
     );
   }
@@ -407,7 +410,8 @@ class GigConnectResult {
 
   factory GigConnectResult.fromJson(Map<String, dynamic> json) {
     return GigConnectResult(
-      message: json['message'] as String? ?? 'Gig account connected successfully',
+      message:
+          json['message'] as String? ?? 'Gig account connected successfully',
       incomeGenerated: json['income_generated'] as bool? ?? false,
       platform: json['platform'] as String? ?? '',
       generated: json['generated'] as int? ?? 0,
@@ -418,14 +422,10 @@ class GigConnectResult {
 class GigStatusResult {
   final bool connected;
 
-  const GigStatusResult({
-    required this.connected,
-  });
+  const GigStatusResult({required this.connected});
 
   factory GigStatusResult.fromJson(Map<String, dynamic> json) {
-    return GigStatusResult(
-      connected: json['connected'] as bool? ?? false,
-    );
+    return GigStatusResult(connected: json['connected'] as bool? ?? false);
   }
 }
 
@@ -440,7 +440,9 @@ class ApiService {
   }
 
   static Exception _asException(http.Response response) {
-    final message = _tryDecodeError(response.body) ?? 'Request failed (${response.statusCode})';
+    final message =
+        _tryDecodeError(response.body) ??
+        'Request failed (${response.statusCode})';
     return Exception(message);
   }
 
@@ -451,12 +453,19 @@ class ApiService {
     http.Response response;
     try {
       response = await http
-          .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
+          .get(
+            Uri.parse('${Config.baseUrl}$path'),
+            headers: _headers(token: token),
+          )
           .timeout(_timeout);
     } on TimeoutException {
-      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+      throw Exception(
+        'Backend timed out while waking up. Please try again in a few seconds.',
+      );
     } on http.ClientException {
-      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -471,12 +480,19 @@ class ApiService {
     http.Response response;
     try {
       response = await http
-          .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
+          .get(
+            Uri.parse('${Config.baseUrl}$path'),
+            headers: _headers(token: token),
+          )
           .timeout(_timeout);
     } on TimeoutException {
-      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+      throw Exception(
+        'Backend timed out while waking up. Please try again in a few seconds.',
+      );
     } on http.ClientException {
-      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final decoded = jsonDecode(response.body);
@@ -501,9 +517,13 @@ class ApiService {
           )
           .timeout(_timeout);
     } on TimeoutException {
-      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+      throw Exception(
+        'Backend timed out while waking up. Please try again in a few seconds.',
+      );
     } on http.ClientException {
-      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -511,7 +531,9 @@ class ApiService {
     throw _asException(response);
   }
 
-  static Future<AvailabilityResult> checkUsernameAvailability(String username) async {
+  static Future<AvailabilityResult> checkUsernameAvailability(
+    String username,
+  ) async {
     final encoded = Uri.encodeQueryComponent(username);
     final body = await _getJson('/auth/check-username?username=$encoded');
     return AvailabilityResult.fromJson(body);
@@ -555,10 +577,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/send-otp',
-      body: {
-        'user_id': userId,
-        'purpose': purpose,
-      },
+      body: {'user_id': userId, 'purpose': purpose},
     );
     return SendOtpResult.fromJson(body);
   }
@@ -570,11 +589,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/verify-otp',
-      body: {
-        'user_id': userId,
-        'email_otp': emailOtp,
-        'phone_otp': phoneOtp,
-      },
+      body: {'user_id': userId, 'email_otp': emailOtp, 'phone_otp': phoneOtp},
     );
     return VerifyOtpResult.fromJson(body);
   }
@@ -596,10 +611,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/login',
-      body: {
-        'identifier': identifier,
-        'password': password,
-      },
+      body: {'identifier': identifier, 'password': password},
     );
     return LoginResult.fromJson(body);
   }
@@ -610,10 +622,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/send-first-login-otp',
-      body: {
-        'challenge_token': challengeToken,
-        'channel': channel,
-      },
+      body: {'challenge_token': challengeToken, 'channel': channel},
     );
     return SendOtpResult.fromJson(body);
   }
@@ -625,11 +634,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/verify-first-login-otp',
-      body: {
-        'challenge_token': challengeToken,
-        'channel': channel,
-        'otp': otp,
-      },
+      body: {'challenge_token': challengeToken, 'channel': channel, 'otp': otp},
     );
     return LoginResult.fromJson(body);
   }
@@ -654,11 +659,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/auth/verify-reset-otp',
-      body: {
-        'user_id': userId,
-        'email_otp': emailOtp,
-        'phone_otp': phoneOtp,
-      },
+      body: {'user_id': userId, 'email_otp': emailOtp, 'phone_otp': phoneOtp},
     );
     return ResetOtpVerifiedResult.fromJson(body);
   }
@@ -669,10 +670,7 @@ class ApiService {
   }) async {
     await _postJson(
       '/auth/reset-password',
-      body: {
-        'reset_token': resetToken,
-        'new_password': newPassword,
-      },
+      body: {'reset_token': resetToken, 'new_password': newPassword},
     );
   }
 
@@ -682,10 +680,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/digilocker/request',
-      body: {
-        'user_id': userId,
-        'doc_type': docType,
-      },
+      body: {'user_id': userId, 'doc_type': docType},
     );
     return DigiLockerRequestResult.fromJson(body);
   }
@@ -696,15 +691,14 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/digilocker/verify',
-      body: {
-        'request_id': requestId,
-        'consent_code': consentCode,
-      },
+      body: {'request_id': requestId, 'consent_code': consentCode},
     );
     return DigiLockerVerifyResult.fromJson(body);
   }
 
-  static Future<DigiLockerStatusResult> getDigiLockerStatusByUserId(int userId) async {
+  static Future<DigiLockerStatusResult> getDigiLockerStatusByUserId(
+    int userId,
+  ) async {
     final body = await _getJson('/digilocker/status?user_id=$userId');
     return DigiLockerStatusResult.fromJson(body);
   }
@@ -724,11 +718,7 @@ class ApiService {
   }) async {
     final body = await _postJson(
       '/gig/connect',
-      body: {
-        'user_id': userId,
-        'platform': platform,
-        'worker_id': workerId,
-      },
+      body: {'user_id': userId, 'platform': platform, 'worker_id': workerId},
     );
     return GigConnectResult.fromJson(body);
   }
@@ -747,12 +737,18 @@ class ApiService {
     http.Response response;
     try {
       response = await http
-          .get(Uri.parse('${Config.baseUrl}/gig/income-history?user_id=$userId'))
+          .get(
+            Uri.parse('${Config.baseUrl}/gig/income-history?user_id=$userId'),
+          )
           .timeout(_timeout);
     } on TimeoutException {
-      throw Exception('Backend timed out while loading income history. Please try again.');
+      throw Exception(
+        'Backend timed out while loading income history. Please try again.',
+      );
     } on http.ClientException {
-      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
     }
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -774,9 +770,13 @@ class ApiService {
           .get(Uri.parse('${Config.baseUrl}/gig/status?user_id=$userId'))
           .timeout(_timeout);
     } on TimeoutException {
-      throw Exception('Backend timed out while checking gig status. Please try again.');
+      throw Exception(
+        'Backend timed out while checking gig status. Please try again.',
+      );
     } on http.ClientException {
-      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+      throw Exception(
+        'Unable to reach the backend service. Please check your internet connection and try again.',
+      );
     }
     if (response.statusCode == 200) {
       return GigStatusResult.fromJson(
@@ -790,7 +790,11 @@ class ApiService {
     throw _asException(response);
   }
 
-  static Future<EnvironmentModel> getEnvironment(double lat, double lon, {int? userId}) async {
+  static Future<EnvironmentModel> getEnvironment(
+    double lat,
+    double lon, {
+    int? userId,
+  }) async {
     final query = userId == null
         ? '/environment?lat=$lat&lon=$lon'
         : '/environment?lat=$lat&lon=$lon&user_id=$userId';
@@ -798,11 +802,19 @@ class ApiService {
     return EnvironmentModel.fromJson(body);
   }
 
-  static Future<Map<String, dynamic>> getRiskData(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> getRiskData(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _getJson('/risk?user_id=$userId&lat=$lat&lon=$lon');
   }
 
-  static Future<Map<String, dynamic>> getPremium(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> getPremium(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     try {
       return await _getJson('/premium?user_id=$userId&lat=$lat&lon=$lon');
     } catch (_) {
@@ -822,8 +834,13 @@ class ApiService {
     return InsuranceSummaryModel.fromJson(body);
   }
 
-  static Future<BankTransactionHistoryModel> getTransactionHistory(int userId, {int limit = 10}) async {
-    final body = await _getJson('/payment/transactions?user_id=$userId&limit=$limit');
+  static Future<BankTransactionHistoryModel> getTransactionHistory(
+    int userId, {
+    int limit = 10,
+  }) async {
+    final body = await _getJson(
+      '/payment/transactions?user_id=$userId&limit=$limit',
+    );
     return BankTransactionHistoryModel.fromJson(body);
   }
 
@@ -834,42 +851,63 @@ class ApiService {
   }) async {
     await _postJson(
       '/payment/link-bank',
-      body: {
-        'user_id': userId,
-        'account_number': accountNumber,
-        'ifsc': ifsc,
-      },
+      body: {'user_id': userId, 'account_number': accountNumber, 'ifsc': ifsc},
     );
   }
 
-  static Future<Map<String, dynamic>> processClaim(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> processClaim(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _postJson(
       '/claim/process',
       body: {'user_id': userId, 'lat': lat, 'lon': lon},
     );
   }
 
-  static Future<Map<String, dynamic>> getWorkerDashboard(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> getWorkerDashboard(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _getJson('/dashboard/worker?user_id=$userId&lat=$lat&lon=$lon');
   }
 
-  static Future<Map<String, dynamic>> getRiskDetails(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> getRiskDetails(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _getJson('/risk/details?user_id=$userId&lat=$lat&lon=$lon');
   }
 
-  static Future<Map<String, dynamic>> getPremiumDetails(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> getPremiumDetails(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _getJson('/premium/details?user_id=$userId&lat=$lat&lon=$lon');
   }
 
-  static Future<Map<String, dynamic>> autoProcessClaim(int userId, double lat, double lon) async {
+  static Future<Map<String, dynamic>> autoProcessClaim(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     return _postJson(
       '/claim/auto-process',
       body: {'user_id': userId, 'lat': lat, 'lon': lon},
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getUiTransactionHistory(int userId, {int limit = 10}) async {
-    final body = await _getJsonList('/transactions/history?user_id=$userId&limit=$limit');
+  static Future<List<Map<String, dynamic>>> getUiTransactionHistory(
+    int userId, {
+    int limit = 10,
+  }) async {
+    final body = await _getJsonList(
+      '/transactions/history?user_id=$userId&limit=$limit',
+    );
     return body
         .whereType<Map>()
         .map((item) => item.map((key, value) => MapEntry('$key', value)))
@@ -901,10 +939,16 @@ class EnvironmentModel {
 
   factory EnvironmentModel.fromJson(Map<String, dynamic> json) {
     return EnvironmentModel(
-      weather: WeatherData.fromJson(json['weather'] as Map<String, dynamic>? ?? const {}),
+      weather: WeatherData.fromJson(
+        json['weather'] as Map<String, dynamic>? ?? const {},
+      ),
       aqi: AqiData.fromJson(json['aqi'] as Map<String, dynamic>? ?? const {}),
-      traffic: TrafficData.fromJson(json['traffic'] as Map<String, dynamic>? ?? const {}),
-      context: ContextData.fromJson(json['context'] as Map<String, dynamic>? ?? const {}),
+      traffic: TrafficData.fromJson(
+        json['traffic'] as Map<String, dynamic>? ?? const {},
+      ),
+      context: ContextData.fromJson(
+        json['context'] as Map<String, dynamic>? ?? const {},
+      ),
     );
   }
 }
@@ -937,11 +981,7 @@ class AqiData {
   final double pm25;
   final double pm10;
 
-  AqiData({
-    required this.aqi,
-    required this.pm25,
-    required this.pm10,
-  });
+  AqiData({required this.aqi, required this.pm25, required this.pm10});
 
   factory AqiData.fromJson(Map<String, dynamic> json) {
     return AqiData(
@@ -956,10 +996,7 @@ class TrafficData {
   final double trafficScore;
   final String trafficLevel;
 
-  TrafficData({
-    required this.trafficScore,
-    required this.trafficLevel,
-  });
+  TrafficData({required this.trafficScore, required this.trafficLevel});
 
   factory TrafficData.fromJson(Map<String, dynamic> json) {
     return TrafficData(
@@ -973,10 +1010,7 @@ class ContextData {
   final int hour;
   final String dayType;
 
-  ContextData({
-    required this.hour,
-    required this.dayType,
-  });
+  ContextData({required this.hour, required this.dayType});
 
   factory ContextData.fromJson(Map<String, dynamic> json) {
     return ContextData(
@@ -993,7 +1027,8 @@ class BaselineIncomeModel {
 
   factory BaselineIncomeModel.fromJson(Map<String, dynamic> json) {
     return BaselineIncomeModel(
-      baselineDailyIncome: (json['baseline_daily_income'] as num?)?.toDouble() ?? 0.0,
+      baselineDailyIncome:
+          (json['baseline_daily_income'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -1029,11 +1064,7 @@ class IncomeHistoryModel {
   final DailyRecord? bestDay;
   final DailyRecord? worstDay;
 
-  IncomeHistoryModel({
-    required this.records,
-    this.bestDay,
-    this.worstDay,
-  });
+  IncomeHistoryModel({required this.records, this.bestDay, this.worstDay});
 
   factory IncomeHistoryModel.fromJson(Map<String, dynamic> json) {
     final rawRecords = json['records'] as List? ?? const [];
@@ -1093,7 +1124,11 @@ class DailyRecord {
       hoursWorked: (json['hours_worked'] as num?)?.toDouble(),
       platform: json['platform'] as String?,
       disruptionType: json['disruption_type'] as String?,
-      weather: (json['temperature'] != null || json['humidity'] != null || json['rainfall'] != null || json['wind_speed'] != null)
+      weather:
+          (json['temperature'] != null ||
+              json['humidity'] != null ||
+              json['rainfall'] != null ||
+              json['wind_speed'] != null)
           ? WeatherData(
               temperature: (json['temperature'] as num?)?.toDouble() ?? 0.0,
               humidity: (json['humidity'] as num?)?.toDouble() ?? 0.0,
@@ -1101,7 +1136,10 @@ class DailyRecord {
               rainfall: (json['rainfall'] as num?)?.toDouble() ?? 0.0,
             )
           : null,
-      aqi: (json['aqi_level'] != null || json['pm2_5'] != null || json['pm10'] != null)
+      aqi:
+          (json['aqi_level'] != null ||
+              json['pm2_5'] != null ||
+              json['pm10'] != null)
           ? AqiData(
               aqi: json['aqi_level'] as int? ?? 0,
               pm25: (json['pm2_5'] as num?)?.toDouble() ?? 0.0,
@@ -1167,9 +1205,15 @@ class InsuranceSummaryModel {
       claimReady: json['claim_ready'] as bool? ?? false,
       lastPayout: (json['last_payout'] as num?)?.toDouble() ?? 0.0,
       latestClaimStatus: json['latest_claim_status'] as String?,
-      recentRemarks: (json['recent_remarks'] as List? ?? const []).map((e) => '$e').toList(),
-      policyStart: json['policy_start'] != null ? DateTime.tryParse('${json['policy_start']}') : null,
-      policyEnd: json['policy_end'] != null ? DateTime.tryParse('${json['policy_end']}') : null,
+      recentRemarks: (json['recent_remarks'] as List? ?? const [])
+          .map((e) => '$e')
+          .toList(),
+      policyStart: json['policy_start'] != null
+          ? DateTime.tryParse('${json['policy_start']}')
+          : null,
+      policyEnd: json['policy_end'] != null
+          ? DateTime.tryParse('${json['policy_end']}')
+          : null,
     );
   }
 }
@@ -1222,7 +1266,9 @@ class BankTransactionItemModel {
       status: json['status'] as String? ?? '',
       referenceId: json['reference_id'] as String?,
       remark: json['remark'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.tryParse('${json['created_at']}') : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse('${json['created_at']}')
+          : null,
     );
   }
 }

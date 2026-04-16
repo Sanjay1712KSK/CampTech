@@ -45,7 +45,11 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     );
   }
 
-  Future<Map<String, dynamic>> _loadAutoClaim(int userId, double lat, double lon) async {
+  Future<Map<String, dynamic>> _loadAutoClaim(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
     try {
       return await ApiService.autoProcessClaim(userId, lat, lon);
     } catch (error) {
@@ -92,7 +96,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
               }
               if (snapshot.hasError) {
                 return _ErrorState(
-                  message: snapshot.error.toString().replaceFirst('Exception: ', ''),
+                  message: snapshot.error.toString().replaceFirst(
+                    'Exception: ',
+                    '',
+                  ),
                   onRetry: _refresh,
                 );
               }
@@ -163,14 +170,22 @@ class _DashboardView extends StatelessWidget {
     final weather = _asMap(environment['weather']);
     final aqi = _asMap(environment['aqi']);
     final traffic = _asMap(environment['traffic']);
-    final payoutStatus = _readString(payout['status'], fallback: _readString(payout['payout_status']));
+    final payoutStatus = _readString(
+      payout['status'],
+      fallback: _readString(payout['payout_status']),
+    );
     final claimStatus = _readString(claim['status'], fallback: 'PROCESSING');
     final claimTriggered = claim['claim_triggered'] == true;
     final coverageActive = status['coverage_active'] == true;
     final premiumEligible = premium['eligible'] == true;
     final earningsToday =
-        _readDouble(gigContext['earnings_today'], fallback: _readDouble(gigContext['actual_income'])) ?? 0.0;
-    final normalDeliveries = _readDouble(delivery['normal_deliveries_per_hour']) ?? 0.0;
+        _readDouble(
+          gigContext['earnings_today'],
+          fallback: _readDouble(gigContext['actual_income']),
+        ) ??
+        0.0;
+    final normalDeliveries =
+        _readDouble(delivery['normal_deliveries_per_hour']) ?? 0.0;
     final currentDeliveries = _readDouble(delivery['estimated_current']) ?? 0.0;
     final dropRatio = _readDouble(delivery['drop_ratio']);
     final dropLabel = _readString(
@@ -179,10 +194,16 @@ class _DashboardView extends StatelessWidget {
     );
     final confidence = _readString(claim['confidence'], fallback: 'LOW');
     final payoutAmount =
-        _readDouble(payout['amount_paid'], fallback: _readDouble(payout['amount'])) ?? 0.0;
+        _readDouble(
+          payout['amount_paid'],
+          fallback: _readDouble(payout['amount']),
+        ) ??
+        0.0;
     final payoutMessage = _readString(
       payout['message'],
-      fallback: payoutAmount > 0 ? 'Payout successfully credited' : 'No payout has been credited yet.',
+      fallback: payoutAmount > 0
+          ? 'Payout successfully credited'
+          : 'No payout has been credited yet.',
     );
     final policyStatus = _readString(
       policy['status'],
@@ -195,30 +216,45 @@ class _DashboardView extends StatelessWidget {
       fallback: _readString(risk['risk_level'], fallback: 'LOW'),
     );
     final riskScore =
-        _readDouble(riskDetails['risk_score'], fallback: _readDouble(risk['risk_score'])) ?? 0.0;
+        _readDouble(
+          riskDetails['risk_score'],
+          fallback: _readDouble(risk['risk_score']),
+        ) ??
+        0.0;
     final lastUpdated = _formatDateTime(
-      _readString(riskDetails['last_updated'], fallback: _readString(environment['last_updated'])),
+      _readString(
+        riskDetails['last_updated'],
+        fallback: _readString(environment['last_updated']),
+      ),
     );
-    final triggerSummary =
-        triggers.isEmpty ? 'No major triggers are active right now.' : triggers.map(_prettifyTrigger).join(', ');
+    final triggerSummary = triggers.isEmpty
+        ? 'No major triggers are active right now.'
+        : triggers.map(_prettifyTrigger).join(', ');
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       children: [
         _HeroCard(
           name: _displayName(userPayload, user),
           earningsToday: earningsToday,
           coverageActive: coverageActive,
           city: currentCity,
-          weatherText: '${_readDouble(weather['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm rain',
+          weatherText:
+              '${_readDouble(weather['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm rain',
           aqiText: '${_readInt(aqi['aqi']) ?? 0}',
-          trafficText: _readString(traffic['traffic_level'], fallback: 'Unknown'),
+          trafficText: _readString(
+            traffic['traffic_level'],
+            fallback: 'Unknown',
+          ),
         ),
         const SizedBox(height: 16),
         _SectionCard(
           title: 'What Is Happening',
-          subtitle: 'Live disruption signals translated into worker-friendly risk.',
+          subtitle:
+              'Live disruption signals translated into worker-friendly risk.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -298,7 +334,8 @@ class _DashboardView extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: 'Auto Claim Status',
-          subtitle: 'The system checks disruption and loss automatically. No manual claim filing is needed.',
+          subtitle:
+              'The system checks disruption and loss automatically. No manual claim filing is needed.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -307,10 +344,14 @@ class _DashboardView extends StatelessWidget {
                 runSpacing: 12,
                 children: [
                   _MetricTile(
-                    icon: claimTriggered ? Icons.flash_on_rounded : Icons.pause_circle_outline_rounded,
+                    icon: claimTriggered
+                        ? Icons.flash_on_rounded
+                        : Icons.pause_circle_outline_rounded,
                     label: 'Claim triggered',
                     value: claimTriggered ? 'Yes' : 'No',
-                    tone: claimTriggered ? AppTheme.successColor : AppTheme.textSecondary,
+                    tone: claimTriggered
+                        ? AppTheme.successColor
+                        : AppTheme.textSecondary,
                   ),
                   _MetricTile(
                     icon: Icons.policy_rounded,
@@ -330,7 +371,8 @@ class _DashboardView extends StatelessWidget {
                 icon: Icons.lightbulb_outline_rounded,
                 text: _readString(
                   claim['explanation'],
-                  fallback: 'The claim engine is watching for trigger-driven loss automatically.',
+                  fallback:
+                      'The claim engine is watching for trigger-driven loss automatically.',
                 ),
               ),
             ],
@@ -349,7 +391,9 @@ class _DashboardView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.22)),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.22),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +411,10 @@ class _DashboardView extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       payoutMessage,
-                      style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
@@ -376,12 +423,18 @@ class _DashboardView extends StatelessWidget {
               _InfoRow(label: 'Payout status', value: payoutStatus),
               _InfoRow(
                 label: 'Transaction ID',
-                value: _readString(payout['transaction_id'], fallback: 'Pending'),
+                value: _readString(
+                  payout['transaction_id'],
+                  fallback: 'Pending',
+                ),
               ),
               _InfoRow(
                 label: 'Processed at',
                 value: _formatDateTime(
-                  _readString(payout['processed_at'], fallback: _readString(payout['time'])),
+                  _readString(
+                    payout['processed_at'],
+                    fallback: _readString(payout['time']),
+                  ),
                 ),
               ),
             ],
@@ -390,7 +443,8 @@ class _DashboardView extends StatelessWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: 'Why This Happened',
-          subtitle: 'A simple explainer that shows the full automated decision flow.',
+          subtitle:
+              'A simple explainer that shows the full automated decision flow.',
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
@@ -427,7 +481,8 @@ class _DashboardView extends StatelessWidget {
                   title: 'Claim',
                   description: _readString(
                     claim['explanation'],
-                    fallback: 'The zero-touch claim engine checked for trigger-based loss automatically.',
+                    fallback:
+                        'The zero-touch claim engine checked for trigger-based loss automatically.',
                   ),
                 ),
                 _FlowStep(
@@ -435,7 +490,8 @@ class _DashboardView extends StatelessWidget {
                   title: 'Fraud',
                   description: _readString(
                     _asMap(claim['fraud'])['explanation'],
-                    fallback: 'Fraud checks reviewed device, location, behavior, and context before payout.',
+                    fallback:
+                        'Fraud checks reviewed device, location, behavior, and context before payout.',
                   ),
                 ),
                 _FlowStep(
@@ -487,14 +543,17 @@ class _DashboardView extends StatelessWidget {
                 label: 'Reason',
                 value: _readString(
                   premium['reason'],
-                  fallback: premiumEligible ? 'Eligible for premium quote' : 'Quote unavailable',
+                  fallback: premiumEligible
+                      ? 'Eligible for premium quote'
+                      : 'Quote unavailable',
                 ),
               ),
               _InfoRow(
                 label: 'Pricing explanation',
                 value: _readString(
                   premium['explanation'],
-                  fallback: 'Pricing follows live risk, trigger severity, and weekly income.',
+                  fallback:
+                      'Pricing follows live risk, trigger severity, and weekly income.',
                 ),
               ),
               _InfoRow(label: 'Policy status', value: policyStatus),
@@ -509,26 +568,36 @@ class _DashboardView extends StatelessWidget {
               ? const _EmptyState(
                   icon: Icons.receipt_long_outlined,
                   title: 'No transactions yet',
-                  message: 'Premium payments and payouts will appear here as soon as the system records them.',
+                  message:
+                      'Premium payments and payouts will appear here as soon as the system records them.',
                 )
               : Column(
                   children: bundle.transactions
-                      .map((transaction) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _TransactionRow(transaction: transaction),
-                          ))
+                      .map(
+                        (transaction) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _TransactionRow(transaction: transaction),
+                        ),
+                      )
                       .toList(),
                 ),
         ),
         const SizedBox(height: 16),
         _SectionCard(
           title: 'System Summary',
-          subtitle: 'A quick worker-facing summary of what the platform is doing right now.',
+          subtitle:
+              'A quick worker-facing summary of what the platform is doing right now.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(label: 'Coverage active', value: coverageActive ? 'Yes' : 'No'),
-              _InfoRow(label: 'Auto payout enabled', value: status['auto_payout_enabled'] == true ? 'Yes' : 'No'),
+              _InfoRow(
+                label: 'Coverage active',
+                value: coverageActive ? 'Yes' : 'No',
+              ),
+              _InfoRow(
+                label: 'Auto payout enabled',
+                value: status['auto_payout_enabled'] == true ? 'Yes' : 'No',
+              ),
               _InfoRow(label: 'Active triggers', value: triggerSummary),
             ],
           ),
@@ -599,7 +668,10 @@ class _HeroCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 9,
+                      ),
                       decoration: BoxDecoration(
                         color: coverageActive
                             ? AppTheme.successColor.withOpacity(0.18)
@@ -607,9 +679,13 @@ class _HeroCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        coverageActive ? 'Coverage Active' : 'Coverage Inactive',
+                        coverageActive
+                            ? 'Coverage Active'
+                            : 'Coverage Inactive',
                         style: TextStyle(
-                          color: coverageActive ? AppTheme.successColor : AppTheme.errorColor,
+                          color: coverageActive
+                              ? AppTheme.successColor
+                              : AppTheme.errorColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -617,7 +693,11 @@ class _HeroCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.assured_workload_rounded, color: AppTheme.primaryColor, size: 34),
+              const Icon(
+                Icons.assured_workload_rounded,
+                color: AppTheme.primaryColor,
+                size: 34,
+              ),
             ],
           ),
           const SizedBox(height: 22),
@@ -631,10 +711,7 @@ class _HeroCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _HeroStat(
-                  label: 'Location',
-                  value: city,
-                ),
+                child: _HeroStat(label: 'Location', value: city),
               ),
             ],
           ),
@@ -658,10 +735,7 @@ class _HeroStat extends StatelessWidget {
   final String label;
   final String value;
 
-  const _HeroStat({
-    required this.label,
-    required this.value,
-  });
+  const _HeroStat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -674,7 +748,10 @@ class _HeroStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
@@ -694,10 +771,7 @@ class _ContextPill extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _ContextPill({
-    required this.icon,
-    required this.label,
-  });
+  const _ContextPill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -714,7 +788,10 @@ class _ContextPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -793,7 +870,10 @@ class _MetricTile extends StatelessWidget {
         children: [
           Icon(icon, color: tone ?? AppTheme.primaryColor, size: 20),
           const SizedBox(height: 10),
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
@@ -824,16 +904,23 @@ class _ImpactStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: highlight ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white.withOpacity(0.04),
+        color: highlight
+            ? AppTheme.primaryColor.withOpacity(0.1)
+            : Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: highlight ? AppTheme.primaryColor.withOpacity(0.22) : Colors.white.withOpacity(0.03),
+          color: highlight
+              ? AppTheme.primaryColor.withOpacity(0.22)
+              : Colors.white.withOpacity(0.03),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 8),
           Text(
             value,
@@ -853,10 +940,7 @@ class _ExplainBar extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _ExplainBar({
-    required this.icon,
-    required this.text,
-  });
+  const _ExplainBar({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -888,10 +972,7 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -966,7 +1047,10 @@ class _FlowStep extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(color: AppTheme.textSecondary, height: 1.45),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    height: 1.45,
+                  ),
                 ),
               ],
             ),
@@ -1066,7 +1150,10 @@ class _EmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -1094,10 +1181,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final Future<void> Function() onRetry;
 
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -1106,7 +1190,11 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 120),
-        const Icon(Icons.cloud_off_rounded, size: 34, color: AppTheme.textSecondary),
+        const Icon(
+          Icons.cloud_off_rounded,
+          size: 34,
+          color: AppTheme.textSecondary,
+        ),
         const SizedBox(height: 14),
         const Text(
           'Dashboard unavailable',
@@ -1146,28 +1234,29 @@ Map<String, dynamic> _asMap(Object? value) {
 String _displayName(Map<String, dynamic> userPayload, UserState user) {
   return _readString(
     userPayload['name'],
-    fallback: _readString(
-      userPayload['username'],
-      fallback: user.userName,
-    ),
+    fallback: _readString(userPayload['username'], fallback: user.userName),
   );
 }
 
-String _displayCity(Map<String, dynamic> environment, Map<String, dynamic> status, String fallbackCity) {
+String _displayCity(
+  Map<String, dynamic> environment,
+  Map<String, dynamic> status,
+  String fallbackCity,
+) {
   final location = _asMap(status['location']);
   return _readString(
     environment['city'],
     fallback: _readString(
       environment['resolved_city'],
-      fallback: _readString(
-        location['active_city'],
-        fallback: fallbackCity,
-      ),
+      fallback: _readString(location['active_city'], fallback: fallbackCity),
     ),
   );
 }
 
-Map<String, dynamic> _resolvePayout(Map<String, dynamic> dashboard, Map<String, dynamic> claim) {
+Map<String, dynamic> _resolvePayout(
+  Map<String, dynamic> dashboard,
+  Map<String, dynamic> claim,
+) {
   final claimPayout = _asMap(claim['payout']);
   if (claimPayout.isNotEmpty) {
     return claimPayout;
@@ -1177,12 +1266,18 @@ Map<String, dynamic> _resolvePayout(Map<String, dynamic> dashboard, Map<String, 
 
 List<String> _asStringList(Object? value) {
   if (value is! List) return const [];
-  return value.map((item) => '$item').where((item) => item.trim().isNotEmpty).toList();
+  return value
+      .map((item) => '$item')
+      .where((item) => item.trim().isNotEmpty)
+      .toList();
 }
 
 String _joinExplanation(Object? value) {
   if (value is List) {
-    return value.map((item) => '$item').where((item) => item.trim().isNotEmpty).join(' ');
+    return value
+        .map((item) => '$item')
+        .where((item) => item.trim().isNotEmpty)
+        .join(' ');
   }
   return _readString(value);
 }
@@ -1207,7 +1302,8 @@ String _readString(Object? value, {String fallback = '--'}) {
 
 double? _readDouble(Object? value, {double? fallback}) {
   if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value.replaceAll('%', '').trim()) ?? fallback;
+  if (value is String)
+    return double.tryParse(value.replaceAll('%', '').trim()) ?? fallback;
   return fallback;
 }
 
