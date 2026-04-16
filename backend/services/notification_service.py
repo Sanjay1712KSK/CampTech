@@ -48,6 +48,18 @@ def _resolve_mailtrap_recipient(email: str) -> tuple[str, str]:
     return normalized, 'direct'
 
 
+def _extract_provider_error(exc: Exception) -> str:
+    message = str(exc).strip()
+    if message:
+        return message
+
+    errors = getattr(exc, 'errors', None)
+    if errors:
+        return str(errors)
+
+    return exc.__class__.__name__
+
+
 def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category: str) -> tuple[bool, str | None]:
     if mt is None:
         return False, 'Mailtrap package is not installed on the backend environment'
@@ -68,8 +80,16 @@ def _deliver_mailtrap_email(*, to_email: str, subject: str, text: str, category:
         client.send(mail)
         return True, None
     except Exception as exc:  # pragma: no cover - external network/service
-        logger.exception('Mailtrap email delivery failed for %s: %s', to_email, exc)
-        return False, 'Unable to send email right now'
+        provider_error = _extract_provider_error(exc)
+        logger.exception(
+            'Mailtrap email delivery failed for recipient=%s resolved_recipient=%s category=%s sender=%s provider_error=%s',
+            to_email,
+            resolved_email,
+            category,
+            MAILTRAP_SENDER_EMAIL,
+            provider_error,
+        )
+        return False, f'Unable to send email right now ({provider_error})'
 
 
 def send_email_otp(email: str, otp: str, purpose: str) -> dict:
