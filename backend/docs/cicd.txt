@@ -1,5 +1,4 @@
 git add .
-git pull origin main
 git commit -m main
 git commit -m "Addition of ADMIN ui framework along with new features"
 git push origin main
