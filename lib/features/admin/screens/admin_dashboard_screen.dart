@@ -523,6 +523,61 @@ class _AdminDashboardView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Predictive Insights'),
+            _PanelCard(
+              title: 'Next 7-Day Outlook',
+              subtitle: 'Use these predictions to prepare underwriting and fraud operations.',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _SignalStat(
+                        icon: Icons.calendar_month_outlined,
+                        label: 'Expected claims',
+                        value: '${data.predictions.nextWeekClaims}',
+                        color: AppTheme.primaryColor,
+                      ),
+                      _SignalStat(
+                        icon: Icons.currency_rupee_rounded,
+                        label: 'Expected payout',
+                        value: _currency(data.predictions.expectedPayout),
+                        color: AppTheme.warningColor,
+                      ),
+                      _SignalStat(
+                        icon: _trendIcon(data.predictions.riskTrend),
+                        label: 'Risk trend',
+                        value: _titleize(data.predictions.riskTrend),
+                        color: _trendColor(data.predictions.riskTrend),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  _InsightBanner(text: data.predictions.insight),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Recommendations'),
+            _PanelCard(
+              title: 'System-Generated Recommendations',
+              subtitle: 'Business actions inferred from the live insurer dataset.',
+              child: Column(
+                children: recommendations
+                    .map((rec) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _RecommendationTile(
+                            icon: rec.icon,
+                            title: rec.title,
+                            body: rec.body,
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
           ],
         );
       },
@@ -798,4 +853,465 @@ class _LabelBar extends StatelessWidget {
       ],
     );
   }
+}
+
+class _TripleBarChart extends StatelessWidget {
+  final List<_ChartDatum> values;
+
+  const _TripleBarChart({required this.values});
+
+  @override
+  Widget build(BuildContext context) {
+    final max = values.fold<double>(0, (current, item) => item.value > current ? item.value : current);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: values
+          .map(
+            (item) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      item.value.toStringAsFixed(0),
+                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 140,
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        width: double.infinity,
+                        height: max <= 0 ? 0 : (item.value / max) * 140,
+                        decoration: BoxDecoration(
+                          color: item.color,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      item.label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _HotspotRow extends StatelessWidget {
+  final String city;
+  final int count;
+  final double max;
+
+  const _HotspotRow({
+    required this.city,
+    required this.count,
+    required this.max,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, color: AppTheme.warningColor, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(city, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700)),
+              ),
+              Text('$count alerts', style: const TextStyle(color: AppTheme.textSecondary)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _LabelBar(
+            label: 'Fraud activity',
+            value: count.toDouble(),
+            max: max,
+            color: AppTheme.warningColor,
+            trailing: '$count',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecommendationTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _RecommendationTile({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.primaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Text(body, style: const TextStyle(color: AppTheme.textSecondary, height: 1.45)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TriggerChip extends StatelessWidget {
+  final String label;
+
+  const _TriggerChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _InsightBanner extends StatelessWidget {
+  final String text;
+
+  const _InsightBanner({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: AppTheme.primaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoLine({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textSecondary))),
+          Text(
+            value,
+            style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyPanel extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _EmptyPanel({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Icon(icon, color: AppTheme.textSecondary),
+            const SizedBox(height: 10),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminLoadingState extends StatelessWidget {
+  const _AdminLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        SizedBox(height: 220),
+        Center(child: CircularProgressIndicator()),
+      ],
+    );
+  }
+}
+
+class _AdminErrorState extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
+
+  const _AdminErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 140),
+        const Icon(Icons.analytics_outlined, size: 36, color: AppTheme.textSecondary),
+        const SizedBox(height: 14),
+        const Text(
+          'Admin dashboard unavailable',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+        ),
+        const SizedBox(height: 18),
+        ElevatedButton(
+          onPressed: () {
+            onRetry();
+          },
+          child: const Text('Reload dashboard'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChartDatum {
+  final String label;
+  final double value;
+  final Color color;
+
+  const _ChartDatum(this.label, this.value, this.color);
+}
+
+class _RecommendationData {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _RecommendationData({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+}
+
+List<_RecommendationData> _buildRecommendations(_AdminDashboardBundle data) {
+  final recommendations = <_RecommendationData>[];
+  if (data.overview.lossRatio >= 0.8) {
+    recommendations.add(
+      _RecommendationData(
+        icon: Icons.currency_exchange_rounded,
+        title: 'Review pricing pressure',
+        body:
+            'Loss ratio is at ${_percentValue(data.overview.lossRatio)}, so premium adequacy in higher-risk segments should be reviewed.',
+      ),
+    );
+  }
+  if (data.fraud.fraudRate >= 0.2) {
+    recommendations.add(
+      _RecommendationData(
+        icon: Icons.shield_moon_outlined,
+        title: 'Tighten fraud monitoring',
+        body:
+            'Fraud pressure is elevated at ${_percentValue(data.fraud.fraudRate)}. Review flagged and rejected claims for repeat patterns.',
+      ),
+    );
+  }
+  if (data.risk.topTriggers.isNotEmpty) {
+    recommendations.add(
+      _RecommendationData(
+        icon: Icons.thunderstorm_outlined,
+        title: 'Adjust risk strategy in active trigger zones',
+        body:
+            'Recent risk is being driven by ${data.risk.topTriggers.map(_titleize).join(', ')}, which may justify targeted underwriting attention.',
+      ),
+    );
+  }
+  if (data.fraud.hotspots.isNotEmpty) {
+    recommendations.add(
+      _RecommendationData(
+        icon: Icons.location_searching_outlined,
+        title: 'Investigate fraud hotspots',
+        body:
+            'Fraud activity is concentrated in ${data.fraud.hotspots.first.city}. Consider enhanced monitoring for repeated suspicious claims there.',
+      ),
+    );
+  }
+  recommendations.add(
+    _RecommendationData(
+      icon: Icons.timeline_outlined,
+      title: 'Plan for next-week claims',
+      body: data.predictions.insight,
+    ),
+  );
+  return recommendations;
+}
+
+double _maxFraudCount(AdminFraudStatsModel fraud) {
+  return fraud.topFraudTypes.fold<double>(
+    1,
+    (current, item) => item.count > current ? item.count.toDouble() : current,
+  );
+}
+
+double _maxHotspotCount(List<AdminFraudHotspotModel> hotspots) {
+  return hotspots.fold<double>(
+    1,
+    (current, item) => item.count > current ? item.count.toDouble() : current,
+  );
+}
+
+String _currency(double value) {
+  final formatter = NumberFormat.compactCurrency(symbol: 'Rs ');
+  return formatter.format(value);
+}
+
+String _percentValue(double value) {
+  return '${(value * 100).toStringAsFixed(1)}%';
+}
+
+String _fraudLabel(String type) {
+  switch (type.toLowerCase()) {
+    case 'gps_spoof':
+      return 'GPS Spoofing';
+    case 'weather_mismatch':
+      return 'Weather Mismatch';
+    case 'session_hijack':
+      return 'Session Anomaly';
+    default:
+      return _titleize(type.replaceAll('_', ' '));
+  }
+}
+
+Color _fraudColor(String type) {
+  switch (type.toLowerCase()) {
+    case 'gps_spoof':
+      return AppTheme.errorColor;
+    case 'weather_mismatch':
+      return AppTheme.warningColor;
+    case 'session_hijack':
+      return const Color(0xFFFF8A65);
+    default:
+      return AppTheme.primaryColor;
+  }
+}
+
+IconData _trendIcon(String trend) {
+  switch (trend.toLowerCase()) {
+    case 'increasing':
+      return Icons.north_east_rounded;
+    case 'decreasing':
+      return Icons.south_east_rounded;
+    default:
+      return Icons.trending_flat_rounded;
+  }
+}
+
+Color _trendColor(String trend) {
+  switch (trend.toLowerCase()) {
+    case 'increasing':
+      return AppTheme.errorColor;
+    case 'decreasing':
+      return AppTheme.successColor;
+    default:
+      return AppTheme.warningColor;
+  }
+}
+
+String _titleize(String text) {
+  return text
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+      .join(' ');
 }

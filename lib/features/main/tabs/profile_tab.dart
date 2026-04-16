@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/admin/screens/admin_dashboard_screen.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
 import 'package:guidewire_gig_ins/features/insurance/screens/link_bank_screen.dart';
 import 'package:guidewire_gig_ins/features/verification/screens/digilocker_verification_screen.dart';
@@ -333,6 +334,32 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
             _SectionTitle(title: 'Actions'),
             _SettingsCard(
               children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.admin_panel_settings_outlined,
+                    color: AppTheme.primaryColor,
+                  ),
+                  title: const Text(
+                    'Insurer Dashboard',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Open the admin control center',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminDashboardScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _DividerLine(),
                 ListTile(
                   leading: const Icon(
                     Icons.logout_rounded,
