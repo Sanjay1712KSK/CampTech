@@ -219,3 +219,313 @@ class _AdminDashboardBundle {
     required this.predictions,
   });
 }
+
+class _AdminDashboardView extends StatelessWidget {
+  final _AdminDashboardBundle data;
+
+  const _AdminDashboardView({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendations = _buildRecommendations(data);
+    final hotspots = data.fraud.hotspots;
+    final profitPositive = data.financials.profit >= 0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 1100;
+        final cardsPerRow = constraints.maxWidth >= 1200
+            ? 3
+            : constraints.maxWidth >= 800
+                ? 2
+                : 1;
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          children: [
+            _AdminHero(
+              title: 'Decision Dashboard',
+              subtitle:
+                  'Monitor platform health, detect fraud pressure, and act on predictive insurer insights.',
+              insight: data.predictions.insight,
+            ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Overview'),
+            _MetricGrid(
+              cardsPerRow: cardsPerRow,
+              children: [
+                _OverviewCard(icon: Icons.people_alt_outlined, label: 'Total Users', value: '${data.overview.totalUsers}'),
+                _OverviewCard(icon: Icons.verified_user_outlined, label: 'Active Policies', value: '${data.overview.activePolicies}'),
+                _OverviewCard(icon: Icons.assignment_outlined, label: 'Total Claims', value: '${data.overview.totalClaims}'),
+                _OverviewCard(icon: Icons.payments_outlined, label: 'Total Payouts', value: _currency(data.overview.totalPayouts)),
+                _OverviewCard(icon: Icons.account_balance_wallet_outlined, label: 'Total Premiums', value: _currency(data.overview.totalPremiums)),
+                _OverviewCard(
+                  icon: Icons.balance_outlined,
+                  label: 'Loss Ratio',
+                  value: _percentValue(data.overview.lossRatio),
+                  accent: data.overview.lossRatio > 1 ? AppTheme.errorColor : AppTheme.warningColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Fraud Analytics'),
+            isWide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: _PanelCard(
+                          title: 'Fraud Core Signals',
+                          subtitle: 'Watch platform fraud pressure and top attack patterns.',
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _SignalStat(
+                                      icon: Icons.gpp_bad_outlined,
+                                      label: 'Fraud Rate',
+                                      value: _percentValue(data.fraud.fraudRate),
+                                      color: AppTheme.errorColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _SignalStat(
+                                      icon: Icons.flag_outlined,
+                                      label: 'Flagged Claims',
+                                      value: '${data.fraud.flaggedClaims}',
+                                      color: AppTheme.warningColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _SignalStat(
+                                      icon: Icons.block_outlined,
+                                      label: 'Rejected Claims',
+                                      value: '${data.fraud.rejectedClaims}',
+                                      color: AppTheme.errorColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              ...data.fraud.topFraudTypes.map((item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _LabelBar(
+                                      label: _fraudLabel(item.type),
+                                      value: item.count.toDouble(),
+                                      max: _maxFraudCount(data.fraud),
+                                      color: _fraudColor(item.type),
+                                      trailing: '${item.count}',
+                                    ),
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 4,
+                        child: _PanelCard(
+                          title: 'Fraud Hotspots',
+                          subtitle: 'City-wise fraud activity from live fraud logs.',
+                          child: hotspots.isEmpty
+                              ? const _EmptyPanel(
+                                  icon: Icons.location_off_outlined,
+                                  text: 'No city-level fraud activity is available yet.',
+                                )
+                              : Column(
+                                  children: hotspots
+                                      .map((hotspot) => Padding(
+                                            padding: const EdgeInsets.only(bottom: 12),
+                                            child: _HotspotRow(
+                                              city: hotspot.city,
+                                              count: hotspot.count,
+                                              max: _maxHotspotCount(hotspots),
+                                            ),
+                                          ))
+                                      .toList(),
+                                ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      _PanelCard(
+                        title: 'Fraud Core Signals',
+                        subtitle: 'Watch platform fraud pressure and top attack patterns.',
+                        child: Column(
+                          children: [
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                _SignalStat(
+                                  icon: Icons.gpp_bad_outlined,
+                                  label: 'Fraud Rate',
+                                  value: _percentValue(data.fraud.fraudRate),
+                                  color: AppTheme.errorColor,
+                                ),
+                                _SignalStat(
+                                  icon: Icons.flag_outlined,
+                                  label: 'Flagged Claims',
+                                  value: '${data.fraud.flaggedClaims}',
+                                  color: AppTheme.warningColor,
+                                ),
+                                _SignalStat(
+                                  icon: Icons.block_outlined,
+                                  label: 'Rejected Claims',
+                                  value: '${data.fraud.rejectedClaims}',
+                                  color: AppTheme.errorColor,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            ...data.fraud.topFraudTypes.map((item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _LabelBar(
+                                    label: _fraudLabel(item.type),
+                                    value: item.count.toDouble(),
+                                    max: _maxFraudCount(data.fraud),
+                                    color: _fraudColor(item.type),
+                                    trailing: '${item.count}',
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _PanelCard(
+                        title: 'Fraud Hotspots',
+                        subtitle: 'City-wise fraud activity from live fraud logs.',
+                        child: hotspots.isEmpty
+                            ? const _EmptyPanel(
+                                icon: Icons.location_off_outlined,
+                                text: 'No city-level fraud activity is available yet.',
+                              )
+                            : Column(
+                                children: hotspots
+                                    .map((hotspot) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: _HotspotRow(
+                                            city: hotspot.city,
+                                            count: hotspot.count,
+                                            max: _maxHotspotCount(hotspots),
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                      ),
+                    ],
+                  ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Claims and Risk'),
+            _MetricGrid(
+              cardsPerRow: cardsPerRow,
+              children: [
+                _PanelCard(
+                  title: 'Claim Analytics',
+                  subtitle: 'Approval, rejection, flagging, and payout profile.',
+                  child: Column(
+                    children: [
+                      _TripleBarChart(
+                        values: [
+                          _ChartDatum('Approved', data.claims.approved.toDouble(), AppTheme.successColor),
+                          _ChartDatum('Rejected', data.claims.rejected.toDouble(), AppTheme.errorColor),
+                          _ChartDatum('Flagged', data.claims.flagged.toDouble(), AppTheme.warningColor),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _InfoLine(label: 'Average payout', value: _currency(data.claims.avgPayout)),
+                      _InfoLine(label: 'Average loss', value: _currency(data.claims.avgLoss)),
+                    ],
+                  ),
+                ),
+                _PanelCard(
+                  title: 'Risk Analytics',
+                  subtitle: 'Track systemic risk and the triggers driving platform stress.',
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SignalStat(
+                              icon: Icons.warning_amber_outlined,
+                              label: 'High-risk users',
+                              value: '${data.risk.highRiskUsers}',
+                              color: AppTheme.warningColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _SignalStat(
+                              icon: Icons.track_changes_outlined,
+                              label: 'Avg risk score',
+                              value: data.risk.avgRiskScore.toStringAsFixed(2),
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: data.risk.topTriggers
+                              .map((trigger) => _TriggerChip(label: _titleize(trigger)))
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _PanelCard(
+                  title: 'Financial Health',
+                  subtitle: 'See how premiums and payouts translate into insurer performance.',
+                  child: Column(
+                    children: [
+                      _InfoLine(label: 'Premiums collected', value: _currency(data.financials.totalPremiums)),
+                      _InfoLine(label: 'Total payouts', value: _currency(data.financials.totalPayouts)),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: (profitPositive ? AppTheme.successColor : AppTheme.errorColor).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Profit / Loss',
+                              style: TextStyle(color: AppTheme.textSecondary),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _currency(data.financials.profit),
+                              style: TextStyle(
+                                color: profitPositive ? AppTheme.successColor : AppTheme.errorColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
