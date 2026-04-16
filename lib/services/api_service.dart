@@ -464,6 +464,28 @@ class ApiService {
     throw _asException(response);
   }
 
+  static Future<List<dynamic>> _getJsonList(
+    String path, {
+    String? token,
+  }) async {
+    http.Response response;
+    try {
+      response = await http
+          .get(Uri.parse('${Config.baseUrl}$path'), headers: _headers(token: token))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw Exception('Backend timed out while waking up. Please try again in a few seconds.');
+    } on http.ClientException {
+      throw Exception('Unable to reach the backend service. Please check your internet connection and try again.');
+    }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is List) return decoded;
+      throw Exception('Unexpected response format');
+    }
+    throw _asException(response);
+  }
+
   static Future<Map<String, dynamic>> _postJson(
     String path, {
     required Map<String, dynamic> body,
@@ -825,6 +847,33 @@ class ApiService {
       '/claim/process',
       body: {'user_id': userId, 'lat': lat, 'lon': lon},
     );
+  }
+
+  static Future<Map<String, dynamic>> getWorkerDashboard(int userId, double lat, double lon) async {
+    return _getJson('/dashboard/worker?user_id=$userId&lat=$lat&lon=$lon');
+  }
+
+  static Future<Map<String, dynamic>> getRiskDetails(int userId, double lat, double lon) async {
+    return _getJson('/risk/details?user_id=$userId&lat=$lat&lon=$lon');
+  }
+
+  static Future<Map<String, dynamic>> getPremiumDetails(int userId, double lat, double lon) async {
+    return _getJson('/premium/details?user_id=$userId&lat=$lat&lon=$lon');
+  }
+
+  static Future<Map<String, dynamic>> autoProcessClaim(int userId, double lat, double lon) async {
+    return _postJson(
+      '/claim/auto-process',
+      body: {'user_id': userId, 'lat': lat, 'lon': lon},
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>> getUiTransactionHistory(int userId, {int limit = 10}) async {
+    final body = await _getJsonList('/transactions/history?user_id=$userId&limit=$limit');
+    return body
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', value)))
+        .toList();
   }
 
   static String? _tryDecodeError(String body) {
