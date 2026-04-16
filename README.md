@@ -221,7 +221,7 @@ Main UX surfaces:
 - Open-Meteo
 - OpenWeather Air Pollution
 - OpenRouteService
-- Mailtrap
+- Brevo SMTP
 
 ### ML / Intelligence Stack
 
@@ -261,9 +261,11 @@ DATABASE_URL=sqlite:///./gig_insurance.db
 API_PUBLIC_BASE_URL=http://127.0.0.1:8000
 OPENWEATHER_API_KEY=YOUR_OPENWEATHER_KEY
 ORS_API_KEY=YOUR_ORS_KEY
-MAILTRAP_TOKEN=YOUR_MAILTRAP_TOKEN
-MAILTRAP_SENDER_EMAIL=hello@demomailtrap.co
-MAILTRAP_SENDER_NAME=Mailtrap Test
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=YOUR_BREVO_SMTP_LOGIN
+SMTP_PASS=YOUR_BREVO_SMTP_KEY
+SENDER_EMAIL=YOUR_VERIFIED_SENDER_EMAIL
 BLOCKCHAIN_MODE=mock
 ```
 
@@ -344,7 +346,7 @@ When the backend is run locally, the intended onboarding behavior is strict:
 - the email OTP field should appear in the UI
 
 Phone OTP is mocked and shown in the UI for demo convenience.
-Email OTP depends on your Mailtrap configuration working locally.
+Email OTP depends on your Brevo SMTP configuration working locally.
 
 ### 5. Recommended local test flow
 

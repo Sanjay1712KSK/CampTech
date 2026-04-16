@@ -85,7 +85,7 @@ Tap continue and wait for OTP delivery.
 
 What happens:
 
-- email OTP is sent through Mailtrap to the user email
+- email OTP is sent through Brevo SMTP to the user email
 - phone OTP is mocked and shown in the app for demo use
 
 Expected result:

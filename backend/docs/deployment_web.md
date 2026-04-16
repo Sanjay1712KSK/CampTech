@@ -23,7 +23,9 @@ The repo now includes [render.yaml](/s:/flutter/guidewire_gig_ins/render.yaml), 
 ### Required secret values
 
 - `API_PUBLIC_BASE_URL`
-- `MAILTRAP_TOKEN`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SENDER_EMAIL`
 - `OPENWEATHER_API_KEY`
 - `ORS_API_KEY`
 

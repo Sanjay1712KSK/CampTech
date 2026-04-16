@@ -28,9 +28,8 @@ Important notes:
 - These users are already created as confirmed, DigiLocker-verified, and gig-connected.
 - Login still asks for OTP on `email` or `phone`.
 - For demo ease, choose `phone` OTP during login because the phone OTP is shown in the app flow.
-- Demo actor emails are sandboxed.
-  They are automatically redirected to the configured Mailtrap demo inbox instead of a real inbox.
-- If you choose `email`, the OTP goes to the sandbox inbox, not to a real external recipient.
+- Demo actor emails use the same Brevo SMTP flow as normal users.
+- If you choose `email`, the OTP is sent to the actor's configured inbox, while `phone` remains the easier demo path because the mock OTP is shown in the UI.
 
 ## Demo Login Credentials
 

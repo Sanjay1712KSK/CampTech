@@ -38,14 +38,16 @@ services:
         sync: false
       - key: NBFLITE_TIMEOUT
         value: "15"
-      - key: MAILTRAP_TOKEN
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
         sync: false
-      - key: MAILTRAP_SENDER_EMAIL
-        value: hello@demomailtrap.co
-      - key: MAILTRAP_SENDER_NAME
-        value: Mailtrap Test
-      - key: MAILTRAP_DEMO_REDIRECT_EMAIL
-        value: demo-actors@demomailtrap.co
+      - key: SMTP_PASS
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
 
 databases:
   - name: guidewire-gig-ins-db

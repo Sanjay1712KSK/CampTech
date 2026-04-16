@@ -30,7 +30,7 @@ Health routes:
 
 - CORS is enabled for all origins so the Flutter app can connect during development.
 - SQLite is used by default in development.
-- Email OTP and account-confirmation emails are sent through Mailtrap.
+- Email OTP and account-confirmation emails are sent through Brevo SMTP.
 - SMS OTP is mocked and returned in the API response for demo use.
 - DigiLocker is simulated. The app uses the generated `oauth_state` as the consent code in the mock flow.
 
@@ -163,7 +163,7 @@ Notes:
 
 - OTP expiry: 5 minutes
 - retry limit: 5
-- email OTP is sent by Mailtrap
+- email OTP is sent by Brevo SMTP
 - phone OTP is mocked and included in the response
 
 Response:
