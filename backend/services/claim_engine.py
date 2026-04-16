@@ -12,9 +12,10 @@ from models.profile import Profile
 from models.user_model import User
 from services.blockchain_service import log_claim, record_payout, store_on_blockchain
 from services.environment_service import get_environment
-from services.fraud_engine_v2 import evaluate_claim_fraud, update_user_location_state
+from services.fraud_intelligence_engine import evaluate_fraud_intelligence, update_user_location_state
 from services.ml_service import (
     expected_loss_prediction,
+    get_latest_user_behavior,
     record_claim_learning,
     update_model_weights,
     update_user_behavior,
@@ -122,6 +123,9 @@ def process_claim(
     lon: float,
     *,
     device_id: str | None = None,
+    device_metadata: dict | None = None,
+    location_logs: list[dict] | None = None,
+    claim_reason: str | None = None,
 ) -> dict:
     user = _user_or_404(db, user_id)
     eligibility = check_user_eligibility(user_id, db)
@@ -208,19 +212,31 @@ def process_claim(
         lat=lat,
         lon=lon,
         city=environment_data.get('city'),
+        db=db,
     )
-    fraud = evaluate_claim_fraud(
+    fraud = evaluate_fraud_intelligence(
         db=db,
         user=user,
-        lat=lat,
-        lon=lon,
-        environment_data=environment_data,
+        claim_id=None,
+        device_id=device_id,
+        device_metadata=device_metadata,
+        location_logs=location_logs,
+        login_history=None,
+        claim_data={
+            'actual_income': actual_income,
+            'baseline_income': expected_income,
+            'predicted_loss': predicted_loss,
+            'actual_loss': actual_loss,
+            'lat': lat,
+            'lon': lon,
+            'city': environment_data.get('city'),
+            'claim_reason': claim_reason or today_income.get('disruption_type'),
+        },
         risk_data=risk_result,
-        premium_data=premium_result,
+        environment_data=environment_data,
+        past_claims=None,
+        user_behavior_profile=get_latest_user_behavior(db, user_id=user_id),
         gig_data=today_income,
-        predicted_loss=predicted_loss,
-        actual_loss=actual_loss,
-        current_device_id=device_id,
     )
 
     latest_premium_snapshot = None
@@ -286,7 +302,7 @@ def process_claim(
         )
         payout_chain = record_payout(f'claim_{claim.id}', payout_amount, user_id=user_id, db=db)
 
-    record_claim_learning(
+    learning_record = record_claim_learning(
         db,
         user_id=user_id,
         policy_id=policy.id,
@@ -305,10 +321,12 @@ def process_claim(
 
     fraud_log = FraudLog(
         user_id=int(user_id),
+        claim_history_id=learning_record.id,
         claim_reference=f'claim_{claim.id}',
         fraud_score=float(fraud.get('fraud_score', 0.0)),
         decision=str(fraud.get('decision', claim_status)),
         confidence=str(fraud.get('confidence', 'LOW')),
+        city=str(environment_data.get('city') or ''),
         fraud_types=fraud.get('fraud_types') or [],
         explanation=str(fraud.get('explanation', '')),
         signals=fraud.get('signals') or {},

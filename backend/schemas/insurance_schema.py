@@ -65,6 +65,9 @@ class ClaimProcessRequest(BaseModel):
     lat: float = Field(..., ge=-90.0, le=90.0)
     lon: float = Field(..., ge=-180.0, le=180.0)
     device_id: str | None = Field(default=None, min_length=3, max_length=255)
+    device_metadata: dict | None = None
+    location_logs: list[dict] | None = None
+    claim_reason: str | None = None
 
 
 class ClaimProcessResponse(BaseModel):

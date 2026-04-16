@@ -14,6 +14,7 @@ class FraudLog(Base):
     fraud_score = Column(Float, nullable=False, default=0.0)
     decision = Column(String(24), nullable=False, default='APPROVED', index=True)
     confidence = Column(String(16), nullable=True)
+    city = Column(String(100), nullable=True, index=True)
     fraud_types = Column(JSON, nullable=True)
     explanation = Column(Text, nullable=True)
     signals = Column(JSON, nullable=True)

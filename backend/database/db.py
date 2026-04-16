@@ -119,6 +119,17 @@ def _sqlite_has_column(table_name: str, column_name: str) -> bool:
     return _run_sqlite_with_retries(_action)
 
 
+def _sqlite_add_column_if_missing(table_name: str, column_name: str, column_sql: str) -> None:
+    if _sqlite_has_column(table_name, column_name):
+        return
+
+    def _action():
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_sql}"))
+
+    _run_sqlite_with_retries(_action)
+
+
 def ensure_schema():
     """Ensure DB schema matches models; reset in development if mismatch."""
     _load_model_metadata()
@@ -157,7 +168,7 @@ def ensure_schema():
         'user_behavior': ['user_id', 'event_type', 'behavior_metadata', 'observed_at'],
         'model_weights': ['model_name', 'version', 'rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight'],
         'blockchain_records': ['record_type', 'reference_id', 'tx_hash', 'data', 'transaction_type', 'transaction_hash', 'status', 'payload'],
-        'fraud_logs': ['user_id', 'claim_reference', 'fraud_score', 'decision', 'confidence', 'fraud_types', 'explanation', 'signals'],
+        'fraud_logs': ['user_id', 'claim_reference', 'fraud_score', 'decision', 'confidence', 'city', 'fraud_types', 'explanation', 'signals'],
         'adaptive_risk_weights': ['rain_weight', 'traffic_weight', 'aqi_weight', 'wind_weight', 'sample_count', 'updated_at'],
         'environment_snapshots': ['bucket_lat', 'bucket_lon', 'temperature', 'wind_speed', 'humidity', 'rain_estimate', 'aqi', 'traffic_index', 'observed_at'],
         'verifications': ['user_id', 'otp_code', 'type', 'channel', 'expires_at', 'attempts'],
@@ -205,6 +216,12 @@ def ensure_schema():
         ],
     }
 
+    additive_columns = {
+        'fraud_logs': {
+            'city': 'city VARCHAR(100)',
+        },
+    }
+
     schema_ok = True
     missing_tables_only = False
     inspector = inspect(engine)
@@ -215,6 +232,10 @@ def ensure_schema():
             break
         for column_name in columns:
             if not _sqlite_has_column(table_name, column_name):
+                column_sql = (additive_columns.get(table_name) or {}).get(column_name)
+                if column_sql:
+                    _sqlite_add_column_if_missing(table_name, column_name, column_sql)
+                    continue
                 schema_ok = False
                 missing_tables_only = False
                 break
@@ -230,4 +251,5 @@ def ensure_schema():
             _run_sqlite_with_retries(reset_database)
     else:
         _run_sqlite_with_retries(lambda: Base.metadata.create_all(bind=engine))
+
 

@@ -18,6 +18,9 @@ def process_claim_endpoint(payload: ClaimProcessRequest, db: Session = Depends(g
         lat=payload.lat,
         lon=payload.lon,
         device_id=payload.device_id,
+        device_metadata=payload.device_metadata,
+        location_logs=payload.location_logs,
+        claim_reason=payload.claim_reason,
     )
 
 

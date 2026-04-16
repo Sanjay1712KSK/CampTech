@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database.db import get_db
 from services.bank_service import transaction_history
 from services.environment_service import get_environment
-from services.fraud_engine_v2 import build_location_status, get_device_status, update_user_location_state
+from services.fraud_intelligence_engine import build_location_status, get_device_status, update_user_location_state
 from services.gig_service import today_income
 from services.premium_engine import calculate_weekly_premium
 from services.policy_service import get_latest_policy
@@ -44,7 +44,13 @@ async def dashboard_worker(
         persist_snapshots=False,
     )
     policy = get_latest_policy(user_id, db)
-    location_status = update_user_location_state(user, lat=lat, lon=lon, city=environment.get('city') or environment.get('resolved_city'))
+    location_status = update_user_location_state(
+        user,
+        lat=lat,
+        lon=lon,
+        city=environment.get('city') or environment.get('resolved_city'),
+        db=db,
+    )
     db.commit()
     return {
         'user': build_user_session(user),
@@ -65,7 +71,7 @@ async def dashboard_worker(
         'status': {
             'coverage_active': bool(policy and policy.premium_paid and policy.status == 'ACTIVE'),
             'auto_payout_enabled': True,
-            'device': get_device_status(user),
+            'device': get_device_status(user, db=db),
             'location': location_status,
         },
     }
@@ -144,7 +150,7 @@ async def transactions_history(
 @router.get('/user/device-status')
 async def user_device_status(user_id: int = Query(..., gt=0), db: Session = Depends(get_db)):
     user = _require_user(db, user_id)
-    return get_device_status(user)
+    return get_device_status(user, db=db)
 
 
 @router.get('/user/location-status')
@@ -157,7 +163,7 @@ async def user_location_status(
 ):
     user = _require_user(db, user_id)
     if lat is not None and lon is not None:
-        status = update_user_location_state(user, lat=lat, lon=lon, city=city)
+        status = update_user_location_state(user, lat=lat, lon=lon, city=city, db=db)
         db.commit()
         return status
     return build_location_status(user, city=city)

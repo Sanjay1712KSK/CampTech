@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from models.models import UserSettings
 from models.user_model import User
 from models.verification import Verification
+from services.fraud_intelligence_engine import record_login_event
 from services.notification_service import send_confirmation_email, send_email_otp, send_sms_otp
 from services.otp_service import OTP_EXPIRY_SECONDS, OTP_RETRY_LIMIT, generate_otp, verify_stored_otp
 from utils.jwt import decode_token, encode_token
@@ -469,6 +470,7 @@ def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp:
     user.has_completed_first_login_2fa = True
     device_id = payload.get('device_id')
     session_payload = _issue_access_session(user, device_id=device_id)
+    record_login_event(db, user=user, device_id=device_id, device_metadata={})
     db.commit()
     return session_payload
 
