@@ -80,9 +80,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
       setState(() => _biometricEnabled = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            error.toString().replaceFirst('Exception: ', ''),
-          ),
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
         ),
       );
     }
@@ -169,8 +167,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     _InfoTile(
                       icon: Icons.account_balance_wallet_outlined,
                       label: 'Total Paid',
-                      value:
-                          'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}',
+                      value: 'Rs ${(bank?.totalPaid ?? 0).toStringAsFixed(0)}',
                     ),
                     _DividerLine(),
                     _InfoTile(
@@ -183,7 +180,8 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     _InfoTile(
                       icon: Icons.show_chart_rounded,
                       label: 'Net Gain',
-                      value: 'Rs ${((bank?.totalClaimed ?? 0) - (bank?.totalPaid ?? 0)).toStringAsFixed(0)}',
+                      value:
+                          'Rs ${((bank?.totalClaimed ?? 0) - (bank?.totalPaid ?? 0)).toStringAsFixed(0)}',
                     ),
                     _DividerLine(),
                     _InfoTile(
@@ -246,7 +244,9 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: Text(
                                   '- $remark',
-                                  style: const TextStyle(color: AppTheme.textSecondary),
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -257,10 +257,16 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     if (bank?.bankLinked != true) ...[
                       _DividerLine(),
                       ListTile(
-                        leading: const Icon(Icons.link_rounded, color: AppTheme.primaryColor),
+                        leading: const Icon(
+                          Icons.link_rounded,
+                          color: AppTheme.primaryColor,
+                        ),
                         title: const Text(
                           'Link Bank Account',
-                          style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         subtitle: const Text(
                           'Add payout account details',
@@ -269,7 +275,9 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                         onTap: () async {
                           await Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const LinkBankScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const LinkBankScreen(),
+                            ),
                           );
                           if (mounted) setState(() {});
                         },
@@ -329,7 +337,9 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
             ),
             const SizedBox(height: 20),
             _SectionTitle(title: 'Language'),
-            _LanguageCard(currentLanguage: Localizations.localeOf(context).languageCode),
+            _LanguageCard(
+              currentLanguage: Localizations.localeOf(context).languageCode,
+            ),
             const SizedBox(height: 20),
             _SectionTitle(title: 'Actions'),
             _SettingsCard(
@@ -418,11 +428,7 @@ class _PolicyCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF2F3B2F),
-            Color(0xFF1F2921),
-            Color(0xFF121612),
-          ],
+          colors: [Color(0xFF2F3B2F), Color(0xFF1F2921), Color(0xFF121612)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -434,9 +440,7 @@ class _PolicyCard extends StatelessWidget {
             offset: const Offset(0, 12),
           ),
         ],
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.15),
-        ),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +457,10 @@ class _PolicyCard extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isActive
                           ? AppTheme.successColor.withOpacity(0.18)
@@ -527,10 +534,7 @@ class _CardFact extends StatelessWidget {
   final String label;
   final String value;
 
-  const _CardFact({
-    required this.label,
-    required this.value,
-  });
+  const _CardFact({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -616,10 +620,7 @@ class _InfoTile extends StatelessWidget {
       leading: Icon(icon, color: AppTheme.primaryColor),
       title: Text(
         label,
-        style: const TextStyle(
-          color: AppTheme.textSecondary,
-          fontSize: 13,
-        ),
+        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
       ),
       subtitle: Text(
         value,
@@ -664,10 +665,7 @@ class _LanguageCard extends StatelessWidget {
           value: currentLanguage,
           isExpanded: true,
           dropdownColor: AppTheme.surfaceColor,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 13,
-          ),
+          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
           icon: const Icon(
             Icons.language_rounded,
             color: AppTheme.textSecondary,

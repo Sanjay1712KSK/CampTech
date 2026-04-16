@@ -1002,10 +1002,7 @@ class AdminLoginResult {
   final String token;
   final String role;
 
-  const AdminLoginResult({
-    required this.token,
-    required this.role,
-  });
+  const AdminLoginResult({required this.token, required this.role});
 
   factory AdminLoginResult.fromJson(Map<String, dynamic> json) {
     return AdminLoginResult(
@@ -1048,10 +1045,7 @@ class AdminFraudTypeModel {
   final String type;
   final int count;
 
-  const AdminFraudTypeModel({
-    required this.type,
-    required this.count,
-  });
+  const AdminFraudTypeModel({required this.type, required this.count});
 
   factory AdminFraudTypeModel.fromJson(Map<String, dynamic> json) {
     return AdminFraudTypeModel(
@@ -1065,10 +1059,7 @@ class AdminFraudHotspotModel {
   final String city;
   final int count;
 
-  const AdminFraudHotspotModel({
-    required this.city,
-    required this.count,
-  });
+  const AdminFraudHotspotModel({required this.city, required this.count});
 
   factory AdminFraudHotspotModel.fromJson(Map<String, dynamic> json) {
     return AdminFraudHotspotModel(
