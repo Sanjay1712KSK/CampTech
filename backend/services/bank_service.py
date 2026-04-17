@@ -112,7 +112,7 @@ def credit(db: Session, user_id: int, amount: float) -> BankAccount:
 
 
 def insurance_summary(db: Session, user_id: int) -> dict:
-    _require_user(db, int(user_id))
+    user = _require_user(db, int(user_id))
     account = get_account(db, int(user_id))
     total_paid = (
         db.query(func.coalesce(func.sum(BankTransaction.amount), 0.0))
