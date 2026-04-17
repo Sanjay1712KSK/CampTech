@@ -1967,6 +1967,11 @@ String _readString(Object? value, {String fallback = '--'}) {
   return text.isEmpty ? fallback : text;
 }
 
+String _fallbackText(String value, {String fallback = '--'}) {
+  final text = value.trim();
+  return text.isEmpty ? fallback : text;
+}
+
 double? _readDouble(Object? value, {double? fallback}) {
   if (value is num) return value.toDouble();
   if (value is String)
