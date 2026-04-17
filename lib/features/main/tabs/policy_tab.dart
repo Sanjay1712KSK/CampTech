@@ -394,6 +394,7 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
                 title: 'Claim Engine',
                 accentColor: const Color(0xFFFF8A65),
                 actionLabel: null,
+                onAction: null,
                 inputs: [
                   'Current earnings vs baseline',
                   'Live triggers from environment and risk',
