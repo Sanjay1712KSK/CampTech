@@ -950,57 +950,73 @@ This data is then used by:
 - claim logic
 - user behavior analysis
 
-## Persona Simulation Layer
+## 👤 Demo Personas
 
-To make the demo meaningful and dynamic, the system includes persona-driven input seeding.
-
-Simulated actors:
-
-- `good_actor`
-- `bad_actor`
-- `edge_case`
-- `low_risk`
-- `premium_success`
-
-These personas differ in:
-
-- environment severity
-- work patterns
-- risk profile
-- premium story
-- claim outcome
-- fraud posture
-
-This allows the exact same app and backend to produce different outcomes per worker instead of showing one generic flow.
+The platform includes multiple demo personas so the same backend can produce clearly different insurance outcomes.
 
 See:
 
 - [actor_demo_guide.md](backend/docs/demo/actor_demo_guide.md)
 
-## Two Highlight Personas
+### 🟢 Arjun — The Honest Worker (Primary Flow)
 
-### Ravi Sharma (`bad_actor`)
+- consistent delivery partner
+- has active policy
+- location tracking enabled
 
-Represents the "system gamer" story.
+Scenario:
 
-- weak disruption evidence
-- low trigger activation
-- high anomaly signal
-- rejected claim outcome
+- heavy rain occurs
+- deliveries drop significantly
+- system auto-detects loss
 
-This persona demonstrates fraud awareness and payout restraint.
+Outcome:
 
-### Suresh Patel (`premium_success`)
+- claim auto-triggered
+- fraud check passed
+- instant payout credited
 
-Represents the "protected worker" story.
+### 🔴 Rahul — Fraud Attempt
 
-- premium already paid
-- real weather anomaly
-- approved claim already settled
-- payout credited
-- trusted transaction trail visible
+- attempts to manipulate the system
+- fake delivery drop
+- GPS inconsistency
 
-This persona demonstrates the full insurance lifecycle working correctly.
+Outcome:
+
+- fraud signals detected such as GPS mismatch and behavioral anomaly
+- claim rejected
+- no payout issued
+
+### 🟡 Meena — Edge Case User
+
+- experiences mild disruption
+- moderate income drop
+
+Outcome:
+
+- claim triggered with medium confidence
+- partial payout issued
+
+### 🔵 Insurer (Admin Persona)
+
+- monitors system performance
+
+Capabilities:
+
+- view loss ratio
+- analyze fraud trends
+- predict claim surge
+- get system recommendations
+
+### 🟣 Karthik — Restricted User (No Permissions)
+
+- denies location access
+
+Outcome:
+
+- limited coverage
+- claim restricted or not triggered
 
 ## UI Design Direction
 
@@ -1101,6 +1117,15 @@ Screenshot note:
 - exported images in this repository are portrait mobile captures
 - most screenshot files are resized / compressed exports in an approximate range of `378-386 px` width and `845-855 px` height
 - small dimension differences across files are due to cropping and export variation, not UI inconsistency
+
+### 🚪 Entrance Screen
+
+Description:
+User selects role as Worker or Insurer, or starts the automated demo from the very first screen.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/App%20Entrance%20Page.png" width="260" alt="App entrance screen" />
+</p>
 
 ### Onboarding Flow
 
@@ -1244,6 +1269,92 @@ This persona is used to show:
 - real disruption context
 - approved claim state
 - payout and trust story in the claims journey
+
+### 🛡 Insurer Control Center (Admin Dashboard)
+
+Description:
+A powerful dashboard for insurers to monitor system health, fraud patterns, and predictive insights.
+
+#### Admin Demo Login Page
+
+Description:
+Shows the admin entry point for opening the insurer control center securely.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Admin%20Demo%20Login%20Page.png" width="260" alt="Admin demo login page" />
+</p>
+
+#### Insurer Control Center - System Health
+
+Description:
+Provides a high-level summary of system performance.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health.png" width="260" alt="Insurer control center system health" />
+</p>
+
+#### Insurer Control Center - System Health 2
+
+Description:
+Provides an additional high-level summary of system performance.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health%202.png" width="260" alt="Insurer control center system health 2" />
+</p>
+
+#### Insurer Control Center - Fraud Intelligence
+
+Description:
+Displays fraud detection metrics and flagged claims.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Intelligence.png" width="260" alt="Insurer control center fraud intelligence" />
+</p>
+
+#### Insurer Control Center - Fraud Hotspots + Risk and claim trends
+
+Description:
+Highlights city-wise fraud activity alongside risk and claim trend monitoring.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Hotspots%20%2B%20Risk%20and%20claim%20trends.png" width="260" alt="Insurer control center fraud hotspots and risk claim trends" />
+</p>
+
+#### Insurer Control Center - Predictions
+
+Description:
+Shows predictive analytics for future claims and payouts.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Predictions.png" width="260" alt="Insurer control center predictions" />
+</p>
+
+#### Insurer Control Center - Risk Analytics and Financial Health
+
+Description:
+Combines risk analytics with financial health indicators for insurer decision-making.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Risk%20Analytics%20and%20Financial%20Health.png" width="260" alt="Insurer control center risk analytics and financial health" />
+</p>
+
+#### Insurer Control Center - Smart Insights
+
+Description:
+Summarizes AI-generated insights from platform performance and disruption data.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Smart%20Insights.png" width="260" alt="Insurer control center smart insights" />
+</p>
+
+#### Insurer Control Center - AI recommendations
+
+Description:
+Presents system-generated recommendations for insurer action.
+
+<p align="center">
+  <img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20AI%20recommendations.png" width="260" alt="Insurer control center ai recommendations" />
+</p>
 
 ### Why These Screens Matter
 
