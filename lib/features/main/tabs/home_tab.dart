@@ -860,6 +860,30 @@ class _ContextPill extends StatelessWidget {
   }
 }
 
+class _SignalChip extends StatelessWidget {
+  final String label;
+
+  const _SignalChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1411,4 +1435,29 @@ String _formatDateTime(String value) {
   final parsed = DateTime.tryParse(value);
   if (parsed == null) return value;
   return DateFormat('d MMM, h:mm a').format(parsed.toLocal());
+}
+
+List<String> _fraudSignals(Map<String, dynamic> fraud) {
+  final signalList = fraud['signal_list'];
+  if (signalList is List) {
+    return signalList
+        .map((item) => '$item'.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  final signals = _asMap(fraud['signals']);
+  final items = <String>[];
+  signals.forEach((key, value) {
+    final label = _titleCase(key.replaceAll('_', ' '));
+    if (value is bool) {
+      items.add('$label ${value ? 'OK' : 'Review'}');
+    } else if (value != null) {
+      final text = '$value'.trim();
+      if (text.isNotEmpty) {
+        items.add('$label $text');
+      }
+    }
+  });
+  return items;
 }

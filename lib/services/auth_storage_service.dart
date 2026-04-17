@@ -8,10 +8,7 @@ class StoredSession {
   final String accessToken;
   final AuthUser user;
 
-  const StoredSession({
-    required this.accessToken,
-    required this.user,
-  });
+  const StoredSession({required this.accessToken, required this.user});
 }
 
 class AuthStorageService {
@@ -36,10 +33,15 @@ class AuthStorageService {
   static Future<StoredSession?> getSession() async {
     final accessToken = await _storage.read(key: _accessTokenKey);
     final userJson = await _storage.read(key: _userKey);
-    if (accessToken == null || userJson == null || accessToken.isEmpty || userJson.isEmpty) {
+    if (accessToken == null ||
+        userJson == null ||
+        accessToken.isEmpty ||
+        userJson.isEmpty) {
       return null;
     }
-    final user = AuthUser.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
+    final user = AuthUser.fromJson(
+      jsonDecode(userJson) as Map<String, dynamic>,
+    );
     return StoredSession(accessToken: accessToken, user: user);
   }
 

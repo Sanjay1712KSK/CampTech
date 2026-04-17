@@ -23,10 +23,9 @@ class AuthFlowHelper {
       accessToken: result.accessToken,
       user: result.user!,
     );
-    ref.read(userProvider.notifier).setAuthenticatedUser(
-          result.user!,
-          accessToken: result.accessToken,
-        );
+    ref
+        .read(userProvider.notifier)
+        .setAuthenticatedUser(result.user!, accessToken: result.accessToken);
 
     await _promptForBiometricIfNeeded(context);
     await _promptForLocationAccessIfNeeded(context, ref);
@@ -46,7 +45,8 @@ class AuthFlowHelper {
       return;
     }
 
-    final shouldEnable = await showDialog<bool>(
+    final shouldEnable =
+        await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Enable biometric unlock?'),
@@ -96,7 +96,8 @@ class AuthFlowHelper {
       return;
     }
 
-    final allow = await showDialog<bool>(
+    final allow =
+        await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
@@ -125,7 +126,9 @@ class AuthFlowHelper {
     final currentLocation = ref.read(locationProvider);
 
     if (!allow) {
-      ref.read(locationProvider.notifier).setLimitedFallback(
+      ref
+          .read(locationProvider.notifier)
+          .setLimitedFallback(
             message:
                 'Location access was denied. Auto-claim protection stays limited until you enable it.',
           );
@@ -148,7 +151,9 @@ class AuthFlowHelper {
     final result = await LocationService.requestCurrentLocation();
     if (result.granted && result.lat != null && result.lon != null) {
       final city = result.city ?? 'Current location';
-      ref.read(locationProvider.notifier).updateLocation(
+      ref
+          .read(locationProvider.notifier)
+          .updateLocation(
             lat: result.lat!,
             lon: result.lon!,
             city: city,
@@ -172,7 +177,9 @@ class AuthFlowHelper {
       return;
     }
 
-    ref.read(locationProvider.notifier).setLimitedFallback(
+    ref
+        .read(locationProvider.notifier)
+        .setLimitedFallback(
           message: result.error ?? 'Location access is unavailable right now.',
         );
     if (user != null) {
