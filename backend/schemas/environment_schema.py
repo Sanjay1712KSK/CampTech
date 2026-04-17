@@ -80,3 +80,21 @@ class EnvironmentResponse(BaseModel):
     time_slot_risk: dict[str, Literal['LOW', 'MEDIUM', 'HIGH']]
     predictive_risk: PredictiveRiskResponse
     hourly_forecast: list[dict]
+
+
+class EnvironmentOverrideRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    override_mode: bool = True
+    rain: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    traffic: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    aqi: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    scenario: Literal['rain', 'fraud', 'reset'] | None = None
+
+
+class EnvironmentOverrideResponse(BaseModel):
+    override_mode: bool
+    scenario: str
+    rain: str | None = None
+    traffic: str | None = None
+    aqi: str | None = None
