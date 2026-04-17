@@ -30,7 +30,7 @@ GigShield is designed as an always-on, explainable, demo-ready insurance platfor
 
 ## Demo & Resources
 
-- Demo Video: [Watch Here](./Demo/Phase%202%20.mp4)
+- Demo Video: [Watch Here](https://www.youtube.com/watch?v=Dv3lkD6P2Bs)
 - APK Download: [GitHub Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
 - Pitch Deck: [View Here](./Demo/GigShield_Pitch_Deck.pdf)
 - Releases: [Browse Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
