@@ -166,7 +166,7 @@ class _DemoStartOverlay extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
