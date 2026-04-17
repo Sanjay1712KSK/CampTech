@@ -1048,112 +1048,120 @@ class _DashboardView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          title: 'Auto Claim Status',
-          subtitle:
-              'The system checks disruption and loss automatically. No manual claim filing is needed.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _MetricTile(
-                    icon: claimTriggered
-                        ? Icons.flash_on_rounded
-                        : Icons.pause_circle_outline_rounded,
-                    label: 'Claim triggered',
-                    value: claimTriggered ? 'Yes' : 'No',
-                    tone: claimTriggered
-                        ? AppTheme.successColor
-                        : AppTheme.textSecondary,
-                  ),
-                  _MetricTile(
-                    icon: Icons.policy_rounded,
-                    label: 'Status',
-                    value: claimStatus,
-                    tone: _claimTone(claimStatus),
-                  ),
-                  _MetricTile(
-                    icon: Icons.verified_user_rounded,
-                    label: 'Confidence',
-                    value: confidence,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _ExplainBar(
-                icon: Icons.lightbulb_outline_rounded,
-                text: _readString(
-                  claim['explanation'],
-                  fallback:
-                      'The claim engine is watching for trigger-driven loss automatically.',
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          title: 'Instant Payout',
-          subtitle: 'This is the money outcome the worker cares about most.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.22),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        _HighlightSection(
+          sectionKey: claimKey,
+          highlighted: highlightedSection == 'claim',
+          child: _SectionCard(
+            title: 'Auto Claim Status',
+            subtitle:
+                'The system checks disruption and loss automatically. No manual claim filing is needed.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
-                    Text(
-                      payoutAmount > 0
-                          ? 'Rs ${payoutAmount.toStringAsFixed(0)} credited ${_readString(payout['processing_time'], fallback: 'instantly')}'
-                          : 'No payout credited yet',
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    _MetricTile(
+                      icon: claimTriggered
+                          ? Icons.flash_on_rounded
+                          : Icons.pause_circle_outline_rounded,
+                      label: 'Claim triggered',
+                      value: claimTriggered ? 'Yes' : 'No',
+                      tone: claimTriggered
+                          ? AppTheme.successColor
+                          : AppTheme.textSecondary,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      payoutMessage,
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        height: 1.5,
-                      ),
+                    _MetricTile(
+                      icon: Icons.policy_rounded,
+                      label: 'Status',
+                      value: claimStatus,
+                      tone: _claimTone(claimStatus),
+                    ),
+                    _MetricTile(
+                      icon: Icons.verified_user_rounded,
+                      label: 'Confidence',
+                      value: confidence,
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 14),
-              _InfoRow(label: 'Payout status', value: payoutStatus),
-              _InfoRow(
-                label: 'Transaction ID',
-                value: _readString(
-                  payout['transaction_id'],
-                  fallback: 'Pending',
-                ),
-              ),
-              _InfoRow(
-                label: 'Processed at',
-                value: _formatDateTime(
-                  _readString(
-                    payout['processed_at'],
-                    fallback: _readString(payout['time']),
+                const SizedBox(height: 14),
+                _ExplainBar(
+                  icon: Icons.lightbulb_outline_rounded,
+                  text: _readString(
+                    claim['explanation'],
+                    fallback:
+                        'The claim engine is watching for trigger-driven loss automatically.',
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _HighlightSection(
+          sectionKey: payoutKey,
+          highlighted: highlightedSection == 'payout',
+          child: _SectionCard(
+            title: 'Instant Payout',
+            subtitle: 'This is the money outcome the worker cares about most.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withOpacity(0.22),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        payoutAmount > 0
+                            ? 'Rs ${payoutAmount.toStringAsFixed(0)} credited ${_readString(payout['processing_time'], fallback: 'instantly')}'
+                            : 'No payout credited yet',
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        payoutMessage,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _InfoRow(label: 'Payout status', value: payoutStatus),
+                _InfoRow(
+                  label: 'Transaction ID',
+                  value: _readString(
+                    payout['transaction_id'],
+                    fallback: 'Pending',
+                  ),
+                ),
+                _InfoRow(
+                  label: 'Processed at',
+                  value: _formatDateTime(
+                    _readString(
+                      payout['processed_at'],
+                      fallback: _readString(payout['time']),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
