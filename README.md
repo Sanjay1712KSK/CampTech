@@ -40,6 +40,71 @@ The emphasis is not just on polished UI, but on:
 - resistance to bad claims
 - end-to-end intelligence across onboarding, pricing, claims, and payout
 
+## 🚀 Phase 3: Scale & Optimize
+
+We enhanced the system with advanced intelligence, automation, and real-time capabilities:
+
+### 🧠 Advanced Fraud Detection
+
+- GPS spoofing detection
+- device binding with one device per account
+- session anomaly detection for unrealistic location jumps
+- weather vs claim mismatch validation
+- behavioral anomaly detection
+- continuous location tracking with user consent
+
+### 💰 Instant Payout System
+
+- integrated Razorpay in test mode
+- automatic payout after claim approval
+- transaction ID generation and tracking
+- linked user bank account flow with mock account support
+- real-time payout visualization in the worker experience
+
+### ⚡ Zero-Touch Claim Engine
+
+- fully automated claim triggering
+- no manual claim filing required for qualifying disruption-led loss
+- driven by:
+  - environment data
+  - delivery drop
+  - income loss
+
+### 🌐 Real-Time + Controlled Environment Engine
+
+- live weather, AQI, and traffic APIs
+- override mode for demo simulation
+- controlled disruption scenarios for repeatable demos
+
+### 📊 Intelligent Dashboards
+
+- Worker dashboard:
+  - earnings protection
+  - risk visibility
+  - claim and payout tracking
+- Insurer dashboard:
+  - loss ratio
+  - fraud analytics
+  - predictive insights
+  - recommendations
+
+### 🎬 Automated Demo System
+
+- one-click demo from app launch
+- simulates the full pipeline:
+  - disruption -> risk -> claim -> fraud -> payout
+- includes auto navigation, scrolling, and UI updates
+
+## 🔄 What's New Compared to Phase 2
+
+- added intelligent fraud detection layer
+- introduced instant payout system
+- upgraded claim engine to fully automated parametric claims
+- added real-time plus override environment simulation
+- built admin insurer dashboard
+- created automated demo orchestration system
+- improved UI with explainable AI engine visualization
+
 ## What Is Real-Time And What Is Mocked
 
 ### Real-Time Inputs
@@ -72,13 +137,34 @@ Important: the simulation layer only injects inputs. It does not hardcode risk, 
 
 ## System Overview
 
-The platform has five major capabilities:
+The platform now combines multiple connected capabilities:
 
-1. Secure onboarding for workers
-2. Gig account connection and income history generation
-3. Real-time environment and risk intelligence
-4. Dynamic premium, policy, and claim automation
-5. Adaptive fraud, ML learning, and blockchain-backed traceability
+1. Secure onboarding for workers with email OTP, phone OTP, DigiLocker, biometric support, and device binding
+2. Role-based access for workers and insurers from the app entry flow
+3. Gig account connection and income history generation
+4. Real-time environment, disruption, and risk intelligence
+5. Dynamic premium generation, policy activation, and insurance payment flow
+6. Zero-touch claim automation with fraud intelligence and instant payout simulation
+7. Intelligent dashboards for both workers and insurers
+8. Adaptive learning, blockchain-backed traceability, and live demo orchestration
+
+## Newly Added High-Impact Features
+
+Important capabilities added and strengthened in the current build include:
+
+- Advanced Fraud Detection:
+  - catches delivery-specific fraud such as GPS spoofing, fake weather claims, session anomalies, and behavior mismatches using live plus historical data
+- Instant Payout System (Simulated):
+  - integrates test-mode payment and payout flows to demonstrate how a worker can receive lost wages instantly after claim approval
+- Intelligent Dashboard:
+  - for workers:
+    - earnings protected
+    - active weekly coverage
+    - explainable risk, claim, fraud, and payout visibility
+  - for insurers:
+    - loss ratios
+    - fraud analytics
+    - predictive analytics for next week's likely weather and disruption-driven claims
 
 ## About the Project
 
@@ -111,7 +197,12 @@ We built a full-stack prototype with:
 - SQLite for local development
 - PostgreSQL-ready deployment support
 - real-time environment APIs for live disruption signals
+- Brevo SMTP for real email OTP delivery
+- Razorpay test-mode payment and payout simulation
 - modular engines for risk, premium, claims, fraud, learning, and blockchain-backed traceability
+- a worker dashboard that explains the full insurance pipeline in plain language
+- an insurer control panel with loss ratio, fraud analytics, and predictive insights
+- a one-tap automated demo flow that can visually run the full pipeline from disruption to payout
 
 At the center of the platform is a reasoning pipeline:
 
@@ -180,13 +271,14 @@ We solved this by simulating only the **inputs** such as income history, user be
 4. DigiLocker verification completes KYC
 5. User connects a gig account
 6. Gig income history is available
-7. Live environment APIs feed the Risk Engine
-8. Premium is generated directly from Risk Engine output
-9. User pays weekly premium and policy is created
-10. Disruption causes income loss
-11. Claim Engine validates loss and fraud risk
-12. Payout is issued when approved
-13. Policy, claim, and payout records are written through the blockchain adapter
+7. Device trust, location permission, and biometric security are established
+8. Live environment APIs feed the Risk Engine
+9. Premium is generated directly from Risk Engine output
+10. User pays weekly premium and policy is created
+11. Disruption causes income loss
+12. Claim Engine validates loss and fraud risk automatically
+13. Payout is issued when approved
+14. Policy, claim, and payout records are written through the blockchain adapter
 
 ## Architecture
 
@@ -196,14 +288,18 @@ We solved this by simulating only the **inputs** such as income history, user be
 - Riverpod
 - Geolocator
 - Local authentication for biometric unlock on supported devices
+- Role selection before authentication
+- Auto-demo orchestration controller for one-tap end-to-end demos
 
 Main UX surfaces:
 
+- Role Selection
 - Home
 - Earnings
 - Insurance
 - Claims
 - Profile
+- Admin / Insurer Dashboard
 
 ### Backend
 
@@ -213,6 +309,8 @@ Main UX surfaces:
 - PostgreSQL-ready production deployment
 - JWT authentication
 - bcrypt password hashing
+- device binding and location-aware session controls
+- fraud intelligence, prediction, payout, and admin analytics services
 
 ### External APIs
 
@@ -220,6 +318,7 @@ Main UX surfaces:
 - OpenWeather Air Pollution
 - OpenRouteService
 - Brevo SMTP
+- Razorpay Test Mode
 
 ### ML / Intelligence Stack
 
@@ -227,6 +326,7 @@ Main UX surfaces:
 - Anomaly-based fraud scoring
 - Database-driven adaptive learning
 - Regression-ready prediction hook
+- lightweight prediction engine for next-6-hour risk, next-week claims, and expected payouts
 
 ## Run Locally
 
@@ -360,6 +460,110 @@ Email OTP depends on your Brevo SMTP configuration working locally.
    - risk
    - premium
    - claim flow
+
+## 🧪 How to Run Locally
+
+### 📦 Backend (FastAPI)
+
+1. Clone the repository.
+
+```bash
+git clone <repo_url>
+cd guidewire_gig_ins/backend
+```
+
+2. Create a virtual environment.
+
+```bash
+python -m venv venv
+```
+
+Linux / macOS:
+
+```bash
+source venv/bin/activate
+```
+
+Windows:
+
+```powershell
+venv\Scripts\activate
+```
+
+3. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Run the server.
+
+```bash
+uvicorn main:app --reload
+```
+
+Backend runs at:
+
+```text
+http://127.0.0.1:8000
+```
+
+### 📱 Frontend (Flutter)
+
+1. Navigate to the project root.
+
+```bash
+cd guidewire_gig_ins
+```
+
+2. Install dependencies.
+
+```bash
+flutter pub get
+```
+
+3. Update the API base URL.
+
+- use `http://10.0.2.2:8000` for Android emulator
+- use your machine LAN IP like `http://192.168.x.x:8000` for a real device on the same Wi-Fi
+- or pass it dynamically using `--dart-define`
+
+4. Run the app.
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://YOUR_LOCAL_IP:8000
+```
+
+### 📦 Build APK
+
+```bash
+flutter build apk --release
+```
+
+### 🔑 Environment Variables
+
+Important environment variables include:
+
+- Razorpay test keys:
+  - `RAZORPAY_KEY_ID`
+  - `RAZORPAY_KEY_SECRET`
+- Brevo SMTP credentials:
+  - `SMTP_HOST`
+  - `SMTP_PORT`
+  - `SMTP_USER`
+  - `SMTP_PASS`
+  - `SENDER_EMAIL`
+- environment data providers:
+  - `OPENWEATHER_API_KEY`
+  - `ORS_API_KEY`
+- backend configuration:
+  - `DATABASE_URL`
+  - `API_PUBLIC_BASE_URL`
+  - `BLOCKCHAIN_MODE`
+
+See:
+
+- [backend/.env.example](backend/.env.example)
 
 ## Backend Engines
 
@@ -595,6 +799,39 @@ Logic:
   - learning record
   - blockchain adapter record
 
+### Zero-Touch Claim Engine
+
+The platform also includes a zero-touch, parametric claim path.
+
+This means:
+
+- no manual claim filing is required for qualifying disruption-led loss
+- claims can be auto-triggered from live signals
+- the UI can show why the claim happened without hidden logic
+
+Logic:
+
+- automatically detects disruption from:
+  - rain
+  - traffic
+  - AQI
+  - delivery drop
+- estimates:
+  - baseline income
+  - actual income
+  - loss
+  - loss percentage
+- checks:
+  - active policy
+  - trigger strength
+  - minimum loss threshold
+  - location trust
+- generates:
+  - claim status
+  - confidence
+  - explanation
+- passes the claim into fraud intelligence before payout
+
 ### 10. Fraud / ML Layer
 
 Uses anomaly-style logic, not heavy training infrastructure.
@@ -647,6 +884,23 @@ The system therefore protects both sides:
 
 - honest workers are not punished by static rules
 - insurers are not exposed to unsupported payouts
+
+### Advanced Fraud Detection
+
+The fraud intelligence layer now goes beyond simple anomaly scoring and includes delivery-specific fraud checks designed for gig insurance.
+
+It can detect:
+
+- GPS spoofing and teleport jumps
+- fake weather or weak context claims using live and historical environment data
+- device anomalies and multi-device access
+- session anomalies and impossible travel
+- user behavior deviation
+- efficiency manipulation
+- frequent claim abuse
+- collusion-style clustered suspicious claims
+
+This makes the platform capable of catching delivery-specific fraud patterns while still returning explainable fraud scores, signals, and decisions.
 
 ### 11. Adaptive Learning Layer
 
@@ -707,6 +961,23 @@ Optional ML hook:
 
 - a lightweight regression-style hook exists for future model-backed efficiency prediction
 - when unavailable, the system safely falls back to rule-based logic
+
+### 13. Prediction Engine
+
+The backend includes a lightweight ML and prediction layer designed for fast, explainable forecasting without heavyweight infrastructure.
+
+It predicts:
+
+- next 6-hour risk
+- next-week claims
+- expected payouts
+- risk trend direction
+
+It supports:
+
+- worker-facing predictive messaging
+- insurer-facing dashboard insights
+- adaptive weight tuning from recent claim outcomes
 
 ## Why It Is Dynamic
 
@@ -859,11 +1130,13 @@ The app has been refactored into a more explainable, layman-friendly insurtech i
 
 Main tabs:
 
+- Role Selection
 - Home
 - Earnings
 - Insurance
 - Claims
 - Profile
+- Admin Dashboard
 
 Key UX goals:
 
@@ -874,6 +1147,65 @@ Key UX goals:
 - surface trust through transaction and blockchain cues
 
 The demo also includes persona-specific UI explanation banners so the story changes visibly across users.
+
+### Intelligent Dashboard
+
+The platform now exposes intelligent dashboard experiences for both sides of the insurance system.
+
+For Workers:
+
+- earnings protected view
+- active weekly coverage
+- live environment summary
+- risk explanation
+- delivery impact
+- auto-claim visibility
+- fraud decision visibility
+- payout status and transaction trail
+
+For Insurers (Admin):
+
+- total users
+- active policies
+- total claims
+- total payouts
+- total premiums
+- loss ratio
+- fraud rate and top fraud signals
+- high-risk user and trigger analytics
+- predictive analytics on next week's likely weather/disruption claims
+- system-generated recommendations
+
+### Insurance Payment And Payout Experience
+
+The app now demonstrates both sides of the money flow:
+
+- weekly premium payment and policy activation
+- bank-linking for payout readiness
+- instant payout system through simulated Razorpay test-mode flows
+
+This helps show how a worker can move from paying for protection to receiving lost wages instantly when a valid disruption-led claim is approved.
+
+### Live Demo Pipeline
+
+The project also includes a one-click demo orchestration system.
+
+It can visually demonstrate:
+
+`Environment disruption -> Risk -> Claim -> Fraud -> Payout -> Admin Insights`
+
+The automated demo can:
+
+- start from the app entry screen
+- load a demo worker
+- connect gig data
+- fetch environment and risk
+- generate premium
+- simulate disruption
+- auto-trigger claims
+- validate fraud
+- process payout
+- move into the insurer dashboard
 
 ## Visual Walkthrough
 
@@ -1079,6 +1411,11 @@ Implemented protections include:
 - rate-limiting-aware verification handling
 - KYC gating through DigiLocker flow
 - optional biometric login on supported devices
+- one-device-per-account binding
+- session anomaly and impossible-travel checks
+- continuous location validation
+- location-aware claim eligibility
+- fraud logs and explainable fraud signals
 
 ## Deployment
 
@@ -1130,6 +1467,59 @@ This allows the same codebase to support:
 
 - [api_spec.md](backend/docs/api_spec.md)
 - [actor_demo_guide.md](backend/docs/demo/actor_demo_guide.md)
+- [live_demo_runbook.md](backend/docs/live_demo_runbook.md)
+- [perfect_demo_script.md](backend/docs/perfect_demo_script.md)
+
+## 🎬 Demo Instructions
+
+The app includes a guided demo mode that can visually run the full insurance pipeline.
+
+### Full Demo Flow
+
+1. Launch the app.
+2. On the starting screen, tap `Start Full Demo`.
+3. The system automatically runs:
+   - demo worker login
+   - gig connection
+   - environment fetch
+   - risk calculation
+   - premium generation
+   - policy/payment activation
+   - disruption simulation
+   - auto claim trigger
+   - fraud validation
+   - payout processing
+   - insurer dashboard insights
+
+### What the Demo Shows
+
+- Environment disruption
+- Risk increase
+- Claim generation
+- Fraud validation
+- Instant payout simulation
+- Admin analytics update
+
+### Best Manual Demo Personas
+
+- `good_actor` for genuine disruption story
+- `bad_actor` for fraud detection story
+- `premium_success` for premium-to-payout success story
+
+### Demo Logins
+
+Worker personas use:
+
+```text
+Password: Demo@1234
+```
+
+Admin uses:
+
+```text
+Email: admin@gigshield.com
+Password: admin123
+```
 
 ## What Makes This Stand Out
 
@@ -1140,6 +1530,9 @@ What makes it different:
 - real-time environmental APIs drive core decisions
 - premium and claims both reuse the same risk engine
 - claim logic is explainable instead of opaque
+- advanced fraud detection catches delivery-specific abuse such as GPS spoofing and fake weather/context claims
+- instant payout system is simulated through test-mode payment flows so the worker journey feels immediate and complete
+- intelligent dashboards exist for both workers and insurers
 - engine logic is explicit and auditable, not hidden in black-box prompts
 - persona-driven simulation proves different outcomes on the same stack
 - adaptive ML logic exists without heavyweight model infrastructure
@@ -1150,15 +1543,27 @@ What makes it different:
 
 As of the current Phase 2 build, the system includes:
 
+- role selection for worker and insurer entry
 - full onboarding flow
 - mandatory DigiLocker step
+- Brevo-based email OTP delivery
+- phone OTP mock delivery for demo convenience
+- device binding and secure login flow
+- location permission and biometric security prompts
 - gig connection module
 - real-time environment and risk engine
 - dynamic premium engine
-- policy creation flow
+- insurance payment flow with test-mode order creation
+- policy creation and activation flow
+- zero-touch claim engine
 - fraud-aware claim engine
-- payout handling
+- advanced fraud intelligence layer
+- instant payout handling
 - blockchain adapter layer
+- worker dashboard with explainable AI flow
+- insurer admin dashboard with financial, fraud, and predictive analytics
+- live demo pipeline controls and one-tap automated demo flow
+- lightweight prediction engine
 - persona simulation system
 - redesigned multi-tab Flutter UX
 - deployment preparation for backend and web
