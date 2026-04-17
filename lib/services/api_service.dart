@@ -1472,6 +1472,7 @@ class DailyRecord {
 class InsuranceSummaryModel {
   final int userId;
   final bool bankLinked;
+  final bool locationEnabled;
   final String? accountNumberMasked;
   final String? ifsc;
   final double? balance;
@@ -1492,6 +1493,7 @@ class InsuranceSummaryModel {
   InsuranceSummaryModel({
     required this.userId,
     required this.bankLinked,
+    required this.locationEnabled,
     required this.accountNumberMasked,
     required this.ifsc,
     required this.balance,
@@ -1514,6 +1516,7 @@ class InsuranceSummaryModel {
     return InsuranceSummaryModel(
       userId: json['user_id'] as int? ?? 0,
       bankLinked: json['bank_linked'] as bool? ?? false,
+      locationEnabled: json['location_enabled'] as bool? ?? true,
       accountNumberMasked: json['account_number_masked'] as String?,
       ifsc: json['ifsc'] as String?,
       balance: (json['balance'] as num?)?.toDouble(),
