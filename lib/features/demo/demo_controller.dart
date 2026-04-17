@@ -247,7 +247,6 @@ class DemoController extends Notifier<DemoAutomationState> {
       userId: user.id,
       lat: 13.0827,
       lon: 80.2707,
-      timestamp: DateTime.now(),
       locationEnabled: true,
       city: 'Chennai',
       deviceId: deviceId,

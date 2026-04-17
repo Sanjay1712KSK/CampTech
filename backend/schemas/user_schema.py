@@ -183,7 +183,7 @@ class LocationUpdateRequest(BaseModel):
     user_id: int = Field(..., gt=0)
     lat: float = Field(..., ge=-90.0, le=90.0)
     lon: float = Field(..., ge=-180.0, le=180.0)
-    timestamp: datetime
+    timestamp: datetime | None = None
     city: str | None = None
     device_id: str | None = Field(default=None, min_length=3, max_length=255)
     location_enabled: bool = True

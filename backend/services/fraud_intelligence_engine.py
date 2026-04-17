@@ -263,7 +263,7 @@ def record_continuous_location_update(
     user: User,
     lat: float,
     lon: float,
-    timestamp: datetime,
+    timestamp: datetime | None = None,
     city: str | None = None,
     device_id: str | None = None,
     location_enabled: bool = True,
@@ -271,6 +271,8 @@ def record_continuous_location_update(
     user.location_enabled = bool(location_enabled)
     if device_id and user.current_device_id and str(device_id).strip() != str(user.current_device_id).strip():
         raise ValueError('Location update device does not match the active device')
+
+    timestamp = timestamp or _utcnow()
 
     if timestamp.tzinfo is not None:
         timestamp = timestamp.astimezone(UTC).replace(tzinfo=None)
