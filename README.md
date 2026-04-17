@@ -40,11 +40,11 @@ The emphasis is not just on polished UI, but on:
 - resistance to bad claims
 - end-to-end intelligence across onboarding, pricing, claims, and payout
 
-## 🚀 Phase 3: Scale & Optimize
+## Phase 3: Scale & Optimize
 
 We enhanced the system with advanced intelligence, automation, and real-time capabilities:
 
-### 🧠 Advanced Fraud Detection
+### Advanced Fraud Detection
 
 - GPS spoofing detection
 - device binding with one device per account
@@ -53,7 +53,7 @@ We enhanced the system with advanced intelligence, automation, and real-time cap
 - behavioral anomaly detection
 - continuous location tracking with user consent
 
-### 💰 Instant Payout System
+### Instant Payout System
 
 - integrated Razorpay in test mode
 - automatic payout after claim approval
@@ -61,7 +61,7 @@ We enhanced the system with advanced intelligence, automation, and real-time cap
 - linked user bank account flow with mock account support
 - real-time payout visualization in the worker experience
 
-### ⚡ Zero-Touch Claim Engine
+### Zero-Touch Claim Engine
 
 - fully automated claim triggering
 - no manual claim filing required for qualifying disruption-led loss
@@ -70,13 +70,13 @@ We enhanced the system with advanced intelligence, automation, and real-time cap
   - delivery drop
   - income loss
 
-### 🌐 Real-Time + Controlled Environment Engine
+### Real-Time + Controlled Environment Engine
 
 - live weather, AQI, and traffic APIs
 - override mode for demo simulation
 - controlled disruption scenarios for repeatable demos
 
-### 📊 Intelligent Dashboards
+### Intelligent Dashboards
 
 - Worker dashboard:
   - earnings protection
@@ -88,14 +88,14 @@ We enhanced the system with advanced intelligence, automation, and real-time cap
   - predictive insights
   - recommendations
 
-### 🎬 Automated Demo System
+### Automated Demo System
 
 - one-click demo from app launch
 - simulates the full pipeline:
   - disruption -> risk -> claim -> fraud -> payout
 - includes auto navigation, scrolling, and UI updates
 
-## 🔄 What's New Compared to Phase 2
+## What's New Compared to Phase 2
 
 - added intelligent fraud detection layer
 - introduced instant payout system
