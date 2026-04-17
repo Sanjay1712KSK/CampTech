@@ -57,13 +57,17 @@ class RoleSelectionScreen extends ConsumerWidget {
                           onPressed: demo.isRunning
                               ? null
                               : () {
-                                  ref.read(demoControllerProvider.notifier).startDemo();
+                                  ref
+                                      .read(demoControllerProvider.notifier)
+                                      .startDemo();
                                 },
                           icon: demo.isRunning
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.play_circle_fill_rounded),
                           label: Text(
