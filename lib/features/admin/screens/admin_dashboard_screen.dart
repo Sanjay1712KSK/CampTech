@@ -298,7 +298,9 @@ class _AdminDemoOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.surfaceColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.25),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

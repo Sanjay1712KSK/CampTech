@@ -6,7 +6,8 @@ import 'package:guidewire_gig_ins/features/main/tabs/insights_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/profile_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/policy_tab.dart';
 
-final GlobalKey<MainShellState> mainShellGlobalKey = GlobalKey<MainShellState>();
+final GlobalKey<MainShellState> mainShellGlobalKey =
+    GlobalKey<MainShellState>();
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -88,5 +89,9 @@ class MainShellState extends State<MainShell> {
 
   Future<void> runHomeRainScenario() async {
     await homeTabGlobalKey.currentState?.runAutomatedScenario('rain');
+  }
+
+  Future<void> refreshHomeData() async {
+    await homeTabGlobalKey.currentState?.refreshForAutomation();
   }
 }

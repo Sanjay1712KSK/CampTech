@@ -176,7 +176,10 @@ class HomeTabState extends ConsumerState<HomeTab> {
     }
   }
 
-  Future<void> runAutomatedScenario(String scenario) => _runDemoScenario(scenario);
+  Future<void> runAutomatedScenario(String scenario) =>
+      _runDemoScenario(scenario);
+
+  Future<void> refreshForAutomation() => _refresh();
 
   Future<void> scrollToSection(String section) async {
     final key = switch (section) {
@@ -306,7 +309,9 @@ class _DemoOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.surfaceColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.25),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1322,53 +1327,53 @@ class _DashboardView extends StatelessWidget {
             title: 'Premium Details',
             subtitle: 'Live pricing linked directly to the same risk engine.',
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _ImpactStat(
-                      label: 'Weekly premium',
-                      value: 'Rs ${premiumAmount.toStringAsFixed(0)}',
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ImpactStat(
+                        label: 'Weekly premium',
+                        value: 'Rs ${premiumAmount.toStringAsFixed(0)}',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ImpactStat(
-                      label: 'Coverage amount',
-                      value: 'Rs ${coverageAmount.toStringAsFixed(0)}',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ImpactStat(
+                        label: 'Coverage amount',
+                        value: 'Rs ${coverageAmount.toStringAsFixed(0)}',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ImpactStat(
-                      label: 'Eligibility',
-                      value: premiumEligible ? 'Eligible' : 'Not eligible',
-                      highlight: premiumEligible,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ImpactStat(
+                        label: 'Eligibility',
+                        value: premiumEligible ? 'Eligible' : 'Not eligible',
+                        highlight: premiumEligible,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _InfoRow(
-                label: 'Reason',
-                value: _readString(
-                  premium['reason'],
-                  fallback: premiumEligible
-                      ? 'Eligible for premium quote'
-                      : 'Quote unavailable',
+                  ],
                 ),
-              ),
-              _InfoRow(
-                label: 'Pricing explanation',
-                value: _readString(
-                  premium['explanation'],
-                  fallback:
-                      'Pricing follows live risk, trigger severity, and weekly income.',
+                const SizedBox(height: 14),
+                _InfoRow(
+                  label: 'Reason',
+                  value: _readString(
+                    premium['reason'],
+                    fallback: premiumEligible
+                        ? 'Eligible for premium quote'
+                        : 'Quote unavailable',
+                  ),
                 ),
-              ),
-              _InfoRow(label: 'Policy status', value: policyStatus),
-            ],
+                _InfoRow(
+                  label: 'Pricing explanation',
+                  value: _readString(
+                    premium['explanation'],
+                    fallback:
+                        'Pricing follows live risk, trigger severity, and weekly income.',
+                  ),
+                ),
+                _InfoRow(label: 'Policy status', value: policyStatus),
+              ],
             ),
           ),
         ),

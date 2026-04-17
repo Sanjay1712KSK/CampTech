@@ -36,9 +36,15 @@ class DemoAutomationState {
   }) {
     return DemoAutomationState(
       isRunning: isRunning ?? this.isRunning,
-      overlayMessage: clearOverlay ? null : (overlayMessage ?? this.overlayMessage),
-      workerSection: clearWorkerSection ? null : (workerSection ?? this.workerSection),
-      adminSection: clearAdminSection ? null : (adminSection ?? this.adminSection),
+      overlayMessage: clearOverlay
+          ? null
+          : (overlayMessage ?? this.overlayMessage),
+      workerSection: clearWorkerSection
+          ? null
+          : (workerSection ?? this.workerSection),
+      adminSection: clearAdminSection
+          ? null
+          : (adminSection ?? this.adminSection),
     );
   }
 }
@@ -47,7 +53,9 @@ class DemoController extends Notifier<DemoAutomationState> {
   @override
   DemoAutomationState build() => const DemoAutomationState.idle();
 
-  Future<void> startDemo() async {
+  Future<void> startDemo() => startFullDemo();
+
+  Future<void> startFullDemo() async {
     if (state.isRunning) return;
 
     state = const DemoAutomationState(
@@ -62,7 +70,7 @@ class DemoController extends Notifier<DemoAutomationState> {
         scenario: 'reset',
       );
 
-      await _automatedWorkerLogin();
+      final demoUserId = await _automatedWorkerLogin();
 
       rootNavigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => MainShell(key: mainShellGlobalKey)),
@@ -71,41 +79,59 @@ class DemoController extends Notifier<DemoAutomationState> {
       await _waitFor(() => mainShellGlobalKey.currentState != null);
       await Future<void>.delayed(const Duration(seconds: 2));
 
-      await _focusWorkerSection(
-        'environment',
-        message: 'Detecting disruption...',
+      state = state.copyWith(overlayMessage: 'Connecting gig account...');
+      await ApiService.connectGigAccount(
+        userId: demoUserId,
+        platform: 'Swiggy',
+        workerId: 'SWG-DEMO-AUTO-001',
       );
+      await mainShellGlobalKey.currentState?.refreshHomeData();
       await Future<void>.delayed(const Duration(seconds: 2));
 
+      await _focusWorkerSection(
+        'environment',
+        message: 'Fetching environment data...',
+      );
+      await ApiService.getEnvironment(13.0827, 80.2707, userId: demoUserId);
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      await _focusWorkerSection('risk', message: 'Calculating risk...');
+      await ApiService.getRiskData(demoUserId, 13.0827, 80.2707);
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      await _focusWorkerSection('premium', message: 'Generating premium...');
+      final premium = await ApiService.getPremium(demoUserId, 13.0827, 80.2707);
+      await Future<void>.delayed(const Duration(seconds: 3));
+
       state = state.copyWith(
-        overlayMessage: 'Simulating heavy rainfall...',
-        workerSection: 'environment',
+        overlayMessage: 'Processing payment...',
+        workerSection: 'premium',
+      );
+      await ApiService.linkBankAccount(demoUserId);
+      await ApiService.createPaymentOrder(demoUserId, 13.0827, 80.2707);
+      await ApiService.payPremium(
+        demoUserId,
+        ((premium['weekly_premium'] as num?)?.toDouble() ??
+            (premium['premium'] as num?)?.toDouble() ??
+            0.0),
+      );
+      await mainShellGlobalKey.currentState?.refreshHomeData();
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      await _focusWorkerSection(
+        'environment',
+        message: 'Simulating heavy rainfall...',
       );
       await mainShellGlobalKey.currentState?.runHomeRainScenario();
       await Future<void>.delayed(const Duration(seconds: 3));
 
-      await _focusWorkerSection(
-        'risk',
-        message: 'Calculating risk...',
-      );
+      await _focusWorkerSection('claim', message: 'Claim auto-triggered');
       await Future<void>.delayed(const Duration(seconds: 3));
 
-      await _focusWorkerSection(
-        'claim',
-        message: 'Auto claim triggered',
-      );
+      await _focusWorkerSection('fraud', message: 'Validating claim...');
       await Future<void>.delayed(const Duration(seconds: 3));
 
-      await _focusWorkerSection(
-        'fraud',
-        message: 'Validating claim...',
-      );
-      await Future<void>.delayed(const Duration(seconds: 3));
-
-      await _focusWorkerSection(
-        'payout',
-        message: 'Processing payout...',
-      );
+      await _focusWorkerSection('payout', message: 'Processing payout...');
       await Future<void>.delayed(const Duration(seconds: 3));
 
       state = state.copyWith(
@@ -156,7 +182,7 @@ class DemoController extends Notifier<DemoAutomationState> {
     }
   }
 
-  Future<void> _automatedWorkerLogin() async {
+  Future<int> _automatedWorkerLogin() async {
     state = state.copyWith(overlayMessage: 'Signing in demo worker...');
     final deviceId = await DeviceIdentityService.getOrCreateDeviceId();
     final loginResult = await ApiService.login(
@@ -193,7 +219,9 @@ class DemoController extends Notifier<DemoAutomationState> {
 
     final user = finalResult.user;
     if (user == null || finalResult.accessToken.isEmpty) {
-      throw Exception('Demo worker login did not return an authenticated session.');
+      throw Exception(
+        'Demo worker login did not return an authenticated session.',
+      );
     }
 
     await AuthStorageService.saveSession(
@@ -203,11 +231,12 @@ class DemoController extends Notifier<DemoAutomationState> {
     await AuthStorageService.setLocationPromptSeen(true);
     await AuthStorageService.setBiometricPromptSeen(true);
 
-    ref.read(userProvider.notifier).setAuthenticatedUser(
-          user,
-          accessToken: finalResult.accessToken,
-        );
-    ref.read(locationProvider.notifier).updateLocation(
+    ref
+        .read(userProvider.notifier)
+        .setAuthenticatedUser(user, accessToken: finalResult.accessToken);
+    ref
+        .read(locationProvider.notifier)
+        .updateLocation(
           lat: 13.0827,
           lon: 80.2707,
           city: 'Chennai',
@@ -223,6 +252,7 @@ class DemoController extends Notifier<DemoAutomationState> {
       city: 'Chennai',
       deviceId: deviceId,
     );
+    return user.id;
   }
 
   Future<void> _focusWorkerSection(
@@ -255,7 +285,9 @@ class DemoController extends Notifier<DemoAutomationState> {
       if (predicate()) return;
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
-    throw Exception('Demo automation timed out while waiting for the next screen.');
+    throw Exception(
+      'Demo automation timed out while waiting for the next screen.',
+    );
   }
 }
 
