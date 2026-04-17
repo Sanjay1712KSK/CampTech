@@ -14,7 +14,8 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key, this.initialToken});
 
   @override
-  State<AdminDashboardScreen> createState() => AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() =>
+      AdminDashboardScreenState();
 }
 
 class AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
