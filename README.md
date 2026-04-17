@@ -1144,6 +1144,23 @@ Screenshot note:
 - most screenshot files are resized / compressed exports in an approximate range of `378-386 px` width and `845-855 px` height
 - small dimension differences across files are due to cropping and export variation, not UI inconsistency
 
+### 🚪 Entrance Screen
+
+Description:
+User selects role as Worker or Insurer, or starts the automated full demo from the first screen.
+
+<table>
+  <tr>
+    <th>Entrance Screen</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/App%20Entrance%20Page.png" width="260" alt="App entrance screen" /></td>
+  </tr>
+  <tr>
+    <td>Role selection and one-click demo launch surface for the entire platform.</td>
+  </tr>
+</table>
+
 ### Onboarding Flow
 
 <table>
@@ -1286,6 +1303,71 @@ This persona is used to show:
 - real disruption context
 - approved claim state
 - payout and trust story in the claims journey
+
+### 🛡 Insurer Control Center (Admin Dashboard)
+
+Description:
+A powerful dashboard for insurers to monitor system health, fraud patterns, and predictive insights.
+
+#### Admin Access
+
+<table>
+  <tr>
+    <th>Admin Login</th>
+    <th>System Health</th>
+    <th>System Health 2</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Admin%20Demo%20Login%20Page.png" width="240" alt="Admin demo login page" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health.png" width="240" alt="Insurer control center system health" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health%202.png" width="240" alt="Insurer control center system health 2" /></td>
+  </tr>
+  <tr>
+    <td>Secure entry point for the insurer control center.</td>
+    <td>Provides a high-level summary of system performance.</td>
+    <td>Provides an additional high-level summary of system performance.</td>
+  </tr>
+</table>
+
+#### Fraud And Risk Analytics
+
+<table>
+  <tr>
+    <th>Fraud Intelligence</th>
+    <th>Fraud Hotspots + Risk and Claim Trends</th>
+    <th>Risk Analytics and Financial Health</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Intelligence.png" width="240" alt="Insurer control center fraud intelligence" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Hotspots%20%2B%20Risk%20and%20claim%20trends.png" width="240" alt="Insurer control center fraud hotspots risk and claim trends" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Risk%20Analytics%20and%20Financial%20Health.png" width="240" alt="Insurer control center risk analytics and financial health" /></td>
+  </tr>
+  <tr>
+    <td>Displays fraud detection metrics and flagged claims.</td>
+    <td>Shows city-wise fraud activity alongside risk and claim trend monitoring.</td>
+    <td>Illustrates risk analytics together with overall financial health.</td>
+  </tr>
+</table>
+
+#### Predictions And Recommendations
+
+<table>
+  <tr>
+    <th>Predictions</th>
+    <th>Smart Insights</th>
+    <th>AI Recommendations</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Predictions.png" width="240" alt="Insurer control center predictions" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Smart%20Insights.png" width="240" alt="Insurer control center smart insights" /></td>
+    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20AI%20recommendations.png" width="240" alt="Insurer control center ai recommendations" /></td>
+  </tr>
+  <tr>
+    <td>Shows predictive analytics for future claims and payouts.</td>
+    <td>Summarizes smart insights from platform trends and system intelligence.</td>
+    <td>Presents system-generated recommendations for insurer action.</td>
+  </tr>
+</table>
 
 ### Why These Screens Matter
 
