@@ -308,6 +308,10 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
     final premiumExplanation =
         premium['explanation']?.toString() ??
         'Premium pricing is generated from your live risk and income context.';
+    final premiumAmount =
+        ((premium['weekly_premium'] as num?)?.toDouble() ?? 0.0);
+    final coverageAmount = ((premium['coverage'] as num?)?.toDouble() ?? 0.0);
+    final locationEnabled = _summary?.locationEnabled ?? true;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -335,6 +339,15 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
                 ],
               ),
               const SizedBox(height: 18),
+              _ProtectionSummaryCard(
+                weeklyPremium: premiumAmount,
+                coverage: coverageAmount,
+                locationEnabled: locationEnabled,
+                bankLinked: _summary?.bankLinked == true,
+                isPaying: _isActionLoading('policy'),
+                onPay: _activatePolicy,
+              ),
+              const SizedBox(height: 16),
               _EngineCard(
                 icon: Icons.radar_rounded,
                 title: 'Risk Engine',
@@ -375,14 +388,14 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
                 title: 'Policy Engine',
                 accentColor: const Color(0xFFFFD75A),
                 actionLabel: (_summary?.bankLinked == true)
-                    ? 'Activate Policy'
+                    ? 'Pay & Activate Insurance'
                     : 'Link Bank First',
                 isLoading: _isActionLoading('policy'),
                 onAction: _activatePolicy,
                 inputs: [
-                  'Premium amount: Rs ${((premium['weekly_premium'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
+                  'Premium amount: Rs ${premiumAmount.toStringAsFixed(0)}',
                   'Bank linked: ${_summary?.bankLinked == true ? 'Yes' : 'No'}',
-                  'Coverage amount: Rs ${((premium['coverage'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}',
+                  'Coverage amount: Rs ${coverageAmount.toStringAsFixed(0)}',
                 ],
                 whatHappens:
                     'When premium is paid, the backend creates a policy window, links premium context to it, and makes that week claim-aware.',
