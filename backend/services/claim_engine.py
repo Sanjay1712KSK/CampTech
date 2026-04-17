@@ -215,6 +215,28 @@ def process_claim(
         city=environment_data.get('city'),
         db=db,
     )
+    if not bool(user.location_enabled):
+        claim = create_claim_record(
+            user_id=user_id,
+            db=db,
+            week=policy.start_date.strftime('%G-W%V'),
+            loss=0.0,
+            payout=0.0,
+            fraud_score=1.0,
+            status='REJECTED',
+            reasons=['Location permission is required for secure claim validation'],
+        )
+        blockchain = log_claim(
+            f'claim_{claim.id}',
+            {'user_id': user_id, 'status': 'REJECTED', 'reason': 'Location permission is required for secure claim validation'},
+            db=db,
+        )
+        db.commit()
+        return _reject_response(
+            claim_id=f'claim_{claim.id}',
+            reason='Location permission is required for secure claim validation',
+            blockchain=blockchain,
+        )
     fraud = evaluate_fraud_intelligence(
         db=db,
         user=user,

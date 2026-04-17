@@ -183,7 +183,7 @@ async def user_location_status(
 async def location_update(payload: LocationUpdateRequest, db: Session = Depends(get_db)):
     user = _require_user(db, payload.user_id)
     try:
-        status = record_continuous_location_update(
+        location_status = record_continuous_location_update(
             db,
             user=user,
             lat=payload.lat,
@@ -196,4 +196,4 @@ async def location_update(payload: LocationUpdateRequest, db: Session = Depends(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     db.commit()
-    return status
+    return location_status
