@@ -359,7 +359,7 @@ class _LivePipelineSection extends StatelessWidget {
           _AnimatedPipelineStage(
             visible: visibleSteps >= 1,
             child: _PipelineStageCard(
-              icon: Icons.cloudy_snowing_rounded,
+              icon: Icons.thunderstorm_rounded,
               title: 'Environment',
               badge: _readString(
                 environment['demo_scenario'],
