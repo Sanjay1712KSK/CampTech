@@ -58,6 +58,30 @@ At a high level:
 
 ---
 
+## 🌐 Real-Time Data & APIs
+
+GigShield is powered by live external APIs. The platform does not make static insurance decisions from fixed assumptions. It reacts to real-world operating conditions as they change.
+
+- `Weather API` via `Open-Meteo` detects rain intensity and weather disruption that can reduce delivery capacity
+- `AQI API` via `OpenWeather Air Pollution API` measures environmental stress that can affect safe working conditions
+- `Traffic API` via `OpenRouteService` detects congestion patterns that slow deliveries and reduce hourly income potential
+
+These live signals directly influence:
+
+- risk calculation
+- premium generation
+- trigger detection
+- claim triggering
+- fraud validation
+
+Why this matters:
+
+- decisions are dynamic, not static
+- the same user can receive different risk and claim outcomes under different real-world conditions
+- judges can see a true decision pipeline rather than a hardcoded demo script
+
+---
+
 ## 🏗 Core Platform
 
 GigShield is built as a single insurance system rather than a collection of disconnected features.
@@ -87,6 +111,7 @@ GigShield is built as a single insurance system rather than a collection of disc
 - traffic context via `OpenRouteService`
 - simulation override support for reliable demos
 - controlled disruption triggers for storytelling
+- converts raw live inputs into disruption-aware operating context for downstream engines
 
 ### 📉 Risk Engine
 
@@ -115,6 +140,7 @@ GigShield is built as a single insurance system rather than a collection of disc
 - zero-touch automation for qualifying cases
 - claim path based on disruption plus income loss
 - explainable eligibility and guarded outcomes
+- no paperwork-based claim dependency for valid parametric events
 
 ### 💸 Payout System
 
@@ -131,19 +157,55 @@ GigShield is built as a single insurance system rather than a collection of disc
 
 ---
 
+## ⚡ Parametric Triggers (Real-Time Decision Engine)
+
+GigShield uses parametric triggers instead of relying on manual claim filing. The system watches live conditions and worker performance signals, then reacts automatically when disruption crosses meaningful thresholds.
+
+Core triggers include:
+
+- heavy rainfall detected
+- traffic congestion spike
+- sudden drop in deliveries per hour
+- income deviation from the worker's baseline
+- disruption support from combined environment signals
+
+Trigger flow:
+
+`Real-Time API Data + Gig Data -> Trigger Detection -> Risk Score Increase -> Automatic Claim Activation`
+
+What this means in practice:
+
+- no paperwork
+- no delay
+- no manual intervention for qualifying cases
+- claims can be activated because the system already understands the disruption context
+
+---
+
 ## 🚀 Advanced Enhancements
 
 Phase 3 is the strongest evolution of the platform. It shifts GigShield from a solid prototype into a complete, presentation-ready, productized insurance experience.
 
 ### 🧠 Intelligent Fraud Detection
 
-- GPS spoof detection
-- single-device binding
-- session anomaly detection
-- behavior pattern analysis
-- disruption-versus-claim mismatch checks
+GigShield uses a multi-layer fraud intelligence system rather than a single validation rule.
+
+Detection layers:
+
+- GPS spoof detection for movement anomalies and location inconsistency
+- device binding to enforce one trusted device per account
+- session anomaly detection for impossible travel and suspicious location jumps
+- environment-versus-claim mismatch checks
 - weather mismatch validation
-- location-aware claim trust controls
+- behavioral pattern analysis across user activity and claim behavior
+
+Fraud outputs:
+
+- fraud score
+- approval or rejection recommendation
+- explainable fraud reasoning visible to the system
+
+This ensures trust, fairness, and prevents system misuse.
 
 ### 💰 Instant Payout System
 
@@ -195,6 +257,32 @@ Phase 3 is the strongest evolution of the platform. It shifts GigShield from a s
 - full-pipeline story execution
 - controlled screen movement and scrolling
 - fast presentation mode for judges
+
+---
+
+## 🔗 How All Engines Work Together
+
+GigShield is built as a connected engine pipeline. Each engine uses:
+
+- real-time API data
+- gig-worker baseline data
+- outputs from previous engines
+
+Primary engine flow:
+
+`Environment Engine -> Risk Engine -> Premium Engine -> Policy Engine -> Claim Engine -> Fraud Intelligence -> Payout Engine`
+
+How the connection works:
+
+- the `Environment Engine` converts weather, AQI, and traffic into disruption context
+- the `Risk Engine` uses that disruption context plus worker data to calculate explainable risk
+- the `Premium Engine` prices protection from the live risk output
+- the `Policy Engine` activates coverage after payment
+- the `Claim Engine` evaluates whether a disruption-led loss event should activate a claim
+- `Fraud Intelligence` validates that the claim story matches trusted device, location, and environment evidence
+- the `Payout Engine` releases compensation when the case is valid
+
+This creates a continuous decision pipeline where every output feeds the next stage instead of isolated screens making unrelated decisions.
 
 ---
 
@@ -419,11 +507,23 @@ The README below includes the screenshot collections from:
 - `Demo/Screenshots`
 - `Demo/Phase 3 Demo Screenshots`
 
-The sections are ordered to match product flow and persona storytelling.
+The screenshots are grouped so the product can be understood in the same order a judge would experience it:
+
+1. Entrance screen
+2. Authentication
+3. Worker dashboard
+4. Engine visualization
+5. Claim and payout flow
+6. Insurer control center
+7. Persona-specific journeys
 
 ---
 
-## 🚪 Phase 3 Entry & Admin Access
+## 🖼 Screenshots
+
+## 1. Entrance Screen
+
+Role selection and one-click demo entry for the complete product.
 
 ### App Entrance
 
@@ -438,6 +538,10 @@ The sections are ordered to match product flow and persona storytelling.
     <td>Role selection and one-click demo launch surface for the complete product journey.</td>
   </tr>
 </table>
+
+## 2. Authentication (Login / Signup)
+
+Login, signup, verification, recovery, and trust-establishment flows for workers and admins.
 
 ### Admin Entry
 
@@ -455,7 +559,18 @@ The sections are ordered to match product flow and persona storytelling.
 
 ---
 
+## 3. Worker Dashboard
+
+Home, earnings, and insurance views that show risk, disruption context, and worker-facing explainability.
+
 ## 🛡 Insurer Control Center
+
+Dashboard for insurers to monitor:
+
+- loss ratio
+- fraud patterns
+- predictive insights
+- recommendations
 
 ### System Health
 
@@ -515,6 +630,10 @@ The sections are ordered to match product flow and persona storytelling.
 </table>
 
 ---
+
+## 4. Engine Visualization (Risk, Claim, Fraud, Payout)
+
+The following worker screens show how GigShield exposes the decision pipeline inside the product experience.
 
 ## 👤 Real User Journey Screens
 
@@ -665,6 +784,30 @@ The sections are ordered to match product flow and persona storytelling.
     <td>Worker profile overview and account information.</td>
     <td>Expanded profile details and preference visibility.</td>
     <td>Additional profile and account-state controls.</td>
+  </tr>
+</table>
+
+---
+
+## 5. Claim & Payout Flow
+
+These screens show how disruption moves from worker state into claim visibility and payout outcomes.
+
+<table>
+  <tr>
+    <th>Risk State</th>
+    <th>Claim State</th>
+    <th>Payout Outcome</th>
+  </tr>
+  <tr>
+    <td><img src="Demo/Screenshots/Real%20User/Home%20Page%202%20Real%20User.png" width="220" alt="Risk state screen" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Claims%20Page%201%20Real%20User.png" width="220" alt="Claim state screen" /></td>
+    <td><img src="Demo/Screenshots/Real%20User/Claims%20Page%202%20Real%20User.png" width="220" alt="Payout outcome screen" /></td>
+  </tr>
+  <tr>
+    <td>Shows the worker's live disruption and resulting risk posture.</td>
+    <td>Shows the zero-touch claim engine and decision state.</td>
+    <td>Shows the completion path after valid claim evaluation and payout processing.</td>
   </tr>
 </table>
 
@@ -872,6 +1015,22 @@ This persona is designed to show how the platform resists manipulation and preve
 
 ---
 
+## 🎬 Automated Demo Experience
+
+GigShield includes a presentation-ready automated demo mode for fast storytelling.
+
+- one-click demo from app launch
+- simulates real-world disruption such as rain
+- runs the full pipeline automatically:
+  `risk -> claim -> fraud -> payout`
+- supports auto navigation
+- supports auto scrolling
+- shows real-time updates while the story progresses
+
+This allows judges to watch the product behave like a connected system instead of manually navigating every step.
+
+---
+
 ## 🎬 Phase Walkthrough Summary
 
 ### Phase 1 — Access And Trust Establishment
@@ -903,7 +1062,7 @@ This persona is designed to show how the platform resists manipulation and preve
 
 ---
 
-## 📦 Releases
+## 📦 Latest Release Highlights
 
 ### 📦 Latest Release (Phase 3)
 
@@ -913,8 +1072,8 @@ This release introduces the biggest product leap in the repository:
 - instant payout integration with Razorpay test mode
 - zero-touch claim engine
 - real-time environment simulation and override controls
-- automated demo orchestration
-- insurer dashboard with predictive analytics
+- admin analytics dashboard
+- automated demo system
 - explainable AI flows across worker and insurer experiences
 - stronger end-to-end storytelling for live judging
 
@@ -928,18 +1087,43 @@ View all releases here:
 
 View our pitch deck here:
 
-- [Pitch Deck](./GigShield%20Final%20Pitch%20Deck%20PPT.pdf)
+- [View Pitch Deck](./GigShield%20Final%20Pitch%20Deck%20PPT.pdf)
 
 ---
 
-## 🧪 How To Run Locally
+## 🧪 How to Run Locally
 
-### Backend Setup
+### 📦 Backend (FastAPI)
 
 ```bash
 git clone https://github.com/Sanjay1712KSK/GuideWire.git
 cd GuideWire/backend
+python -m venv venv
+```
+
+Activate the virtual environment:
+
+Windows:
+
+```powershell
+venv\Scripts\activate
+```
+
+macOS / Linux:
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
+
+Run the server:
+
+```bash
 uvicorn main:app --reload
 ```
 
@@ -949,24 +1133,48 @@ Backend runs at:
 http://127.0.0.1:8000
 ```
 
-### Frontend Setup
+### 📱 Frontend (Flutter)
+
+This repository does not use a separate `frontend/` folder. The Flutter app lives at the repository root.
 
 ```bash
 cd GuideWire
 flutter pub get
+```
+
+Important:
+
+Update the API base URL before running the app.
+
+- Android emulator: use `http://10.0.2.2:8000`
+- real device: use your computer's LAN IP such as `http://192.168.x.x:8000`
+- you can pass it through `--dart-define`
+
+Run the app:
+
+```bash
 flutter run --dart-define=API_BASE_URL=http://YOUR_LOCAL_IP:8000
 ```
 
-Use:
+Use these values when appropriate:
 
 - `http://10.0.2.2:8000` for Android emulator
 - your machine LAN IP for a real phone on the same Wi-Fi
 
-### Build APK
+### 📦 Build APK
 
 ```bash
 flutter build apk --release
 ```
+
+### 🔑 Required Keys
+
+You should configure the following keys and credentials before running the full demo flow:
+
+- Razorpay test keys
+- Brevo SMTP / email delivery credentials
+- weather and AQI API keys
+- traffic API key
 
 ### Environment Variables
 
@@ -1052,14 +1260,12 @@ Content-Type: application/json
 
 ## 🌟 Why GigShield Stands Out
 
-- real-time environmental signals drive the insurance logic
-- premium and claims reuse the same explainable risk foundation
-- the platform protects both honest workers and insurers
-- fraud prevention is built into the product, not bolted on
-- the worker journey feels immediate and understandable
-- the insurer experience goes beyond dashboards into actionable intelligence
-- the demo system is reliable, visual, and presentation-friendly
-- the product feels like an insurtech platform, not just a collection of screens
+- fully automated claims mean valid disruption events can activate protection without manual paperwork
+- live APIs power real-time decisions, so risk, triggers, and claims reflect current conditions instead of static rules
+- multi-layer fraud intelligence goes beyond basic validation with GPS, device, session, behavior, and environment checks
+- instant payout flow removes the traditional waiting period after approval
+- explainable decisioning shows workers and insurers why the system reached a given outcome
+- end-to-end connected architecture ensures every engine feeds the next, creating one continuous insurance pipeline
 
 ---
 
