@@ -133,7 +133,7 @@ class AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       ),
       body: Stack(
         children: [
-          _adminToken == null ? _buildLogin() : _buildDashboard(),
+          _adminToken == null ? _buildLogin() : _buildDashboard(demo),
           if (demo.isRunning && (demo.overlayMessage ?? '').isNotEmpty)
             _AdminDemoOverlay(message: demo.overlayMessage!),
         ],
@@ -230,7 +230,7 @@ class AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildDashboard() {
+  Widget _buildDashboard(DemoAutomationState demo) {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: FutureBuilder<_AdminDashboardBundle>(
