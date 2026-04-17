@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/email_confirmation_result_screen.dart';
-import 'package:guidewire_gig_ins/features/auth/screens/login_screen.dart';
+import 'package:guidewire_gig_ins/features/auth/screens/role_selection_screen.dart';
 import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/l10n/app_localizations.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
@@ -183,7 +183,7 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
       future: _bootstrapFuture,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const LoginScreen();
+          return const RoleSelectionScreen();
         }
         if (!snapshot.hasData) {
           return const Scaffold(
@@ -196,7 +196,7 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
           return const DashboardLoader();
         }
 
-        return const LoginScreen();
+        return const RoleSelectionScreen();
       },
     );
   }
