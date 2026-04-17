@@ -893,6 +893,29 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> updateLocation({
+    required int userId,
+    required double lat,
+    required double lon,
+    required DateTime timestamp,
+    required bool locationEnabled,
+    String? city,
+    String? deviceId,
+  }) async {
+    return _postJson(
+      '/location/update',
+      body: {
+        'user_id': userId,
+        'lat': lat,
+        'lon': lon,
+        'timestamp': timestamp.toIso8601String(),
+        'city': city,
+        'device_id': deviceId,
+        'location_enabled': locationEnabled,
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> processClaim(
     int userId,
     double lat,
