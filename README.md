@@ -1,4 +1,4 @@
-# GigSHIELD By Team CampTech
+﻿# GigSHIELD By Team CampTech
 
 Real-time, explainable income protection for gig workers.
 
