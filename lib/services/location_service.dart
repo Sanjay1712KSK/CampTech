@@ -18,6 +18,17 @@ class LocationResult {
 }
 
 class LocationService {
+  static Future<bool> hasGrantedLocationPermission() async {
+    final enabled = await Geolocator.isLocationServiceEnabled();
+    if (!enabled) {
+      return false;
+    }
+
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse;
+  }
+
   static Future<String?> _reverseGeocode(double lat, double lon) async {
     try {
       final placemarks = await placemarkFromCoordinates(lat, lon);
