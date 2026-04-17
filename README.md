@@ -28,12 +28,12 @@ GigShield is designed as an always-on, explainable, demo-ready insurance platfor
 
 ---
 
-## Demo & Access
+## Demo & Resources
 
-- [🎬 Demo Video](./Demo/Phase%202%20.mp4)
-- [📦 GitHub Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
-- [📱 APK Download Page](https://github.com/Sanjay1712KSK/GuideWire/releases)
-- [📄 Pitch Deck](./GigShield%20Final%20Pitch%20Deck%20PPT.pdf)
+- Demo Video: [Watch Here](./Demo/Phase%202%20.mp4)
+- APK Download: [GitHub Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
+- Pitch Deck: [View Here](./Demo/GigShield_Pitch_Deck.pdf)
+- Releases: [Browse Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
 
 ---
 
@@ -253,6 +253,41 @@ This makes risk dynamic, location-aware, time-aware, predictive, and central to 
 - policy, claim, and payout events logged through a mock-first adapter
 - trust and audit trail support
 - safe demonstration of immutable-record thinking without external blockchain dependency during demos
+
+## Blockchain Integration (NBFLite - Mock Adapter)
+
+GigShield includes a blockchain adapter layer inspired by the NBFLite framework.
+
+### Purpose
+
+To ensure:
+
+- transparency
+- auditability
+- tamper-proof records
+
+### Stored Records
+
+- policy creation
+- claim processing
+- payout transactions
+
+### Implementation
+
+- mock adapter layer implemented in the backend
+- conceptually centered around a blockchain-write abstraction
+
+Function:
+
+`store_on_blockchain(record_type, data)`
+
+### Design Approach
+
+- built as a pluggable adapter
+- supports mock mode today
+- keeps the architecture ready for future real blockchain integration
+
+Although currently mocked for demo purposes, the architecture is designed to integrate with real blockchain networks.
 
 ---
 
@@ -1224,9 +1259,19 @@ View all releases here:
 
 ## Pitch Deck
 
-View our pitch deck here:
+Explore our complete product vision, architecture, and demo walkthrough:
 
-- [View Pitch Deck](./GigShield%20Final%20Pitch%20Deck%20PPT.pdf)
+- [View Pitch Deck](./Demo/GigShield_Pitch_Deck.pdf)
+
+### What This Covers
+
+- problem statement and motivation
+- solution overview of the GigShield platform
+- system architecture and engine design
+- risk, claim, fraud, and payout engines
+- real-time API integration and parametric triggers
+- demo scenarios and personas
+- key differentiators and innovation
 
 ---
 
