@@ -934,6 +934,21 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> processPayout({
+    required int userId,
+    required double amount,
+    String? claimId,
+  }) async {
+    return _postJson(
+      '/claim/payout',
+      body: {
+        'user_id': userId,
+        'amount': amount,
+        if (claimId != null && claimId.isNotEmpty) 'claim_id': claimId,
+      },
+    );
+  }
+
   static Future<List<Map<String, dynamic>>> getUiTransactionHistory(
     int userId, {
     int limit = 10,
