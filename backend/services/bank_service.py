@@ -38,6 +38,7 @@ def link_account(
     opening_balance: float = DEFAULT_OPENING_BALANCE,
 ) -> BankAccount:
     _require_user(db, int(user_id))
+    user = _require_user(db, int(user_id))
 
     account = get_account(db, user_id)
     if account is None:
@@ -213,6 +214,7 @@ def insurance_summary(db: Session, user_id: int) -> dict:
         'policy_end': policy_end,
         'claim_ready': claim_ready,
         'claim_message': claim_message,
+        'location_enabled': bool(user.location_enabled),
         'last_payout': _round(last_payout.amount) if last_payout else 0.0,
         'payout_status': last_payout.status if last_payout else None,
         'payout_transaction_id': last_payout.reference_id if last_payout else None,

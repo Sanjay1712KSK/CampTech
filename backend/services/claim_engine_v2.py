@@ -233,6 +233,7 @@ def auto_process_claim(
         and policy is not None
         and bool(policy.premium_paid)
         and bool(premium_data.get('eligible'))
+        and bool(user.location_enabled)
     )
     timestamp = _utcnow_iso()
     explanation = _explanation(trigger_data=trigger_data, loss_data=loss_data, timestamp=timestamp)
@@ -245,7 +246,11 @@ def auto_process_claim(
             'confidence': confidence['label'],
             'fraud': None,
             'payout': None,
-            'explanation': explanation if trigger_data['trigger_detected'] else 'No automatic claim was triggered because disruption thresholds were not met.',
+            'explanation': (
+                'Automatic claim is disabled because location permission is turned off.'
+                if not bool(user.location_enabled)
+                else explanation if trigger_data['trigger_detected'] else 'No automatic claim was triggered because disruption thresholds were not met.'
+            ),
             'trigger': trigger_data['primary_trigger'],
             'timestamp': timestamp,
         }

@@ -11,6 +11,7 @@ from models.models import UserSettings
 from models.user_model import User
 from models.verification import Verification
 from services.fraud_intelligence_engine import record_login_event
+from services.fraud_intelligence_engine import evaluate_login_location_anomaly
 from services.notification_service import send_confirmation_email, send_email_otp, send_sms_otp
 from services.otp_service import OTP_EXPIRY_SECONDS, OTP_RETRY_LIMIT, generate_otp, verify_stored_otp
 from utils.jwt import decode_token, encode_token
@@ -129,6 +130,7 @@ def build_user_session(user: User) -> dict:
         'has_completed_first_login_2fa': bool(user.has_completed_first_login_2fa),
         'current_device_id': user.current_device_id,
         'active_city': user.active_city,
+        'location_enabled': bool(user.location_enabled),
         'created_at': user.created_at,
     }
 
@@ -143,8 +145,25 @@ def _register_device_session(user: User, device_id: str | None) -> None:
     user.current_device_id = normalized_device_id
 
 
-def _issue_access_session(user: User, *, device_id: str | None = None) -> dict:
+def _issue_access_session(
+    user: User,
+    *,
+    device_id: str | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
+    city: str | None = None,
+    location_enabled: bool | None = None,
+) -> dict:
     _register_device_session(user, device_id)
+    if location_enabled is not None:
+        user.location_enabled = bool(location_enabled)
+    if lat is not None and lon is not None:
+        user.last_login_lat = float(lat)
+        user.last_login_lon = float(lon)
+        user.last_login_at = _utcnow()
+        if city:
+            user.last_login_city = city
+            user.active_city = city
     token = encode_token(
         {
             'sub': str(user.id),
@@ -374,7 +393,16 @@ def _resolve_identifier_query(db: Session, identifier: str) -> User | None:
     )
 
 
-def authenticate_user(db: Session, identifier: str, password: str, device_id: str | None = None) -> dict:
+def authenticate_user(
+    db: Session,
+    identifier: str,
+    password: str,
+    device_id: str | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
+    city: str | None = None,
+    location_enabled: bool = True,
+) -> dict:
     enforce_rate_limit(f'login:{identifier.strip().lower()}', limit=10, window_seconds=10 * 60)
     user = _resolve_identifier_query(db, identifier)
     if not user or not verify_password(password, user.password_hash):
@@ -383,11 +411,21 @@ def authenticate_user(db: Session, identifier: str, password: str, device_id: st
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Account confirmation is still pending')
     if not user.is_digilocker_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Complete DigiLocker verification before login')
+    if not device_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='device_id is required for secure login')
+    anomaly = evaluate_login_location_anomaly(user, lat=lat, lon=lon)
+    if anomaly['session_anomaly']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Session anomaly detected. Please verify your account activity.')
+    user.location_enabled = bool(location_enabled)
     challenge_token = encode_token(
         {
             'sub': str(user.id),
             'purpose': 'first_login_challenge',
             'device_id': (device_id or '').strip() or None,
+            'lat': lat,
+            'lon': lon,
+            'city': city,
+            'location_enabled': bool(location_enabled),
         },
         expires_in_seconds=OTP_EXPIRY_SECONDS,
     )
@@ -469,8 +507,19 @@ def verify_first_login_otp(db: Session, challenge_token: str, channel: str, otp:
     verify_stored_otp(db, record=record, otp=otp, channel_label=channel)
     user.has_completed_first_login_2fa = True
     device_id = payload.get('device_id')
-    session_payload = _issue_access_session(user, device_id=device_id)
-    record_login_event(db, user=user, device_id=device_id, device_metadata={})
+    lat = payload.get('lat')
+    lon = payload.get('lon')
+    city = payload.get('city')
+    location_enabled = payload.get('location_enabled')
+    session_payload = _issue_access_session(
+        user,
+        device_id=device_id,
+        lat=lat,
+        lon=lon,
+        city=city,
+        location_enabled=location_enabled,
+    )
+    record_login_event(db, user=user, device_id=device_id, device_metadata={}, lat=lat, lon=lon, city=city)
     db.commit()
     return session_payload
 

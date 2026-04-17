@@ -95,6 +95,10 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         payload.identifier or '',
         payload.password,
         device_id=payload.device_id,
+        lat=payload.lat,
+        lon=payload.lon,
+        city=payload.city,
+        location_enabled=payload.location_enabled,
     )
 
 

@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from database.db import get_db
+from schemas.user_schema import LocationUpdateRequest
 from services.bank_service import insurance_summary, transaction_history
 from services.environment_service import get_environment
-from services.fraud_intelligence_engine import build_location_status, get_device_status, update_user_location_state
+from services.fraud_intelligence_engine import build_location_status, get_device_status, record_continuous_location_update, update_user_location_state
 from services.gig_service import today_income
 from services.premium_engine import calculate_weekly_premium
 from services.prediction_engine import build_worker_prediction_message
@@ -79,7 +80,7 @@ async def dashboard_worker(
         'prediction': build_worker_prediction_message(db, user_id=user_id),
         'status': {
             'coverage_active': bool(policy and policy.premium_paid and policy.status == 'ACTIVE'),
-            'auto_payout_enabled': True,
+            'auto_payout_enabled': bool(user.location_enabled),
             'device': get_device_status(user, db=db),
             'location': location_status,
         },
@@ -176,3 +177,23 @@ async def user_location_status(
         db.commit()
         return status
     return build_location_status(user, city=city)
+
+
+@router.post('/location/update')
+async def location_update(payload: LocationUpdateRequest, db: Session = Depends(get_db)):
+    user = _require_user(db, payload.user_id)
+    try:
+        status = record_continuous_location_update(
+            db,
+            user=user,
+            lat=payload.lat,
+            lon=payload.lon,
+            timestamp=payload.timestamp,
+            city=payload.city,
+            device_id=payload.device_id,
+            location_enabled=payload.location_enabled,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    db.commit()
+    return status

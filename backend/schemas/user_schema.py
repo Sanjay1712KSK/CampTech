@@ -118,6 +118,10 @@ class LoginRequest(BaseModel):
     email: EmailStr | None = None
     password: str = Field(..., min_length=8)
     device_id: str | None = Field(default=None, min_length=3, max_length=255)
+    lat: float | None = Field(default=None, ge=-90.0, le=90.0)
+    lon: float | None = Field(default=None, ge=-180.0, le=180.0)
+    city: str | None = None
+    location_enabled: bool = True
 
     @model_validator(mode='after')
     def validate_identifier(self):
@@ -156,6 +160,7 @@ class UserSessionResponse(BaseModel):
     has_completed_first_login_2fa: bool
     current_device_id: str | None = None
     active_city: str | None = None
+    location_enabled: bool = True
     created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -170,6 +175,18 @@ class LoginResponse(BaseModel):
     two_factor_token: str | None = None
     available_channels: list[Literal['email', 'phone']] = []
     message: str | None = None
+
+
+class LocationUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    lat: float = Field(..., ge=-90.0, le=90.0)
+    lon: float = Field(..., ge=-180.0, le=180.0)
+    timestamp: datetime
+    city: str | None = None
+    device_id: str | None = Field(default=None, min_length=3, max_length=255)
+    location_enabled: bool = True
 
 
 class ForgotPasswordRequest(BaseModel):

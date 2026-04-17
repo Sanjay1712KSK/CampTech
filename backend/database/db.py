@@ -152,9 +152,14 @@ def ensure_schema():
             'current_device_id',
             'session_version',
             'device_switch_count',
+            'location_enabled',
             'last_known_lat',
             'last_known_lon',
             'last_location_at',
+            'last_login_lat',
+            'last_login_lon',
+            'last_login_at',
+            'last_login_city',
             'active_city',
             'verified_at',
         ],
@@ -217,6 +222,13 @@ def ensure_schema():
     }
 
     additive_columns = {
+        'users': {
+            'location_enabled': 'location_enabled BOOLEAN NOT NULL DEFAULT 1',
+            'last_login_lat': 'last_login_lat FLOAT',
+            'last_login_lon': 'last_login_lon FLOAT',
+            'last_login_at': 'last_login_at DATETIME',
+            'last_login_city': 'last_login_city VARCHAR(100)',
+        },
         'fraud_logs': {
             'city': 'city VARCHAR(100)',
         },

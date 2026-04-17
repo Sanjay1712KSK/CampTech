@@ -7,6 +7,7 @@ from models.gig_account import GigAccount
 from models.gig_income import GigIncome
 from models.models import IncomeSummary, PremiumSnapshot, RiskSnapshot
 from models.profile import Profile
+from models.user_model import User
 from services.environment_service import get_environment
 from services.gig_service import calculate_baseline_value
 from services.risk_engine import calculate_risk
@@ -187,6 +188,7 @@ def calculate_weekly_premium(
     persist_snapshots: bool = True,
 ) -> dict:
     baseline = _baseline_value(user_id, db)
+    user = db.query(User).filter(User.id == int(user_id)).first()
     environment = environment_data or get_environment(lat, lon, db=db, user_id=user_id)
     risk_result = risk_result or calculate_risk(environment, user_id=user_id, db=db)
     risk_score = float(risk_result.get('risk_score', 0.0) or 0.0)
@@ -201,6 +203,12 @@ def calculate_weekly_premium(
         weekly_premium *= 1.10
     weekly_premium = _round(weekly_premium)
     coverage = _round(weekly_income * 0.8)
+    coverage_modifier = 1.0
+    location_restriction_reason = None
+    if user is not None and not bool(user.location_enabled):
+        coverage_modifier = 0.75
+        coverage = _round(coverage * coverage_modifier)
+        location_restriction_reason = 'Location permission is disabled, so coverage is reduced and auto claim protection is limited.'
 
     linked_risk = {
         'risk_score': _round(risk_score),
@@ -255,20 +263,26 @@ def calculate_weekly_premium(
         'coverage': coverage,
         'risk_score': _round(risk_score),
         'risk': linked_risk,
-        'explanation': explanation,
+        'explanation': explanation if not location_restriction_reason else f'{explanation}. {location_restriction_reason}',
         'resolved_city': profile_city or resolved_city,
         'risk_snapshot_id': risk_snapshot.id if risk_snapshot else None,
         'premium_snapshot_id': premium_snapshot.id if premium_snapshot else None,
         'income_summary_id': income_summary.id if income_summary else None,
         'eligible': bool(baseline > 0 and weekly_income > 0),
-        'reason': 'Eligible for premium quote' if baseline > 0 and weekly_income > 0 else 'Insufficient gig history for pricing',
+        'reason': (
+            location_restriction_reason
+            if location_restriction_reason
+            else 'Eligible for premium quote' if baseline > 0 and weekly_income > 0 else 'Insufficient gig history for pricing'
+        ),
         'last_updated': (environment or {}).get('last_updated'),
+        'location_enabled': bool(user.location_enabled) if user is not None else True,
         'breakdown': {
             'base_rate': 0.07,
             'trigger_severity': trigger_severity,
             'active_triggers': active_triggers,
             'severity_multiplier': 1.15 if trigger_severity == 'HIGH' else 1.0,
             'combined_trigger_multiplier': 1.10 if 'COMBINED_TRIGGER' in active_triggers else 1.0,
+            'coverage_modifier': coverage_modifier,
             'final_formula': 'weekly_income * risk_score * base_rate * severity_multiplier * combined_trigger_multiplier',
         },
     }

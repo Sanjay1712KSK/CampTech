@@ -202,8 +202,15 @@ def build_location_status(
             if user.last_known_lat is not None and user.last_known_lon is not None
             else None
         ),
+        'last_login_location': (
+            {'lat': float(user.last_login_lat), 'lon': float(user.last_login_lon)}
+            if user.last_login_lat is not None and user.last_login_lon is not None
+            else None
+        ),
         'active_city': city or user.active_city,
         'last_location_at': user.last_location_at.isoformat() if user.last_location_at else None,
+        'last_login_at': user.last_login_at.isoformat() if user.last_login_at else None,
+        'location_enabled': bool(user.location_enabled),
         'transition_distance_km': transition_distance_km,
         'unrealistic_jump': unrealistic_jump,
         'location_permission_required': True,
@@ -248,6 +255,130 @@ def update_user_location_state(
     updated = build_location_status(user, lat=lat, lon=lon, city=city)
     updated['rate_limited'] = rate_limited
     return updated
+
+
+def record_continuous_location_update(
+    db: Session,
+    *,
+    user: User,
+    lat: float,
+    lon: float,
+    timestamp: datetime,
+    city: str | None = None,
+    device_id: str | None = None,
+    location_enabled: bool = True,
+) -> dict:
+    user.location_enabled = bool(location_enabled)
+    if device_id and user.current_device_id and str(device_id).strip() != str(user.current_device_id).strip():
+        raise ValueError('Location update device does not match the active device')
+
+    if timestamp.tzinfo is not None:
+        timestamp = timestamp.astimezone(UTC).replace(tzinfo=None)
+
+    now = _utcnow()
+    if timestamp > now + timedelta(minutes=5):
+        raise ValueError('Location timestamp is invalid')
+
+    previous_lat = user.last_known_lat
+    previous_lon = user.last_known_lon
+    previous_at = user.last_location_at
+    movement_km = None
+    speed_kmh = None
+    signals: list[str] = []
+
+    if previous_lat is not None and previous_lon is not None:
+        movement_km = _haversine_km(float(previous_lat), float(previous_lon), float(lat), float(lon))
+        if previous_at is not None:
+            delta_hours = max((timestamp - previous_at).total_seconds() / 3600.0, 0.001)
+            speed_kmh = movement_km / delta_hours
+            if movement_km > 20 and delta_hours < (5 / 60):
+                signals.append('teleport_jump_detected')
+            if speed_kmh > 140:
+                signals.append('unrealistic_speed_detected')
+
+    event = UserBehavior(
+        user_id=int(user.id),
+        event_type=LOCATION_EVENT_TYPE,
+        event_value=city or user.active_city,
+        confidence_score=1.0 if not signals else 0.45,
+        behavior_metadata={
+            'lat': float(lat),
+            'lon': float(lon),
+            'city': city or user.active_city,
+            'timestamp': timestamp.isoformat(),
+            'device_id': (device_id or '').strip() or None,
+            'source': 'continuous_tracking',
+            'signals': signals,
+            'movement_km': _round(movement_km, 3) if movement_km is not None else None,
+            'speed_kmh': _round(speed_kmh, 3) if speed_kmh is not None else None,
+        },
+        observed_at=timestamp,
+    )
+    db.add(event)
+    db.flush()
+
+    update_status = update_user_location_state(user, lat=lat, lon=lon, city=city, db=None)
+    user.last_known_lat = float(lat)
+    user.last_known_lon = float(lon)
+    user.last_location_at = timestamp
+    if city:
+        user.active_city = city
+    user.location_enabled = bool(location_enabled)
+
+    status = build_location_status(user, lat=lat, lon=lon, city=city)
+    status.update(
+        {
+            'movement_km': _round(movement_km, 3) if movement_km is not None else None,
+            'speed_kmh': _round(speed_kmh, 3) if speed_kmh is not None else None,
+            'signals': signals,
+            'gps_status': 'SUSPICIOUS' if signals else 'VALID',
+            'rate_limited': update_status.get('rate_limited', False),
+        }
+    )
+    return status
+
+
+def evaluate_login_location_anomaly(
+    user: User,
+    *,
+    lat: float | None,
+    lon: float | None,
+    login_at: datetime | None = None,
+) -> dict:
+    if lat is None or lon is None or user.last_login_lat is None or user.last_login_lon is None or user.last_login_at is None:
+        return {
+            'session_anomaly': False,
+            'distance_km': None,
+            'speed_kmh': None,
+            'signals': [],
+            'explanation': 'No prior login-location baseline is available for anomaly comparison.',
+        }
+
+    login_at = login_at or _utcnow()
+    if login_at.tzinfo is not None:
+        login_at = login_at.astimezone(UTC).replace(tzinfo=None)
+
+    distance_km = _haversine_km(float(user.last_login_lat), float(user.last_login_lon), float(lat), float(lon))
+    delta_hours = max((login_at - user.last_login_at).total_seconds() / 3600.0, 0.001)
+    speed_kmh = distance_km / delta_hours
+    signals: list[str] = []
+
+    if distance_km > 200 and delta_hours < 3:
+        signals.append('impossible_travel')
+    if speed_kmh > 900:
+        signals.append('session_anomaly')
+
+    return {
+        'session_anomaly': bool(signals),
+        'distance_km': _round(distance_km, 2),
+        'speed_kmh': _round(speed_kmh, 2),
+        'signals': signals,
+        'explanation': (
+            'Recent login locations imply impossible travel.'
+            if signals
+            else 'Recent login location is consistent with prior session movement.'
+        ),
+    }
 
 
 def _build_gps_integrity(location_logs: list[dict], *, active_city: str | None = None) -> dict:
@@ -704,6 +835,15 @@ def evaluate_fraud_intelligence(
         'decision': decision,
         'confidence': confidence,
         'fraud_types': fraud_types,
+        'signal_list': sorted(
+            set(
+                identity_signals.get('signals', [])
+                + session_signals.get('signals', [])
+                + gps_integrity.get('signals', [])
+                + behavior_signals.get('signals', [])
+                + context_signals.get('signals', [])
+            )
+        ),
         'signals': {
             'device': {'score': _round(identity_score), **identity_signals},
             'session': {'score': _round(session_score), **session_signals},
