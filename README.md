@@ -24,7 +24,7 @@ Traditional insurance products do not fit this reality well. They are usually:
 
 GigSHIELD is designed as an intelligent, modular, and explainable protection system for this exact problem space.
 
-## 🏗 Core Platform
+## Core Platform
 
 GigSHIELD is designed as one connected product instead of a collection of isolated features.
 
@@ -42,19 +42,11 @@ The core platform includes:
 
 What makes the base platform strong is that each layer reuses the one before it:
 
-<<<<<<< HEAD
-## Phase 3: Scale & Optimize
-=======
 `Gig Data -> Environment -> Risk -> Premium -> Policy -> Claim -> Payout -> Blockchain Record`
->>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 This keeps the system explainable, auditable, and reusable across worker and insurer experiences.
 
-<<<<<<< HEAD
-### Advanced Fraud Detection
-=======
 ## 🚀 Advanced Enhancements
->>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 ### 🧠 Intelligent Fraud Detection
 
@@ -65,18 +57,14 @@ This keeps the system explainable, auditable, and reusable across worker and ins
 - behavioral analysis
 - continuous location tracking with user consent
 
-### Instant Payout System
+### 💰 Instant Payout System
 
 - Razorpay test integration
 - automatic payout after claim approval
 - transaction tracking
 - linked mock bank accounts
 
-<<<<<<< HEAD
-### Zero-Touch Claim Engine
-=======
 ### ⚡ Zero-Touch Claim System
->>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 - fully automated claim triggering
 - no manual filing
@@ -85,17 +73,13 @@ This keeps the system explainable, auditable, and reusable across worker and ins
   - delivery drop
   - income loss
 
-<<<<<<< HEAD
-### Real-Time + Controlled Environment Engine
-=======
 ### 🌐 Real-Time + Controlled Environment
->>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 - live API data
 - override mode for demo scenarios
 - controlled disruption simulation
 
-### Intelligent Dashboards
+### 📊 Intelligent Dashboards
 
 Worker Dashboard:
 
@@ -110,30 +94,14 @@ Insurer Dashboard:
 - predictive insights
 - recommendations
 
-### Automated Demo System
+### 🎬 Automated Demo System
 
 - one-click demo from app launch
-<<<<<<< HEAD
-- simulates the full pipeline:
-  - disruption -> risk -> claim -> fraud -> payout
-- includes auto navigation, scrolling, and UI updates
-
-## What's New Compared to Phase 2
-
-- added intelligent fraud detection layer
-- introduced instant payout system
-- upgraded claim engine to fully automated parametric claims
-- added real-time plus override environment simulation
-- built admin insurer dashboard
-- created automated demo orchestration system
-- improved UI with explainable AI engine visualization
-=======
 - simulates the full pipeline automatically
 - includes:
   - navigation
   - scrolling
   - real-time updates
->>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 ## What Is Real-Time And What Is Mocked
 
@@ -242,31 +210,21 @@ $$
 
 The delivery-efficiency layer is modeled as:
 
-$$
-\text{efficiency\_score} = \text{delivery\_capacity} \times \text{working\_hours\_factor}
-$$
+`efficiency_score = delivery_capacity × working_hours_factor`
 
 Expected income loss is then estimated as:
 
-$$
-\text{expected\_income\_loss} = 1 - \text{efficiency\_score}
-$$
+`expected_income_loss = 1 - efficiency_score`
 
 The premium engine reuses the risk output directly:
 
-$$
-\text{weekly\_premium} = \text{weekly\_income} \times \text{risk\_score} \times 0.07
-$$
+`weekly_premium = weekly_income × risk_score × 0.07`
 
-And the fraud-aware claim layer compares predicted and actual loss:
+The fraud-aware claim layer compares predicted and actual loss:
 
-$$
-\text{predicted\_loss} = \text{risk\_score} \times \text{baseline\_income}
-$$
+`predicted_loss = risk_score × baseline_income`
 
-$$
-\text{fraud\_score} = \frac{\left|\text{actual\_loss} - \text{predicted\_loss}\right|}{\text{baseline\_income}}
-$$
+`fraud_score = |actual_loss - predicted_loss| / baseline_income`
 
 ### What We Learned
 
@@ -1144,23 +1102,6 @@ Screenshot note:
 - most screenshot files are resized / compressed exports in an approximate range of `378-386 px` width and `845-855 px` height
 - small dimension differences across files are due to cropping and export variation, not UI inconsistency
 
-### 🚪 Entrance Screen
-
-Description:
-User selects role as Worker or Insurer, or starts the automated full demo from the first screen.
-
-<table>
-  <tr>
-    <th>Entrance Screen</th>
-  </tr>
-  <tr>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/App%20Entrance%20Page.png" width="260" alt="App entrance screen" /></td>
-  </tr>
-  <tr>
-    <td>Role selection and one-click demo launch surface for the entire platform.</td>
-  </tr>
-</table>
-
 ### Onboarding Flow
 
 <table>
@@ -1303,71 +1244,6 @@ This persona is used to show:
 - real disruption context
 - approved claim state
 - payout and trust story in the claims journey
-
-### 🛡 Insurer Control Center (Admin Dashboard)
-
-Description:
-A powerful dashboard for insurers to monitor system health, fraud patterns, and predictive insights.
-
-#### Admin Access
-
-<table>
-  <tr>
-    <th>Admin Login</th>
-    <th>System Health</th>
-    <th>System Health 2</th>
-  </tr>
-  <tr>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Admin%20Demo%20Login%20Page.png" width="240" alt="Admin demo login page" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health.png" width="240" alt="Insurer control center system health" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20System%20Health%202.png" width="240" alt="Insurer control center system health 2" /></td>
-  </tr>
-  <tr>
-    <td>Secure entry point for the insurer control center.</td>
-    <td>Provides a high-level summary of system performance.</td>
-    <td>Provides an additional high-level summary of system performance.</td>
-  </tr>
-</table>
-
-#### Fraud And Risk Analytics
-
-<table>
-  <tr>
-    <th>Fraud Intelligence</th>
-    <th>Fraud Hotspots + Risk and Claim Trends</th>
-    <th>Risk Analytics and Financial Health</th>
-  </tr>
-  <tr>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Intelligence.png" width="240" alt="Insurer control center fraud intelligence" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Fraud%20Hotspots%20%2B%20Risk%20and%20claim%20trends.png" width="240" alt="Insurer control center fraud hotspots risk and claim trends" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Risk%20Analytics%20and%20Financial%20Health.png" width="240" alt="Insurer control center risk analytics and financial health" /></td>
-  </tr>
-  <tr>
-    <td>Displays fraud detection metrics and flagged claims.</td>
-    <td>Shows city-wise fraud activity alongside risk and claim trend monitoring.</td>
-    <td>Illustrates risk analytics together with overall financial health.</td>
-  </tr>
-</table>
-
-#### Predictions And Recommendations
-
-<table>
-  <tr>
-    <th>Predictions</th>
-    <th>Smart Insights</th>
-    <th>AI Recommendations</th>
-  </tr>
-  <tr>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Predictions.png" width="240" alt="Insurer control center predictions" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20Smart%20Insights.png" width="240" alt="Insurer control center smart insights" /></td>
-    <td><img src="Demo/Phase%203%20Demo%20Screenshots/Insurer%20Control%20Center%20-%20AI%20recommendations.png" width="240" alt="Insurer control center ai recommendations" /></td>
-  </tr>
-  <tr>
-    <td>Shows predictive analytics for future claims and payouts.</td>
-    <td>Summarizes smart insights from platform trends and system intelligence.</td>
-    <td>Presents system-generated recommendations for insurer action.</td>
-  </tr>
-</table>
 
 ### Why These Screens Matter
 
