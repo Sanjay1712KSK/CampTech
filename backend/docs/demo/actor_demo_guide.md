@@ -30,6 +30,7 @@ Important notes:
 - For demo ease, choose `phone` OTP during login because the phone OTP is shown in the app flow.
 - Demo actor emails use the same Brevo SMTP flow as normal users.
 - If you choose `email`, the OTP is sent to the actor's configured inbox, while `phone` remains the easier demo path because the mock OTP is shown in the UI.
+- The Home tab now includes a `Demo Control Panel` and a `Live Demo Pipeline` section for stage demos.
 
 ## Demo Login Credentials
 
@@ -102,6 +103,42 @@ For each actor, use this walkthrough:
 6. If the bank is not linked, link it.
 7. Pay weekly premium to show policy creation.
 8. Open `Claims` to show claim status, fraud logic, and blockchain record behavior.
+
+## Live Pipeline Demo Controls
+
+The worker `Home` tab now supports a cleaner live stage flow.
+
+### Trigger Rain
+
+Use this when you want to show:
+
+- severe disruption
+- increased risk
+- zero-touch claim triggering
+- approved fraud decision
+- payout success
+
+Best actor:
+
+- `premium_success`
+- `good_actor`
+
+### Trigger Fraud
+
+Use this when you want to show:
+
+- weak disruption evidence
+- mismatch between claim story and environment
+- fraud signals rising
+- payout block or rejection path
+
+Best actor:
+
+- `bad_actor`
+
+### Reset
+
+Use this to return to the actor's normal seeded state before moving to the next story.
 
 Important claim note:
 
@@ -488,7 +525,9 @@ Use this simple story:
 
 - Log in as `good_actor`
 - Show `Home`
+- Tap `Trigger Rain`
 - Explain high rain and traffic
+- Explain the animated `Live Demo Pipeline`
 - Open `Insurance`
 - Explain why premium is higher
 - Open `Claims`
@@ -498,7 +537,9 @@ Use this simple story:
 
 - Log in as `bad_actor`
 - Show `Home`
+- Tap `Trigger Fraud`
 - Explain that conditions are mostly normal
+- Explain the fraud signals in the `Live Demo Pipeline`
 - Open `Claims`
 - Explain why the fraud engine should be more cautious here
 
