@@ -14,6 +14,12 @@ class HomeTab extends ConsumerStatefulWidget {
 
 class _HomeTabState extends ConsumerState<HomeTab> {
   late Future<_WorkerDashboardBundle> _dashboardFuture;
+  Map<String, dynamic>? _demoPipeline;
+  String? _demoScenario;
+  String? _demoError;
+  bool _demoBusy = false;
+  int _demoVisibleSteps = 0;
+  int _demoAnimationToken = 0;
 
   @override
   void initState() {
@@ -72,6 +78,88 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     await _dashboardFuture;
   }
 
+  Future<void> _runDemoScenario(String scenario) async {
+    final user = ref.read(userProvider);
+    final location = ref.read(locationProvider);
+    if (user == null) return;
+
+    setState(() {
+      _demoBusy = true;
+      _demoError = null;
+      _demoScenario = scenario;
+      _demoVisibleSteps = 0;
+    });
+
+    try {
+      if (scenario == 'rain') {
+        await ApiService.setEnvironmentOverride(
+          overrideMode: true,
+          rain: 'HIGH',
+          traffic: 'HIGH',
+          aqi: 'MEDIUM',
+          scenario: 'rain',
+        );
+      } else if (scenario == 'fraud') {
+        await ApiService.setEnvironmentOverride(
+          overrideMode: true,
+          rain: 'LOW',
+          traffic: 'LOW',
+          aqi: 'LOW',
+          scenario: 'fraud',
+        );
+      } else {
+        await ApiService.setEnvironmentOverride(
+          overrideMode: false,
+          scenario: 'reset',
+        );
+      }
+
+      if (scenario == 'reset') {
+        setState(() {
+          _demoPipeline = null;
+          _demoScenario = null;
+          _demoVisibleSteps = 0;
+        });
+        await _refresh();
+      } else {
+        final pipeline = await ApiService.getDemoFullPipeline(
+          user.userId,
+          location.lat,
+          location.lon,
+        );
+        if (!mounted) return;
+        setState(() {
+          _demoPipeline = pipeline;
+        });
+        _animateDemoStages();
+        await _refresh();
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _demoError = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _demoBusy = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _animateDemoStages() async {
+    final token = ++_demoAnimationToken;
+    for (var step = 1; step <= 5; step++) {
+      if (!mounted || token != _demoAnimationToken) return;
+      await Future<void>.delayed(const Duration(milliseconds: 260));
+      if (!mounted || token != _demoAnimationToken) return;
+      setState(() {
+        _demoVisibleSteps = step;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
@@ -114,6 +202,14 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 user: user,
                 location: location,
                 bundle: bundle,
+                demoPipeline: _demoPipeline,
+                demoScenario: _demoScenario,
+                demoBusy: _demoBusy,
+                demoError: _demoError,
+                demoVisibleSteps: _demoVisibleSteps,
+                onTriggerRain: () => _runDemoScenario('rain'),
+                onTriggerFraud: () => _runDemoScenario('fraud'),
+                onResetDemo: () => _runDemoScenario('reset'),
               );
             },
           ),
@@ -143,11 +239,27 @@ class _DashboardView extends StatelessWidget {
   final UserState user;
   final LocationState location;
   final _WorkerDashboardBundle bundle;
+  final Map<String, dynamic>? demoPipeline;
+  final String? demoScenario;
+  final bool demoBusy;
+  final String? demoError;
+  final int demoVisibleSteps;
+  final Future<void> Function() onTriggerRain;
+  final Future<void> Function() onTriggerFraud;
+  final Future<void> Function() onResetDemo;
 
   const _DashboardView({
     required this.user,
     required this.location,
     required this.bundle,
+    required this.demoPipeline,
+    required this.demoScenario,
+    required this.demoBusy,
+    required this.demoError,
+    required this.demoVisibleSteps,
+    required this.onTriggerRain,
+    required this.onTriggerFraud,
+    required this.onResetDemo,
   });
 
   @override
@@ -255,6 +367,20 @@ class _DashboardView extends StatelessWidget {
             traffic['traffic_level'],
             fallback: 'Unknown',
           ),
+        ),
+        const SizedBox(height: 16),
+        _DemoControlSection(
+          demoBusy: demoBusy,
+          demoError: demoError,
+          demoScenario: demoScenario,
+          onTriggerRain: onTriggerRain,
+          onTriggerFraud: onTriggerFraud,
+          onResetDemo: onResetDemo,
+        ),
+        const SizedBox(height: 16),
+        _LivePipelineSection(
+          pipeline: demoPipeline,
+          visibleSteps: demoVisibleSteps,
         ),
         const SizedBox(height: 16),
         _SectionCard(
