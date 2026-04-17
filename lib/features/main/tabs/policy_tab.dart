@@ -537,6 +537,12 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
         value: _summary?.claimReady == true ? 'Ready' : 'Waiting',
       ),
       _OutputStat(
+        label: 'Location protection',
+        value: _summary?.locationEnabled == true
+            ? 'Enabled for full auto protection'
+            : 'Limited until live location is allowed',
+      ),
+      _OutputStat(
         label: 'Claim message',
         value:
             _summary?.claimMessage ??
@@ -576,6 +582,10 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
 
   List<_OutputStat> _buildFraudOutput() {
     final claim = _fraudCheck?['fraud'] as Map<String, dynamic>?;
+    final signals = _joinSignals(
+      ((claim?['signals'] as Map?)?.cast<String, dynamic>()),
+      claim?['signal_list'] as List?,
+    );
     return [
       _OutputStat(
         label: 'Decision',
@@ -590,6 +600,7 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
         label: 'Fraud types',
         value: _joinList(claim?['fraud_types'] as List?),
       ),
+      _OutputStat(label: 'Signals', value: signals),
       _OutputStat(
         label: 'Explanation',
         value:
