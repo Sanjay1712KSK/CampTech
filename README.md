@@ -24,73 +24,96 @@ Traditional insurance products do not fit this reality well. They are usually:
 
 GigSHIELD is designed as an intelligent, modular, and explainable protection system for this exact problem space.
 
-## Phase 2 Positioning
+## 🏗 Core Platform
 
-This prototype is intentionally designed to stand out from generic hackathon insurance demos in three ways:
+GigSHIELD is designed as one connected product instead of a collection of isolated features.
 
-1. It uses live environmental APIs for core decision-making.
-2. It connects all major engines into one reusable pipeline instead of duplicating logic.
-3. It demonstrates clearly different outcomes for different worker personas through the same backend logic.
+The core platform includes:
 
-The emphasis is not just on polished UI, but on:
+- secure onboarding with email OTP, phone OTP, account confirmation, and DigiLocker verification
+- gig account connection with generated income history and earning baselines
+- real-time environment intelligence using weather, AQI, and traffic data
+- a risk engine that combines environment signals with gig and delivery context
+- premium calculation driven directly by the same risk output
+- weekly policy creation and activation
+- a claim engine based on parametric disruption logic
+- payout handling for approved claims
+- blockchain logging through a mock-first adapter
 
-- originality of system behavior
-- explainability of decisions
-- fairness for genuine workers
-- resistance to bad claims
-- end-to-end intelligence across onboarding, pricing, claims, and payout
+What makes the base platform strong is that each layer reuses the one before it:
 
+<<<<<<< HEAD
 ## Phase 3: Scale & Optimize
+=======
+`Gig Data -> Environment -> Risk -> Premium -> Policy -> Claim -> Payout -> Blockchain Record`
+>>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
-We enhanced the system with advanced intelligence, automation, and real-time capabilities:
+This keeps the system explainable, auditable, and reusable across worker and insurer experiences.
 
+<<<<<<< HEAD
 ### Advanced Fraud Detection
+=======
+## 🚀 Advanced Enhancements
+>>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
-- GPS spoofing detection
-- device binding with one device per account
-- session anomaly detection for unrealistic location jumps
-- weather vs claim mismatch validation
-- behavioral anomaly detection
+### 🧠 Intelligent Fraud Detection
+
+- GPS spoof detection
+- device binding with a single device per account
+- session anomaly detection
+- environment vs claim validation
+- behavioral analysis
 - continuous location tracking with user consent
 
 ### Instant Payout System
 
-- integrated Razorpay in test mode
+- Razorpay test integration
 - automatic payout after claim approval
-- transaction ID generation and tracking
-- linked user bank account flow with mock account support
-- real-time payout visualization in the worker experience
+- transaction tracking
+- linked mock bank accounts
 
+<<<<<<< HEAD
 ### Zero-Touch Claim Engine
+=======
+### ⚡ Zero-Touch Claim System
+>>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 - fully automated claim triggering
-- no manual claim filing required for qualifying disruption-led loss
-- driven by:
-  - environment data
+- no manual filing
+- based on:
+  - disruption signals
   - delivery drop
   - income loss
 
+<<<<<<< HEAD
 ### Real-Time + Controlled Environment Engine
+=======
+### 🌐 Real-Time + Controlled Environment
+>>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
-- live weather, AQI, and traffic APIs
-- override mode for demo simulation
-- controlled disruption scenarios for repeatable demos
+- live API data
+- override mode for demo scenarios
+- controlled disruption simulation
 
 ### Intelligent Dashboards
 
-- Worker dashboard:
-  - earnings protection
-  - risk visibility
-  - claim and payout tracking
-- Insurer dashboard:
-  - loss ratio
-  - fraud analytics
-  - predictive insights
-  - recommendations
+Worker Dashboard:
+
+- earnings protection
+- risk visibility
+- claim and payout tracking
+
+Insurer Dashboard:
+
+- loss ratio
+- fraud analytics
+- predictive insights
+- recommendations
 
 ### Automated Demo System
 
 - one-click demo from app launch
+<<<<<<< HEAD
 - simulates the full pipeline:
   - disruption -> risk -> claim -> fraud -> payout
 - includes auto navigation, scrolling, and UI updates
@@ -104,6 +127,13 @@ We enhanced the system with advanced intelligence, automation, and real-time cap
 - built admin insurer dashboard
 - created automated demo orchestration system
 - improved UI with explainable AI engine visualization
+=======
+- simulates the full pipeline automatically
+- includes:
+  - navigation
+  - scrolling
+  - real-time updates
+>>>>>>> cef6e3f (Readme file updated with admin screenshots and also with enhanced demo personas)
 
 ## What Is Real-Time And What Is Mocked
 
@@ -148,23 +178,23 @@ The platform now combines multiple connected capabilities:
 7. Intelligent dashboards for both workers and insurers
 8. Adaptive learning, blockchain-backed traceability, and live demo orchestration
 
-## Newly Added High-Impact Features
+## 🔄 How the System Works
 
-Important capabilities added and strengthened in the current build include:
+GigSHIELD follows one connected insurance lifecycle:
 
-- Advanced Fraud Detection:
-  - catches delivery-specific fraud such as GPS spoofing, fake weather claims, session anomalies, and behavior mismatches using live plus historical data
-- Instant Payout System (Simulated):
-  - integrates test-mode payment and payout flows to demonstrate how a worker can receive lost wages instantly after claim approval
-- Intelligent Dashboard:
-  - for workers:
-    - earnings protected
-    - active weekly coverage
-    - explainable risk, claim, fraud, and payout visibility
-  - for insurers:
-    - loss ratios
-    - fraud analytics
-    - predictive analytics for next week's likely weather and disruption-driven claims
+`User -> Gig Data -> Environment APIs -> Risk Engine -> Premium -> Policy -> Disruption -> Claim Engine -> Fraud Check -> Payout -> Blockchain Logging`
+
+In simple terms:
+
+- the worker connects a gig account and the system understands their income pattern
+- live environment APIs add weather, AQI, and traffic context
+- the risk engine turns those signals into an explainable risk score
+- the premium engine prices weekly protection from that same risk output
+- after payment, the policy becomes active
+- if disruption causes real earning impact, the claim engine reacts
+- the fraud layer validates whether the claim matches trusted context
+- if approved, the payout engine simulates instant compensation
+- the system logs important records for traceability
 
 ## About the Project
 
@@ -328,139 +358,6 @@ Main UX surfaces:
 - Regression-ready prediction hook
 - lightweight prediction engine for next-6-hour risk, next-week claims, and expected payouts
 
-## Run Locally
-
-### Prerequisites
-
-- Python `3.11+` or `3.12`
-- Flutter SDK
-- Android Studio or VS Code with Flutter support
-- A connected Android device or emulator for mobile testing
-
-### 1. Backend setup
-
-From the repository root:
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-The backend uses SQLite locally by default.
-
-- local database file: `backend/gig_insurance.db`
-- if the file does not exist, it is created automatically on startup
-- if the local schema is outdated, the development SQLite flow can recreate the schema automatically
-
-Optional local environment file:
-
-```env
-DATABASE_URL=sqlite:///./gig_insurance.db
-API_PUBLIC_BASE_URL=http://127.0.0.1:8000
-OPENWEATHER_API_KEY=YOUR_OPENWEATHER_KEY
-ORS_API_KEY=YOUR_ORS_KEY
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=YOUR_BREVO_SMTP_LOGIN
-SMTP_PASS=YOUR_BREVO_SMTP_KEY
-SENDER_EMAIL=YOUR_VERIFIED_SENDER_EMAIL
-BLOCKCHAIN_MODE=mock
-```
-
-Start the backend:
-
-```bash
-python main.py
-```
-
-Or, if you prefer:
-
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-Quick health check:
-
-```text
-http://127.0.0.1:8000/health
-```
-
-Expected response:
-
-```json
-{"status":"ok"}
-```
-
-### 2. Seed demo or persona data
-
-After the backend is running, you can seed the simulation layer:
-
-```http
-POST /simulate/input
-Content-Type: application/json
-
-{
-  "enable_simulation": true,
-  "regenerate_income": true,
-  "days": 30
-}
-```
-
-This populates local input data for:
-
-- gig income history
-- user behavior
-- persona-based environment conditions
-
-### 3. Flutter app setup
-
-From the repository root:
-
-```bash
-flutter pub get
-```
-
-For local mobile testing against your laptop backend, launch with:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://YOUR_LOCAL_IP:8000
-```
-
-Examples:
-
-- Android emulator:
-  - `http://10.0.2.2:8000`
-- Real phone on same Wi-Fi:
-  - `http://192.168.x.x:8000`
-
-If you do not pass `API_BASE_URL`, the app falls back to the default value configured in `lib/config.dart`.
-
-### 4. Local OTP behavior
-
-When the backend is run locally, the intended onboarding behavior is strict:
-
-- signup expects both email OTP and phone OTP
-- forgot-password reset expects both email OTP and phone OTP
-- the email OTP field should appear in the UI
-
-Phone OTP is mocked and shown in the UI for demo convenience.
-Email OTP depends on your Brevo SMTP configuration working locally.
-
-### 5. Recommended local test flow
-
-1. Start the backend
-2. Confirm `/health` works
-3. Seed simulation inputs if you want demo personas
-4. Run the Flutter app with your local backend URL
-5. Test:
-   - signup
-   - OTP verification
-   - DigiLocker
-   - gig connection
-   - risk
-   - premium
-   - claim flow
-
 ## 🧪 How to Run Locally
 
 ### 📦 Backend (FastAPI)
@@ -564,6 +461,29 @@ Important environment variables include:
 See:
 
 - [backend/.env.example](backend/.env.example)
+
+### Seed Demo Personas And Inputs
+
+After the backend is running, you can seed the simulation layer:
+
+```http
+POST /simulate/input
+Content-Type: application/json
+
+{
+  "enable_simulation": true,
+  "regenerate_income": true,
+  "days": 30
+}
+```
+
+Recommended local flow:
+
+1. Start the backend.
+2. Confirm `/health` works.
+3. Seed demo inputs if you want personas and dynamic scenarios.
+4. Run the Flutter app with your LAN IP if testing on a real phone.
+5. Test login, gig connection, risk, premium, claim, fraud, and payout flow.
 
 ## Backend Engines
 
@@ -1099,7 +1019,7 @@ See:
 
 - [actor_demo_guide.md](backend/docs/demo/actor_demo_guide.md)
 
-## Two Highlight Personas For Phase 2
+## Two Highlight Personas
 
 ### Ravi Sharma (`bad_actor`)
 
@@ -1541,7 +1461,7 @@ What makes it different:
 
 ## Current Status
 
-As of the current Phase 2 build, the system includes:
+The current build includes:
 
 - role selection for worker and insurer entry
 - full onboarding flow
