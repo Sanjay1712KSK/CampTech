@@ -306,10 +306,7 @@ class _DemoControlSection extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 demoError!,
-                style: const TextStyle(
-                  color: AppTheme.errorColor,
-                  height: 1.5,
-                ),
+                style: const TextStyle(color: AppTheme.errorColor, height: 1.5),
               ),
             ),
         ],
@@ -364,7 +361,10 @@ class _LivePipelineSection extends StatelessWidget {
             child: _PipelineStageCard(
               icon: Icons.cloudy_snowing_rounded,
               title: 'Environment',
-              badge: _readString(environment['demo_scenario'], fallback: 'live'),
+              badge: _readString(
+                environment['demo_scenario'],
+                fallback: 'live',
+              ),
               explanation:
                   'Live signals and demo overrides shape the disruption context before any insurance decision happens.',
               detailRows: [
@@ -396,14 +396,16 @@ class _LivePipelineSection extends StatelessWidget {
               detailRows: [
                 _PipelineDetailRow(
                   label: 'Risk score',
-                  value: (_readDouble(risk['risk_score']) ?? 0).toStringAsFixed(2),
+                  value: (_readDouble(risk['risk_score']) ?? 0).toStringAsFixed(
+                    2,
+                  ),
                 ),
                 _PipelineDetailRow(
                   label: 'Triggers',
                   value: _fallbackText(
-                    _asStringList(risk['active_triggers'])
-                        .map(_prettifyTrigger)
-                        .join(', '),
+                    _asStringList(
+                      risk['active_triggers'],
+                    ).map(_prettifyTrigger).join(', '),
                   ),
                 ),
               ],
@@ -459,8 +461,8 @@ class _LivePipelineSection extends StatelessWidget {
               detailRows: [
                 _PipelineDetailRow(
                   label: 'Fraud score',
-                  value:
-                      (_readDouble(fraud['fraud_score']) ?? 0).toStringAsFixed(2),
+                  value: (_readDouble(fraud['fraud_score']) ?? 0)
+                      .toStringAsFixed(2),
                 ),
                 _PipelineDetailRow(
                   label: 'Signals',
@@ -549,10 +551,7 @@ class _AnimatedPipelineStage extends StatelessWidget {
   final bool visible;
   final Widget child;
 
-  const _AnimatedPipelineStage({
-    required this.visible,
-    required this.child,
-  });
+  const _AnimatedPipelineStage({required this.visible, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -620,7 +619,10 @@ class _PipelineStageCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(999),
@@ -639,10 +641,7 @@ class _PipelineStageCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             explanation,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
+            style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
           ),
           const SizedBox(height: 14),
           ...detailRows,
@@ -656,10 +655,7 @@ class _PipelineDetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _PipelineDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _PipelineDetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
