@@ -82,6 +82,45 @@ Why this matters:
 
 ---
 
+## Real-Time APIs Used
+
+GigShield relies on real-time external APIs to drive intelligent decision-making.
+
+### Weather API
+
+- used to detect rainfall and environmental disruptions
+- critical for triggering claims
+- supplies live weather severity signals to the environment and risk layers
+
+### AQI API
+
+- measures air quality conditions
+- helps determine environmental severity
+- contributes to worker safety and disruption context
+
+### Traffic API
+
+- detects congestion and delivery slowdowns
+- impacts delivery efficiency and income
+- helps explain whether slower deliveries align with real road conditions
+
+### Gig Data (Simulated or Integrated)
+
+- deliveries per hour
+- earnings data
+- historical baseline
+- worker performance context
+
+These APIs provide live signals that directly influence:
+
+- Risk Engine
+- Claim Engine
+- fraud validation
+
+Together, these inputs make the platform responsive to real operating conditions instead of static insurance assumptions.
+
+---
+
 ## Core Platform
 
 GigShield is built as a single insurance system rather than a collection of disconnected features.
@@ -239,6 +278,46 @@ What this means in practice:
 - no delay
 - no manual intervention for qualifying cases
 - claims can be activated because the system already understands the disruption context
+
+---
+
+## Mock APIs & Simulation Layer
+
+To demonstrate real-world scenarios, GigShield includes controlled simulation APIs.
+
+### Environment Override API
+
+- simulates disruptions like heavy rain
+- used for demo scenarios
+- allows the environment layer to react to controlled override inputs
+
+Example:
+
+`POST /environment/override`
+
+### Full Pipeline API
+
+- returns full system output across the connected insurance pipeline
+- supports environment to risk to claim to fraud to payout storytelling
+- helps the frontend render a complete decision flow
+
+Flow:
+
+`environment -> risk -> claim -> fraud -> payout`
+
+### Fraud Simulation API
+
+- triggers fraud scenarios
+- used to test system robustness
+- helps demonstrate spoofing, anomaly, and mismatch outcomes
+
+These mock APIs allow:
+
+- controlled testing
+- repeatable demos
+- dynamic UI updates
+
+They make it possible to show different system behaviors on demand while keeping the same connected engine architecture intact.
 
 ---
 
