@@ -1,4 +1,4 @@
-# 🚀 GigShield — Intelligent Insurance for Gig Workers
+# GigShield — Intelligent Insurance for Gig Workers
 
 Real-time, AI-powered insurance for gig workers that automatically detects income disruption, validates claims, prevents fraud, and issues instant payouts.
 
@@ -6,7 +6,7 @@ GigShield is a full-stack insurtech platform built to protect delivery and gig-e
 
 ---
 
-## 🎯 What GigShield Solves
+## What GigShield Solves
 
 Gig workers do not operate in stable working conditions.
 
@@ -28,7 +28,7 @@ GigShield is designed as an always-on, explainable, demo-ready insurance platfor
 
 ---
 
-## 🎥 Demo & Access
+## Demo & Access
 
 - [🎬 Demo Video](./Demo/Phase%202%20.mp4)
 - [📦 GitHub Releases](https://github.com/Sanjay1712KSK/GuideWire/releases)
@@ -37,7 +37,7 @@ GigShield is designed as an always-on, explainable, demo-ready insurance platfor
 
 ---
 
-## 🧩 Product At A Glance
+## Product At A Glance
 
 GigShield connects the full insurance lifecycle into one product pipeline:
 
@@ -58,7 +58,7 @@ At a high level:
 
 ---
 
-## 🌐 Real-Time Data & APIs
+## Real-Time Data & APIs
 
 GigShield is powered by live external APIs. The platform does not make static insurance decisions from fixed assumptions. It reacts to real-world operating conditions as they change.
 
@@ -82,11 +82,11 @@ Why this matters:
 
 ---
 
-## 🏗 Core Platform
+## Core Platform
 
 GigShield is built as a single insurance system rather than a collection of disconnected features.
 
-### 👤 User Onboarding
+### User Onboarding
 
 - worker and insurer role selection from the entrance screen
 - signup flow with complete registration screens
@@ -97,14 +97,14 @@ GigShield is built as a single insurance system rather than a collection of disc
 - biometric-ready secure login support
 - device-aware trust controls
 
-### 🔗 Gig Account Integration
+### Gig Account Integration
 
 - simulated gig-platform account connection
 - generated earnings history and trend modeling
 - income baseline creation for disruption comparison
 - persona-ready seeded demo workers
 
-### 🌦 Environment Intelligence
+### Environment Intelligence
 
 - live weather signals via `Open-Meteo`
 - live AQI context via `OpenWeather Air Pollution API`
@@ -113,28 +113,88 @@ GigShield is built as a single insurance system rather than a collection of disc
 - controlled disruption triggers for storytelling
 - converts raw live inputs into disruption-aware operating context for downstream engines
 
-### 📉 Risk Engine
+### Risk Engine
 
 - combines hyperlocal environment signals with worker context
 - estimates disruption intensity and expected income loss
 - produces explainable risk outputs
 - powers downstream premium and claim logic
 
-### 💵 Premium Generation
+### Risk Engine (Advanced Intelligence)
+
+The Risk Engine is the core decision-making layer that dynamically evaluates a worker's risk in real time.
+
+#### Hyperlocal Risk Analysis
+
+The system calculates risk based on the user's exact location, not just city-level data.
+
+It considers:
+
+- local weather intensity
+- nearby traffic congestion
+- area-specific environmental conditions
+
+This ensures highly accurate, location-specific risk assessment.
+
+#### Time-Slot Risk Modeling
+
+Risk varies throughout the day.
+
+The system evaluates:
+
+- peak delivery hours
+- off-peak slow periods
+- time-based disruption likelihood
+
+Example:
+
+- evening rain can create higher disruption impact than light morning drizzle because more deliveries are likely to be affected
+
+#### Predictive Risk (Short-Term Forecasting)
+
+The system predicts near-future risk using:
+
+- upcoming weather changes
+- traffic trends
+- historical patterns
+
+Example:
+
+- incoming rain can raise risk before the disruption fully occurs, allowing the platform to react earlier
+
+#### Risk Output
+
+The engine generates:
+
+- risk score in the `0-1` range
+- risk level such as `Low`, `Medium`, or `High`
+- active triggers such as rain, traffic, and environmental stress
+
+#### Connection to Other Engines
+
+The Risk Engine feeds directly into:
+
+- Premium Engine for pricing insurance
+- Claim Engine for triggering payouts
+- Fraud Engine for validating anomalies
+
+This makes risk dynamic, location-aware, time-aware, predictive, and central to the rest of the insurance pipeline.
+
+### Premium Generation
 
 - weekly premium calculation driven by risk output
 - pricing changes with real conditions
 - safer conditions can lead to lower premium
 - riskier conditions justify stronger protection pricing
 
-### 🛡 Policy Creation
+### Policy Creation
 
 - policy activation after premium payment
 - insurance state tracking
 - coverage visibility inside the app
 - policy history support through backend records
 
-### ⚡ Parametric Claim Engine
+### Parametric Claim Engine
 
 - disruption-aware claim evaluation
 - zero-touch automation for qualifying cases
@@ -142,14 +202,14 @@ GigShield is built as a single insurance system rather than a collection of disc
 - explainable eligibility and guarded outcomes
 - no paperwork-based claim dependency for valid parametric events
 
-### 💸 Payout System
+### Payout System
 
 - payout readiness through linked mock bank accounts
 - Razorpay test integration for payment and payout flow
 - automatic payout for valid claims
 - transaction tracking and status visibility
 
-### ⛓ Blockchain Adapter
+### Blockchain Adapter
 
 - policy, claim, and payout events logged through a mock-first adapter
 - trust and audit trail support
@@ -157,7 +217,7 @@ GigShield is built as a single insurance system rather than a collection of disc
 
 ---
 
-## ⚡ Parametric Triggers (Real-Time Decision Engine)
+## Parametric Triggers (Real-Time Decision Engine)
 
 GigShield uses parametric triggers instead of relying on manual claim filing. The system watches live conditions and worker performance signals, then reacts automatically when disruption crosses meaningful thresholds.
 
@@ -182,11 +242,11 @@ What this means in practice:
 
 ---
 
-## 🚀 Advanced Enhancements
+## Advanced Enhancements
 
 Phase 3 is the strongest evolution of the platform. It shifts GigShield from a solid prototype into a complete, presentation-ready, productized insurance experience.
 
-### 🧠 Intelligent Fraud Detection
+### Intelligent Fraud Detection
 
 GigShield uses a multi-layer fraud intelligence system rather than a single validation rule.
 
@@ -207,7 +267,7 @@ Fraud outputs:
 
 This ensures trust, fairness, and prevents system misuse.
 
-### 💰 Instant Payout System
+### Instant Payout System
 
 - Razorpay test-mode integration
 - automatic payout flow after approval
@@ -215,20 +275,20 @@ This ensures trust, fairness, and prevents system misuse.
 - transaction and payout trail visibility
 - clearer trust and completion story for judges
 
-### ⚡ Zero-Touch Claim Engine
+### Zero-Touch Claim Engine
 
 - fully automated claim triggering
 - no manual claim filing needed for valid disruption-led loss
 - connects disruption, worker baseline, and payout decisioning
 
-### 🌐 Real-Time + Controlled Demo Environment
+### Real-Time + Controlled Demo Environment
 
 - real APIs for live data
 - simulation override for consistent presentations
 - controlled trigger buttons for rain and fraud stories
 - repeatable demos without hardcoding outcomes
 
-### 📊 Intelligent Dashboards
+### Intelligent Dashboards
 
 `Worker dashboard`
 
@@ -250,7 +310,7 @@ This ensures trust, fairness, and prevents system misuse.
 - smart insights
 - AI recommendations
 
-### 🎬 Automated Demo System
+### Automated Demo System
 
 - one-click demo entry from app start
 - automated navigation flow
@@ -260,7 +320,7 @@ This ensures trust, fairness, and prevents system misuse.
 
 ---
 
-## 🔗 How All Engines Work Together
+## How All Engines Work Together
 
 GigShield is built as a connected engine pipeline. Each engine uses:
 
@@ -286,9 +346,9 @@ This creates a continuous decision pipeline where every output feeds the next st
 
 ---
 
-## 🏛 Architecture
+## Architecture
 
-### 📱 Frontend
+### Frontend
 
 - Flutter
 - Riverpod
@@ -309,7 +369,7 @@ Main app surfaces:
 - profile
 - admin / insurer control center
 
-### ⚙ Backend
+### Backend
 
 - FastAPI
 - SQLAlchemy
@@ -320,7 +380,7 @@ Main app surfaces:
 - service-oriented architecture
 - dedicated engines for risk, premium, claim, fraud, prediction, payout, and admin analytics
 
-### 🔌 External Integrations
+### External Integrations
 
 - Open-Meteo
 - OpenWeather Air Pollution API
@@ -328,7 +388,7 @@ Main app surfaces:
 - Brevo SMTP
 - Razorpay test mode
 
-### 🤖 Intelligence Layer
+### Intelligence Layer
 
 - rule-based and weighted scoring
 - anomaly-driven fraud logic
@@ -338,7 +398,7 @@ Main app surfaces:
 
 ---
 
-## 🔄 How The System Works
+## How The System Works
 
 ### 1. Worker Identity And Access
 
@@ -391,7 +451,7 @@ Main app surfaces:
 
 ---
 
-## 📐 Explainable Product Logic
+## Explainable Product Logic
 
 GigShield is designed so the core engines reuse one another instead of producing isolated outputs.
 
@@ -431,9 +491,9 @@ The key product principle is that simulation feeds inputs, but the engines still
 
 ---
 
-## 🌐 What Is Live And What Is Simulated
+## What Is Live And What Is Simulated
 
-### ✅ Live / Real-Time
+### Live / Real-Time
 
 - weather signals
 - AQI signals
@@ -444,7 +504,7 @@ The key product principle is that simulation feeds inputs, but the engines still
 - claim reasoning
 - admin analytics surfaces
 
-### 🧪 Simulated / Mocked For Demo Practicality
+### Simulated / Mocked For Demo Practicality
 
 - some OTP convenience flows
 - DigiLocker demo path
@@ -460,47 +520,47 @@ Important note:
 
 ---
 
-## 👤 Demo Personas
+## Demo Personas
 
 GigShield includes multiple personas so judges can see honest, fraudulent, ambiguous, low-risk, and insurer perspectives on the same stack.
 
-### 🟢 Arjun — Honest Worker
+### Arjun — Honest Worker
 
 - represents a genuine worker under real disruption
 - best for showing valid claim and payout logic
 - consistent work pattern
 - strong policyholder story
 
-### 🔴 Rahul — Fraud Attempt
+### Rahul — Fraud Attempt
 
 - represents manipulation or weakly supported claim behavior
 - best for showing fraud detection, mismatch checks, and payout blocking
 - useful for spoofing and anomaly narrative
 
-### 🟡 Meena — Edge Case
+### Meena — Edge Case
 
 - represents ambiguous or medium-confidence cases
 - best for showing explainable review behavior
 - helps demonstrate fairness beyond approve-or-reject extremes
 
-### 🏢 Insurer — Admin Persona
+### Insurer — Admin Persona
 
 - best for showing operational monitoring
 - includes fraud intelligence, system health, predictions, and recommendations
 
-### 🔵 Karthik — Restricted / Low-Risk User
+### Karthik — Restricted / Low-Risk User
 
 - useful for showing fair pricing under calmer conditions
 - helps demonstrate limited claimability when disruption support is weak
 
-### ⭐ Premium Success Persona
+### Premium Success Persona
 
 - shows the strongest full premium-to-payout story
 - best for fast presentations where the audience needs to see end-to-end value quickly
 
 ---
 
-## 🖼 Complete Screenshot Library
+## Complete Screenshot Library
 
 The README below includes the screenshot collections from:
 
@@ -519,7 +579,7 @@ The screenshots are grouped so the product can be understood in the same order a
 
 ---
 
-## 🖼 Screenshots
+## Screenshots
 
 ## 1. Entrance Screen
 
@@ -563,7 +623,7 @@ Login, signup, verification, recovery, and trust-establishment flows for workers
 
 Home, earnings, and insurance views that show risk, disruption context, and worker-facing explainability.
 
-## 🛡 Insurer Control Center
+## Insurer Control Center
 
 Dashboard for insurers to monitor:
 
@@ -635,7 +695,7 @@ Dashboard for insurers to monitor:
 
 The following worker screens show how GigShield exposes the decision pipeline inside the product experience.
 
-## 👤 Real User Journey Screens
+## Real User Journey Screens
 
 ### Authentication & Verification
 
@@ -813,7 +873,7 @@ These screens show how disruption moves from worker state into claim visibility 
 
 ---
 
-## 🟢 Honest Persona Screens — Good Mock Up User
+## Honest Persona Screens — Good Mock Up User
 
 This persona is the trusted-worker story and best represents a valid disruption-led payout path.
 
@@ -907,7 +967,7 @@ This persona is the trusted-worker story and best represents a valid disruption-
 
 ---
 
-## 🔴 Fraud Persona Screens — Bad Mock Up User
+## Fraud Persona Screens — Bad Mock Up User
 
 This persona is designed to show how the platform resists manipulation and prevents invalid payouts.
 
@@ -1015,7 +1075,7 @@ This persona is designed to show how the platform resists manipulation and preve
 
 ---
 
-## 🎬 Automated Demo Experience
+## Automated Demo Experience
 
 GigShield includes a presentation-ready automated demo mode for fast storytelling.
 
@@ -1031,7 +1091,7 @@ This allows judges to watch the product behave like a connected system instead o
 
 ---
 
-## 🎬 Phase Walkthrough Summary
+## Phase Walkthrough Summary
 
 ### Phase 1 — Access And Trust Establishment
 
@@ -1062,9 +1122,9 @@ This allows judges to watch the product behave like a connected system instead o
 
 ---
 
-## 📦 Latest Release Highlights
+## Latest Release Highlights
 
-### 📦 Latest Release (Phase 3)
+### Latest Release (Phase 3)
 
 This release introduces the biggest product leap in the repository:
 
@@ -1083,7 +1143,7 @@ View all releases here:
 
 ---
 
-## 📄 Pitch Deck
+## Pitch Deck
 
 View our pitch deck here:
 
@@ -1091,9 +1151,9 @@ View our pitch deck here:
 
 ---
 
-## 🧪 How to Run Locally
+## How to Run Locally
 
-### 📦 Backend (FastAPI)
+### Backend (FastAPI)
 
 ```bash
 git clone https://github.com/Sanjay1712KSK/GuideWire.git
@@ -1133,7 +1193,7 @@ Backend runs at:
 http://127.0.0.1:8000
 ```
 
-### 📱 Frontend (Flutter)
+### Frontend (Flutter)
 
 This repository does not use a separate `frontend/` folder. The Flutter app lives at the repository root.
 
@@ -1161,13 +1221,13 @@ Use these values when appropriate:
 - `http://10.0.2.2:8000` for Android emulator
 - your machine LAN IP for a real phone on the same Wi-Fi
 
-### 📦 Build APK
+### Build APK
 
 ```bash
 flutter build apk --release
 ```
 
-### 🔑 Required Keys
+### Required Keys
 
 You should configure the following keys and credentials before running the full demo flow:
 
@@ -1223,7 +1283,7 @@ Content-Type: application/json
 
 ---
 
-## 🔐 Security & Trust Features
+## Security & Trust Features
 
 - bcrypt password hashing
 - JWT-based authentication
@@ -1238,7 +1298,7 @@ Content-Type: application/json
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 - `Frontend`: Flutter, Riverpod, Geolocator, Local Auth, Secure Storage
 - `Backend`: FastAPI, SQLAlchemy, Python services, JWT auth
@@ -1248,7 +1308,7 @@ Content-Type: application/json
 
 ---
 
-## 📚 Documentation References
+## Documentation References
 
 - [API specification](backend/docs/api_spec.md)
 - [Actor demo guide](backend/docs/demo/actor_demo_guide.md)
@@ -1258,7 +1318,7 @@ Content-Type: application/json
 
 ---
 
-## 🌟 Why GigShield Stands Out
+## Why GigShield Stands Out
 
 - fully automated claims mean valid disruption events can activate protection without manual paperwork
 - live APIs power real-time decisions, so risk, triggers, and claims reflect current conditions instead of static rules
@@ -1269,6 +1329,6 @@ Content-Type: application/json
 
 ---
 
-## 👥 Team
+## Team
 
 Built by Team CampTech for the Guidewire / DevTrails Hackathon.
