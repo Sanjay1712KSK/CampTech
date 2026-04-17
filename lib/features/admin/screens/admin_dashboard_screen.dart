@@ -1,19 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/demo/demo_controller.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:intl/intl.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+final GlobalKey<AdminDashboardScreenState> adminDashboardGlobalKey =
+    GlobalKey<AdminDashboardScreenState>();
+
+class AdminDashboardScreen extends ConsumerStatefulWidget {
+  final String? initialToken;
+
+  const AdminDashboardScreen({super.key, this.initialToken});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  State<AdminDashboardScreen> createState() => AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   final _emailController = TextEditingController(text: 'admin@gigshield.com');
   final _passwordController = TextEditingController(text: 'admin123');
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _overviewKey = GlobalKey();
+  final GlobalKey _fraudKey = GlobalKey();
+  final GlobalKey _predictionsKey = GlobalKey();
 
   String? _adminToken;
   bool _loggingIn = false;
@@ -21,10 +32,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<_AdminDashboardBundle>? _dashboardFuture;
 
   @override
+  void initState() {
+    super.initState();
+    if ((widget.initialToken ?? '').isNotEmpty) {
+      _adminToken = widget.initialToken;
+      _dashboardFuture = _loadDashboard(widget.initialToken!);
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> scrollToSection(String section) async {
+    final key = switch (section) {
+      'overview' => _overviewKey,
+      'fraud' => _fraudKey,
+      'predictions' => _predictionsKey,
+      _ => _overviewKey,
+    };
+    final targetContext = key.currentContext;
+    if (targetContext == null) return;
+    await Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(seconds: 2),
+      curve: Curves.easeInOut,
+      alignment: 0.08,
+    );
   }
 
   Future<void> _login() async {
@@ -85,6 +123,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final demo = ref.watch(demoControllerProvider);
     return Scaffold(
       backgroundColor: const Color(0xFF141717),
       appBar: AppBar(
@@ -92,7 +131,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         elevation: 0,
         title: const Text('Insurer Control Center'),
       ),
-      body: _adminToken == null ? _buildLogin() : _buildDashboard(),
+      body: Stack(
+        children: [
+          _adminToken == null ? _buildLogin() : _buildDashboard(),
+          if (demo.isRunning && (demo.overlayMessage ?? '').isNotEmpty)
+            _AdminDemoOverlay(message: demo.overlayMessage!),
+        ],
+      ),
     );
   }
 
@@ -235,6 +280,53 @@ class _AdminDashboardBundle {
   });
 }
 
+class _AdminDemoOverlay extends StatelessWidget {
+  final String message;
+
+  const _AdminDemoOverlay({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: Colors.black.withOpacity(0.45),
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AdminDashboardView extends StatelessWidget {
   final _AdminDashboardBundle data;
 
@@ -256,6 +348,7 @@ class _AdminDashboardView extends StatelessWidget {
             ? 2
             : 1;
         return ListView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -268,7 +361,10 @@ class _AdminDashboardView extends StatelessWidget {
               insight: data.predictions.insight,
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'System Health'),
+            KeyedSubtree(
+              key: _overviewKey,
+              child: const _SectionTitle(title: 'System Health'),
+            ),
             _MetricGrid(
               cardsPerRow: cardsPerRow,
               children: [
@@ -308,7 +404,10 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Fraud Intelligence'),
+            KeyedSubtree(
+              key: _fraudKey,
+              child: const _SectionTitle(title: 'Fraud Intelligence'),
+            ),
             isWide
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -620,7 +719,10 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Predictions'),
+            KeyedSubtree(
+              key: _predictionsKey,
+              child: const _SectionTitle(title: 'Predictions'),
+            ),
             _PanelCard(
               title: 'Next 7-Day Outlook',
               subtitle:

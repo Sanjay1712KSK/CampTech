@@ -285,6 +285,85 @@ class _WorkerDashboardBundle {
   });
 }
 
+class _DemoOverlay extends StatelessWidget {
+  final String message;
+
+  const _DemoOverlay({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: Colors.black.withOpacity(0.45),
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.25)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HighlightSection extends StatelessWidget {
+  final GlobalKey sectionKey;
+  final bool highlighted;
+  final Widget child;
+
+  const _HighlightSection({
+    required this.sectionKey,
+    required this.highlighted,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: sectionKey,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: highlighted
+            ? [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.18),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                ),
+              ]
+            : const [],
+      ),
+      child: child,
+    );
+  }
+}
+
 class _DemoControlSection extends StatelessWidget {
   final bool demoBusy;
   final String? demoError;
