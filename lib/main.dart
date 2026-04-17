@@ -21,7 +21,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   final prefs = await SharedPreferences.getInstance();
   final String? savedLang = prefs.getString('app_language');
   if (savedLang != null) {
@@ -123,7 +123,8 @@ class _AuthBootstrapScreen extends ConsumerStatefulWidget {
   const _AuthBootstrapScreen();
 
   @override
-  ConsumerState<_AuthBootstrapScreen> createState() => _AuthBootstrapScreenState();
+  ConsumerState<_AuthBootstrapScreen> createState() =>
+      _AuthBootstrapScreenState();
 }
 
 class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
@@ -144,10 +145,9 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
     if (!biometricEnabled) {
       try {
         final user = await ApiService.getCurrentUser(session.accessToken);
-        ref.read(userProvider.notifier).setAuthenticatedUser(
-              user,
-              accessToken: session.accessToken,
-            );
+        ref
+            .read(userProvider.notifier)
+            .setAuthenticatedUser(user, accessToken: session.accessToken);
         return _BootstrapResult.main;
       } catch (_) {
         await AuthStorageService.clearSession();
@@ -165,10 +165,9 @@ class _AuthBootstrapScreenState extends ConsumerState<_AuthBootstrapScreen> {
 
     try {
       final user = await ApiService.getCurrentUser(session.accessToken);
-      ref.read(userProvider.notifier).setAuthenticatedUser(
-            user,
-            accessToken: session.accessToken,
-          );
+      ref
+          .read(userProvider.notifier)
+          .setAuthenticatedUser(user, accessToken: session.accessToken);
       return _BootstrapResult.main;
     } catch (_) {
       await AuthStorageService.clearSession();
