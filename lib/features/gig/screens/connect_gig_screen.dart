@@ -7,6 +7,7 @@ import 'package:guidewire_gig_ins/features/auth/screens/first_login_verification
 import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/features/gig/screens/income_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/device_identity_service.dart';
 
 class ConnectGigScreen extends ConsumerStatefulWidget {
   final int? userId;
@@ -67,10 +68,14 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
         workerId: workerId,
       );
 
-      if (widget.isOnboardingFlow && widget.identifier != null && widget.password != null) {
+      if (widget.isOnboardingFlow &&
+          widget.identifier != null &&
+          widget.password != null) {
+        final deviceId = await DeviceIdentityService.getOrCreateDeviceId();
         final login = await ApiService.login(
           identifier: widget.identifier!,
           password: widget.password!,
+          deviceId: deviceId,
         );
         if (!mounted) return;
         if (login.requiresTwoFactor && login.twoFactorToken != null) {
@@ -85,7 +90,11 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
             (route) => false,
           );
         } else {
-          await AuthFlowHelper.finalizeAuthenticatedSession(context, ref, login);
+          await AuthFlowHelper.finalizeAuthenticatedSession(
+            context,
+            ref,
+            login,
+          );
           if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
@@ -97,9 +106,9 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
       if (widget.redirectToRiskOnSuccess) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -110,9 +119,7 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
       }
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => IncomeScreen(userId: userId),
-        ),
+        MaterialPageRoute(builder: (_) => IncomeScreen(userId: userId)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -126,7 +133,8 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final requiresConnection = widget.isOnboardingFlow || widget.redirectToRiskOnSuccess;
+    final requiresConnection =
+        widget.isOnboardingFlow || widget.redirectToRiskOnSuccess;
     return PopScope(
       canPop: !requiresConnection,
       child: Scaffold(
@@ -189,7 +197,10 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                     children: [
                       const Text(
                         'Platform',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
@@ -198,10 +209,22 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                           prefixIcon: Icon(Icons.storefront_outlined),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'Swiggy', child: Text('Swiggy')),
-                          DropdownMenuItem(value: 'Zomato', child: Text('Zomato')),
-                          DropdownMenuItem(value: 'Blinkit', child: Text('Blinkit')),
-                          DropdownMenuItem(value: 'Porter', child: Text('Porter')),
+                          DropdownMenuItem(
+                            value: 'Swiggy',
+                            child: Text('Swiggy'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Zomato',
+                            child: Text('Zomato'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Blinkit',
+                            child: Text('Blinkit'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Porter',
+                            child: Text('Porter'),
+                          ),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -212,7 +235,10 @@ class _ConnectGigScreenState extends ConsumerState<ConnectGigScreen> {
                       const SizedBox(height: 16),
                       const Text(
                         'Worker ID',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       TextField(

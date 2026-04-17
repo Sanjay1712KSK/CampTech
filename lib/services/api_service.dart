@@ -641,10 +641,15 @@ class ApiService {
   static Future<LoginResult> login({
     required String identifier,
     required String password,
+    String? deviceId,
   }) async {
     final body = await _postJson(
       '/auth/login',
-      body: {'identifier': identifier, 'password': password},
+      body: {
+        'identifier': identifier,
+        'password': password,
+        if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
+      },
     );
     return LoginResult.fromJson(body);
   }

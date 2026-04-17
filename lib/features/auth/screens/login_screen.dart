@@ -10,6 +10,7 @@ import 'package:guidewire_gig_ins/features/auth/screens/forgot_password_screen.d
 import 'package:guidewire_gig_ins/features/dashboard/screens/dashboard_loader.dart';
 import 'package:guidewire_gig_ins/features/auth/screens/signup_screen.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
+import 'package:guidewire_gig_ins/services/device_identity_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -37,14 +38,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = _passwordController.text;
     if (identifier.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your email, username, or phone and password.')),
+        const SnackBar(
+          content: Text('Enter your email, username, or phone and password.'),
+        ),
       );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      final result = await ApiService.login(identifier: identifier, password: password);
+      final deviceId = await DeviceIdentityService.getOrCreateDeviceId();
+      final result = await ApiService.login(
+        identifier: identifier,
+        password: password,
+        deviceId: deviceId,
+      );
       if (!mounted) return;
       if (result.requiresTwoFactor && result.twoFactorToken != null) {
         Navigator.push(
@@ -67,7 +75,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -103,28 +113,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 10),
               Text(
                 'Use email, username, or full phone number after KYC and account activation.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 36),
               CustomTextField(
                 controller: _identifierController,
                 hintText: 'Email / Username / Phone',
-                prefixIcon: const Icon(Icons.person_outline, color: AppTheme.textSecondary),
+                prefixIcon: const Icon(
+                  Icons.person_outline,
+                  color: AppTheme.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 controller: _passwordController,
                 hintText: 'Password',
                 obscureText: _obscurePassword,
-                prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
+                prefixIcon: const Icon(
+                  Icons.lock_outline,
+                  color: AppTheme.textSecondary,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                     color: AppTheme.textSecondary,
                   ),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
               const SizedBox(height: 12),
@@ -134,7 +153,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordScreen(),
+                      ),
                     );
                   },
                   child: const Text('Forgot password?'),
@@ -162,7 +183,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         TextSpan(
                           text: 'Start onboarding',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: AppTheme.primaryColor,
                                 fontWeight: FontWeight.bold,
                               ),
