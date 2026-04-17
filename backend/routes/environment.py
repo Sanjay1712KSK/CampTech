@@ -4,8 +4,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database.db import get_db
-from schemas.environment_schema import CoordinatesQuery, EnvironmentResponse
-from services.environment_service import get_environment
+from schemas.environment_schema import (
+    CoordinatesQuery,
+    EnvironmentOverrideRequest,
+    EnvironmentOverrideResponse,
+    EnvironmentResponse,
+)
+from services.environment_service import get_environment, set_environment_override
 
 logger = logging.getLogger('gig_insurance_backend.environment.route')
 router = APIRouter()
@@ -19,3 +24,20 @@ def environment(params: CoordinatesQuery = Depends(), db: Session = Depends(get_
     except Exception as exc:
         logger.exception('environment endpoint error: %s', exc)
         raise
+
+
+@router.get('/environment/current', response_model=EnvironmentResponse)
+def environment_current(params: CoordinatesQuery = Depends(), db: Session = Depends(get_db)):
+    return environment(params=params, db=db)
+
+
+@router.post('/environment/override', response_model=EnvironmentOverrideResponse)
+def environment_override(payload: EnvironmentOverrideRequest):
+    state = set_environment_override(
+        override_mode=payload.override_mode,
+        rain=payload.rain,
+        traffic=payload.traffic,
+        aqi=payload.aqi,
+        scenario=payload.scenario,
+    )
+    return EnvironmentOverrideResponse.model_validate(state).model_dump()

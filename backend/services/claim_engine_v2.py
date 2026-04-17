@@ -216,6 +216,52 @@ def auto_process_claim(
         persist_snapshots=True,
     )
     policy = get_claimable_policy(user_id, db)
+    if policy is not None:
+        prior_paid_claim = (
+            db.query(ClaimHistory)
+            .filter(
+                ClaimHistory.user_id == int(user_id),
+                ClaimHistory.policy_id == int(policy.id),
+                ClaimHistory.status == 'APPROVED',
+                ClaimHistory.approved_payout > 0,
+            )
+            .order_by(ClaimHistory.claim_date.desc(), ClaimHistory.id.desc())
+            .first()
+        )
+        if prior_paid_claim is not None:
+            return {
+                'claim_triggered': True,
+                'status': 'APPROVED',
+                'loss': float(prior_paid_claim.actual_loss or 0.0),
+                'confidence': 'HIGH',
+                'fraud': {
+                    'fraud_score': float(prior_paid_claim.fraud_score or 0.0),
+                    'decision': 'APPROVED',
+                    'confidence': 'LOW',
+                    'fraud_types': [],
+                    'signal_list': [],
+                    'signals': {},
+                    'explanation': 'A validated claim for this policy window has already been processed.',
+                },
+                'payout': {
+                    'status': 'SUCCESS',
+                    'amount_paid': float(prior_paid_claim.approved_payout or 0.0),
+                    'transaction_id': prior_paid_claim.claim_reference,
+                    'processed_at': _utcnow_iso(),
+                    'message': 'This policy window already has a completed payout.',
+                },
+                'explanation': 'The current policy week already has a settled automatic claim, so the platform is showing the existing result instead of creating a duplicate payout.',
+                'trigger': 'existing_settlement',
+                'timestamp': _utcnow_iso(),
+                'claim_id': prior_paid_claim.claim_reference,
+                'trigger_details': {'existing_settlement': True},
+                'loss_percentage': None,
+                'location_status': update_user_location_state(user, lat=lat, lon=lon, city=environment_data.get('city'), db=db),
+                'blockchain': {
+                    'claim': None,
+                    'payout': None,
+                },
+            }
 
     trigger_data = _detect_triggers(environment_data=environment_data, risk_data=risk_data, gig_data=gig_data, baseline=baseline)
     loss_data = _loss_estimation(baseline=baseline, gig_data=gig_data)

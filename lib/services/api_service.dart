@@ -916,6 +916,25 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> setEnvironmentOverride({
+    required bool overrideMode,
+    String? rain,
+    String? traffic,
+    String? aqi,
+    String? scenario,
+  }) async {
+    return _postJson(
+      '/environment/override',
+      body: {
+        'override_mode': overrideMode,
+        if (rain != null) 'rain': rain,
+        if (traffic != null) 'traffic': traffic,
+        if (aqi != null) 'aqi': aqi,
+        if (scenario != null) 'scenario': scenario,
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> processClaim(
     int userId,
     double lat,
@@ -960,6 +979,14 @@ class ApiService {
       '/claim/auto-process',
       body: {'user_id': userId, 'lat': lat, 'lon': lon},
     );
+  }
+
+  static Future<Map<String, dynamic>> getDemoFullPipeline(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
+    return _getJson('/demo/full-pipeline?user_id=$userId&lat=$lat&lon=$lon');
   }
 
   static Future<Map<String, dynamic>> processPayout({

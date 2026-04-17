@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from database.db import get_db
 from schemas.user_schema import LocationUpdateRequest
 from services.bank_service import insurance_summary, transaction_history
-from services.environment_service import get_environment
+from services.claim_engine import process_claim
+from services.claim_engine_v2 import auto_process_claim
+from services.environment_service import get_environment, get_environment_override
 from services.fraud_intelligence_engine import build_location_status, get_device_status, record_continuous_location_update, update_user_location_state
 from services.gig_service import today_income
 from services.premium_engine import calculate_weekly_premium
@@ -24,6 +26,28 @@ def _require_user(db: Session, user_id: int) -> User:
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     return user
+
+
+def _demo_payout_from_claim(claim: dict) -> dict:
+    payout = claim.get('payout')
+    if isinstance(payout, dict):
+        return payout
+    transaction = claim.get('transaction')
+    if isinstance(transaction, dict):
+        return {
+            'status': transaction.get('status'),
+            'amount_paid': transaction.get('amount'),
+            'transaction_id': transaction.get('transaction_id'),
+            'processed_at': transaction.get('processed_at') or transaction.get('created_at'),
+            'message': 'Payout successfully credited' if transaction.get('status') == 'SUCCESS' else 'Payout was not completed',
+        }
+    return {
+        'status': 'SKIPPED',
+        'amount_paid': 0.0,
+        'transaction_id': None,
+        'processed_at': None,
+        'message': 'No payout was processed for this claim path.',
+    }
 
 
 @router.get('/dashboard/worker')
@@ -134,6 +158,58 @@ async def premium_details(
         'reason': premium.get('reason'),
         'explanation': premium.get('explanation'),
         'last_updated': premium.get('last_updated'),
+    }
+
+
+@router.get('/demo/full-pipeline')
+async def demo_full_pipeline(
+    user_id: int = Query(..., gt=0),
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    db: Session = Depends(get_db),
+):
+    user = _require_user(db, user_id)
+    environment = get_environment(lat, lon, db=db, user_id=user_id)
+    risk = calculate_risk(environment, user_id=user_id, db=db, today_income=today_income(user_id=user_id, db=db))
+    premium = calculate_weekly_premium(
+        user_id=user_id,
+        lat=lat,
+        lon=lon,
+        db=db,
+        environment_data=environment,
+        risk_result=risk,
+        persist_snapshots=False,
+    )
+
+    override = get_environment_override()
+    scenario = str(override.get('scenario') or 'live')
+    if scenario == 'fraud':
+        claim = process_claim(
+            user_id=user_id,
+            db=db,
+            lat=lat,
+            lon=lon,
+            device_id=user.current_device_id,
+            claim_reason='rain',
+        )
+    else:
+        claim = auto_process_claim(user_id=user_id, db=db, lat=lat, lon=lon)
+
+    payout = _demo_payout_from_claim(claim)
+    return {
+        'scenario': scenario,
+        'override': override,
+        'environment': environment,
+        'risk': risk,
+        'premium': premium,
+        'claim': claim,
+        'fraud': claim.get('fraud') or {
+            'fraud_score': 0.0,
+            'decision': 'APPROVED',
+            'signals': {},
+            'explanation': 'Fraud evaluation is not available for this pipeline snapshot.',
+        },
+        'payout': payout,
     }
 
 
