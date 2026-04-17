@@ -963,43 +963,47 @@ class _DashboardView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          title: 'What Is Happening',
-          subtitle:
-              'Live disruption signals translated into worker-friendly risk.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _MetricTile(
-                    icon: Icons.warning_amber_rounded,
-                    label: 'Risk level',
-                    value: riskLevel,
-                    tone: _riskTone(riskLevel),
-                  ),
-                  _MetricTile(
-                    icon: Icons.insights_rounded,
-                    label: 'Risk score',
-                    value: riskScore.toStringAsFixed(2),
-                  ),
-                  _MetricTile(
-                    icon: Icons.schedule_rounded,
-                    label: 'Last updated',
-                    value: lastUpdated,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              _ExplainBar(
-                icon: Icons.auto_awesome_rounded,
-                text: riskExplanation.isEmpty
-                    ? 'Risk is being recalculated from weather, air quality, and traffic conditions.'
-                    : riskExplanation,
-              ),
-            ],
+        _HighlightSection(
+          sectionKey: riskKey,
+          highlighted: highlightedSection == 'risk',
+          child: _SectionCard(
+            title: 'What Is Happening',
+            subtitle:
+                'Live disruption signals translated into worker-friendly risk.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _MetricTile(
+                      icon: Icons.warning_amber_rounded,
+                      label: 'Risk level',
+                      value: riskLevel,
+                      tone: _riskTone(riskLevel),
+                    ),
+                    _MetricTile(
+                      icon: Icons.insights_rounded,
+                      label: 'Risk score',
+                      value: riskScore.toStringAsFixed(2),
+                    ),
+                    _MetricTile(
+                      icon: Icons.schedule_rounded,
+                      label: 'Last updated',
+                      value: lastUpdated,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _ExplainBar(
+                  icon: Icons.auto_awesome_rounded,
+                  text: riskExplanation.isEmpty
+                      ? 'Risk is being recalculated from weather, air quality, and traffic conditions.'
+                      : riskExplanation,
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
