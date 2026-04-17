@@ -160,6 +160,8 @@ class _DashboardView extends StatelessWidget {
     final claim = bundle.claim;
     final payout = _resolvePayout(dashboard, claim);
     final status = _asMap(dashboard['status']);
+    final device = _asMap(status['device']);
+    final fraud = _asMap(claim['fraud']);
     final policy = _asMap(dashboard['policy']);
     final userPayload = _asMap(dashboard['user']);
     final gigContext = _asMap(risk['gig_context']);
@@ -178,6 +180,10 @@ class _DashboardView extends StatelessWidget {
     final claimTriggered = claim['claim_triggered'] == true;
     final coverageActive = status['coverage_active'] == true;
     final premiumEligible = premium['eligible'] == true;
+    final deviceLocked = device['single_device_enforced'] == true;
+    final fraudDecision = _readString(fraud['decision'], fallback: 'Pending');
+    final fraudScore = _readDouble(fraud['fraud_score']) ?? 0.0;
+    final fraudSignals = _fraudSignals(fraud);
     final earningsToday =
         _readDouble(
           gigContext['earnings_today'],
@@ -248,6 +254,61 @@ class _DashboardView extends StatelessWidget {
           trafficText: _readString(
             traffic['traffic_level'],
             fallback: 'Unknown',
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: 'Trust & Security',
+          subtitle:
+              'A clear view of device protection, location trust, and fraud review.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ExplainBar(
+                icon: Icons.phonelink_lock_rounded,
+                text: deviceLocked
+                    ? 'Your account is secured to this device, which helps the platform trust your session and payouts.'
+                    : 'Device trust is still being established, so security checks are watching this account more closely.',
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _MetricTile(
+                    icon: Icons.gpp_good_rounded,
+                    label: 'Fraud decision',
+                    value: fraudDecision,
+                    tone: _claimTone(fraudDecision),
+                  ),
+                  _MetricTile(
+                    icon: Icons.shield_outlined,
+                    label: 'Fraud score',
+                    value: fraudScore.toStringAsFixed(2),
+                  ),
+                  _MetricTile(
+                    icon: Icons.location_on_outlined,
+                    label: 'Location trust',
+                    value: status['auto_payout_enabled'] == true
+                        ? 'Enabled'
+                        : 'Limited',
+                    tone: status['auto_payout_enabled'] == true
+                        ? AppTheme.successColor
+                        : AppTheme.warningColor,
+                  ),
+                ],
+              ),
+              if (fraudSignals.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: fraudSignals
+                      .map((signal) => _SignalChip(label: signal))
+                      .toList(),
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(height: 16),
