@@ -11,6 +11,23 @@ class CoordinatesQuery(BaseModel):
     user_id: int | None = Field(default=None, ge=1)
 
 
+class EnvironmentOverrideRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    override_mode: bool = True
+    rain: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    traffic: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    aqi: Literal['LOW', 'MEDIUM', 'HIGH'] | None = None
+    fraud_mode: bool = False
+
+
+class EnvironmentOverrideResponse(BaseModel):
+    override_mode: bool
+    fraud_mode: bool
+    version: int
+    levels: dict[str, str]
+
+
 class WeatherHourlyPoint(BaseModel):
     time: str
     hour: int
