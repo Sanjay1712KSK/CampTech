@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -293,7 +295,8 @@ async def location_update(payload: LocationUpdateRequest, db: Session = Depends(
             user=user,
             lat=payload.lat,
             lon=payload.lon,
-            timestamp=payload.timestamp,
+            timestamp=payload.timestamp
+            or datetime.now(UTC).replace(tzinfo=None),
             city=payload.city,
             device_id=payload.device_id,
             location_enabled=payload.location_enabled,
