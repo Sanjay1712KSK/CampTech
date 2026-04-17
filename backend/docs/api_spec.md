@@ -1,6 +1,6 @@
 # Gig Insurance Backend API Specification
 
-This document reflects the FastAPI routes currently mounted in [backend/main.py](s:\flutter\guidewire_gig_ins\backend\main.py). It covers the live backend surface used by the Flutter worker app, the insurer admin dashboard, and the adaptive prediction layer.
+This document reflects the FastAPI routes currently mounted in [backend/main.py](s:\flutter\guidewire_gig_ins\backend\main.py). It covers the live backend surface used by the Flutter worker app, the insurer admin dashboard, the adaptive prediction layer, and the live demo pipeline.
 
 ## Base URL
 
@@ -35,6 +35,7 @@ Health routes:
 - DigiLocker is simulated.
 - Claims support both manual processing and zero-touch parametric auto-processing.
 - Fraud checks, payouts, and predictions are data-driven and feed the worker and admin dashboards.
+- The worker Home dashboard includes a live demo control panel backed by environment override APIs and a consolidated demo pipeline endpoint.
 
 ## Error Shape
 
@@ -323,11 +324,54 @@ Returns the latest stored daily gig snapshot.
 
 Returns recent 7-day income and disruption summary.
 
-## 4. Environment, Risk, And Premium
+## 4. Environment, Risk, Premium, And Demo Controls
 
 ### `GET /environment?lat=13.0827&lon=80.2707`
 
 Returns environment context, including weather, AQI, traffic, and recent comparison data.
+
+### `GET /environment/current?lat=13.0827&lon=80.2707`
+
+Alias of `/environment`. Intended for UI flows that explicitly request the current environment snapshot.
+
+### `POST /environment/override`
+
+Controls the live demo environment override mode.
+
+Request:
+
+```json
+{
+  "override_mode": true,
+  "rain": "HIGH",
+  "traffic": "HIGH",
+  "aqi": "MEDIUM",
+  "scenario": "rain"
+}
+```
+
+Supported scenarios:
+
+- `rain`
+- `fraud`
+- `reset`
+
+Behavior:
+
+- If `override_mode=true`, the backend overlays the selected disruption levels on top of the normal environment response.
+- If `override_mode=false` or `scenario=reset`, the backend returns to live/simulated environment behavior.
+
+Response:
+
+```json
+{
+  "override_mode": true,
+  "scenario": "rain",
+  "rain": "HIGH",
+  "traffic": "HIGH",
+  "aqi": "MEDIUM"
+}
+```
 
 ### `GET /risk?lat=13.0827&lon=80.2707&user_id=1`
 
@@ -361,6 +405,52 @@ Premium response includes:
   "risk_score": 0.28,
   "risk": {},
   "explanation": "Premium generated from live risk conditions"
+}
+```
+
+### `GET /demo/full-pipeline?user_id=1&lat=13.0827&lon=80.2707`
+
+Returns the complete live demo pipeline payload used by the Home dashboard demo panel.
+
+Response sections:
+
+- `scenario`
+- `override`
+- `environment`
+- `risk`
+- `premium`
+- `claim`
+- `fraud`
+- `payout`
+
+Example:
+
+```json
+{
+  "scenario": "rain",
+  "override": {
+    "override_mode": true,
+    "scenario": "rain",
+    "rain": "HIGH",
+    "traffic": "HIGH",
+    "aqi": "MEDIUM"
+  },
+  "environment": {},
+  "risk": {},
+  "premium": {},
+  "claim": {
+    "claim_triggered": true,
+    "status": "APPROVED"
+  },
+  "fraud": {
+    "fraud_score": 0.18,
+    "decision": "APPROVED"
+  },
+  "payout": {
+    "status": "SUCCESS",
+    "amount_paid": 320.0,
+    "transaction_id": "txn_demo_123"
+  }
 }
 ```
 
@@ -833,6 +923,48 @@ The main worker demo flow is:
 9. Pay premium
 10. Trigger either manual claim processing or zero-touch auto-claim processing
 11. Inspect payout, fraud, transaction history, and admin analytics
+
+## Live Demo Pipeline Flow
+
+The main stage demo flow is now:
+
+1. Log in as a worker persona
+2. Open the `Home` tab
+3. Use the `Demo Control Panel`
+4. Tap `Trigger Rain` for the approved path or `Trigger Fraud` for the suspicious path
+5. Watch the `Live Demo Pipeline` animate:
+   - Environment
+   - Risk
+   - Claim
+   - Fraud
+   - Payout
+6. Open `Insurance` and `Claims` to reinforce the same story
+7. Open the admin dashboard to show fraud, payouts, and predictions updating from the same backend
+
+### Demo Scenario A: Protected Worker
+
+- Use `Trigger Rain`
+- Expected story:
+  - severe disruption
+  - higher risk
+  - auto-triggered claim
+  - fraud approved
+  - payout credited
+
+### Demo Scenario B: Fraud-Aware Rejection
+
+- Use `Trigger Fraud`
+- Expected story:
+  - low disruption context
+  - suspicious claim path
+  - fraud mismatch signals
+  - payout blocked or skipped
+
+### Reset
+
+- Use `Reset`
+- Backend returns to live or seeded environment behavior
+- The worker dashboard stops showing an active forced demo scenario
 
 ## Notes
 
