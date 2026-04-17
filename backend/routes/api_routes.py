@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from database.db import get_db
 from schemas.user_schema import LocationUpdateRequest
 from services.bank_service import insurance_summary, transaction_history
+from services.demo_pipeline_service import build_demo_pipeline
 from services.environment_service import get_environment
 from services.fraud_intelligence_engine import build_location_status, get_device_status, record_continuous_location_update, update_user_location_state
 from services.gig_service import today_income
@@ -197,3 +198,14 @@ async def location_update(payload: LocationUpdateRequest, db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     db.commit()
     return location_status
+
+
+@router.get('/demo/full-pipeline')
+async def demo_full_pipeline(
+    user_id: int = Query(..., gt=0),
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    db: Session = Depends(get_db),
+):
+    _require_user(db, user_id)
+    return build_demo_pipeline(db=db, user_id=user_id, lat=lat, lon=lon)
