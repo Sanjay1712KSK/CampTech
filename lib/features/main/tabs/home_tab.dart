@@ -235,6 +235,462 @@ class _WorkerDashboardBundle {
   });
 }
 
+class _DemoControlSection extends StatelessWidget {
+  final bool demoBusy;
+  final String? demoError;
+  final String? demoScenario;
+  final Future<void> Function() onTriggerRain;
+  final Future<void> Function() onTriggerFraud;
+  final Future<void> Function() onResetDemo;
+
+  const _DemoControlSection({
+    required this.demoBusy,
+    required this.demoError,
+    required this.demoScenario,
+    required this.onTriggerRain,
+    required this.onTriggerFraud,
+    required this.onResetDemo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeLabel = demoScenario == null
+        ? 'Live mode'
+        : demoScenario == 'rain'
+        ? 'Rain disruption demo active'
+        : demoScenario == 'fraud'
+        ? 'Fraud challenge demo active'
+        : 'Live mode';
+
+    return _SectionCard(
+      title: 'Demo Control Panel',
+      subtitle:
+          'Drive the live insurance story from disruption to payout with real backend responses.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ExplainBar(
+            icon: Icons.play_circle_outline_rounded,
+            text:
+                'Use these controls during the demo to trigger a severe weather path, force a suspicious claim path, or reset back to live conditions.',
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _ActionPillButton(
+                icon: Icons.thunderstorm_rounded,
+                label: 'Trigger Rain',
+                isBusy: demoBusy && demoScenario == 'rain',
+                onTap: onTriggerRain,
+              ),
+              _ActionPillButton(
+                icon: Icons.gpp_bad_rounded,
+                label: 'Trigger Fraud',
+                isBusy: demoBusy && demoScenario == 'fraud',
+                onTap: onTriggerFraud,
+              ),
+              _ActionPillButton(
+                icon: Icons.restart_alt_rounded,
+                label: 'Reset',
+                isBusy: demoBusy && demoScenario == null,
+                onTap: onResetDemo,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _InfoRow(label: 'Demo status', value: activeLabel),
+          if (demoError != null && demoError!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                demoError!,
+                style: const TextStyle(
+                  color: AppTheme.errorColor,
+                  height: 1.5,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LivePipelineSection extends StatelessWidget {
+  final Map<String, dynamic>? pipeline;
+  final int visibleSteps;
+
+  const _LivePipelineSection({
+    required this.pipeline,
+    required this.visibleSteps,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (pipeline == null) {
+      return const _SectionCard(
+        title: 'Live Demo Pipeline',
+        subtitle:
+            'Run a demo scenario to watch the end-to-end insurance pipeline explain itself.',
+        child: _EmptyState(
+          icon: Icons.stream_rounded,
+          title: 'No demo scenario running',
+          message:
+              'Tap Trigger Rain or Trigger Fraud above to animate the full environment to payout story.',
+        ),
+      );
+    }
+
+    final environment = _asMap(pipeline!['environment']);
+    final risk = _asMap(pipeline!['risk']);
+    final claim = _asMap(pipeline!['claim']);
+    final fraud = _asMap(pipeline!['fraud']);
+    final payout = _asMap(pipeline!['payout']);
+    final weather = _asMap(environment['weather']);
+    final traffic = _asMap(environment['traffic']);
+    final aqi = _asMap(environment['aqi']);
+    final triggerDetails = _asMap(claim['trigger_details']);
+
+    return _SectionCard(
+      title: 'Live Demo Pipeline',
+      subtitle:
+          'A step-by-step visual of environment disruption flowing through risk, claim, fraud, and payout.',
+      child: Column(
+        children: [
+          _AnimatedPipelineStage(
+            visible: visibleSteps >= 1,
+            child: _PipelineStageCard(
+              icon: Icons.cloudy_snowing_rounded,
+              title: 'Environment',
+              badge: _readString(environment['demo_scenario'], fallback: 'live'),
+              explanation:
+                  'Live signals and demo overrides shape the disruption context before any insurance decision happens.',
+              detailRows: [
+                _PipelineDetailRow(
+                  label: 'Rain',
+                  value:
+                      '${_readDouble(weather['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm',
+                ),
+                _PipelineDetailRow(
+                  label: 'Traffic',
+                  value: _readString(traffic['traffic_level']),
+                ),
+                _PipelineDetailRow(
+                  label: 'AQI',
+                  value: '${_readInt(aqi['aqi']) ?? 0}',
+                ),
+              ],
+            ),
+          ),
+          _AnimatedPipelineStage(
+            visible: visibleSteps >= 2,
+            child: _PipelineStageCard(
+              icon: Icons.query_stats_rounded,
+              title: 'Risk Engine',
+              badge: _readString(risk['risk_level'], fallback: 'LOW'),
+              explanation: _joinExplanation(risk['reasons']).isEmpty
+                  ? 'The risk engine translates environment disruption into a worker-specific risk score and active triggers.'
+                  : _joinExplanation(risk['reasons']),
+              detailRows: [
+                _PipelineDetailRow(
+                  label: 'Risk score',
+                  value: (_readDouble(risk['risk_score']) ?? 0).toStringAsFixed(2),
+                ),
+                _PipelineDetailRow(
+                  label: 'Triggers',
+                  value: _fallbackText(
+                    _asStringList(risk['active_triggers'])
+                        .map(_prettifyTrigger)
+                        .join(', '),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _AnimatedPipelineStage(
+            visible: visibleSteps >= 3,
+            child: _PipelineStageCard(
+              icon: Icons.description_outlined,
+              title: 'Claim Engine',
+              badge: _readString(claim['status'], fallback: 'PROCESSING'),
+              explanation: _readString(
+                claim['explanation'],
+                fallback:
+                    'The zero-touch claim engine compares baseline income with current loss under active triggers.',
+              ),
+              detailRows: [
+                _PipelineDetailRow(
+                  label: 'Claim triggered',
+                  value: claim['claim_triggered'] == true ? 'Yes' : 'No',
+                ),
+                _PipelineDetailRow(
+                  label: 'Loss',
+                  value:
+                      'Rs ${((_readDouble(claim['loss']) ?? 0)).toStringAsFixed(0)}',
+                ),
+                _PipelineDetailRow(
+                  label: 'Trigger',
+                  value: _prettifyTrigger(
+                    _readString(claim['trigger'], fallback: 'none'),
+                  ),
+                ),
+                if (triggerDetails.isNotEmpty)
+                  _PipelineDetailRow(
+                    label: 'Why',
+                    value:
+                        'Rain ${_readDouble(triggerDetails['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm, traffic ${_readDouble(triggerDetails['traffic_index'])?.toStringAsFixed(2) ?? '0.0'}, delivery drop ${_percent(_readDouble(triggerDetails['delivery_drop']))}',
+                  ),
+              ],
+            ),
+          ),
+          _AnimatedPipelineStage(
+            visible: visibleSteps >= 4,
+            child: _PipelineStageCard(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Fraud Engine',
+              badge: _readString(fraud['decision'], fallback: 'APPROVED'),
+              explanation: _readString(
+                fraud['explanation'],
+                fallback:
+                    'Fraud intelligence validates identity, session, GPS, behavior, and context before payout.',
+              ),
+              detailRows: [
+                _PipelineDetailRow(
+                  label: 'Fraud score',
+                  value:
+                      (_readDouble(fraud['fraud_score']) ?? 0).toStringAsFixed(2),
+                ),
+                _PipelineDetailRow(
+                  label: 'Signals',
+                  value: _fallbackText(_fraudSignals(fraud).join(', ')),
+                ),
+              ],
+            ),
+          ),
+          _AnimatedPipelineStage(
+            visible: visibleSteps >= 5,
+            child: _PipelineStageCard(
+              icon: Icons.currency_rupee_rounded,
+              title: 'Payout Engine',
+              badge: _readString(payout['status'], fallback: 'SKIPPED'),
+              explanation: _readString(
+                payout['message'],
+                fallback:
+                    'Approved claims trigger the instant payout engine and the resulting transaction is shown here.',
+              ),
+              detailRows: [
+                _PipelineDetailRow(
+                  label: 'Amount',
+                  value:
+                      'Rs ${((_readDouble(payout['amount_paid'], fallback: _readDouble(payout['amount'])) ?? 0)).toStringAsFixed(0)}',
+                ),
+                _PipelineDetailRow(
+                  label: 'Transaction ID',
+                  value: _readString(payout['transaction_id']),
+                ),
+                _PipelineDetailRow(
+                  label: 'Time',
+                  value: _readString(
+                    payout['processed_at'],
+                    fallback: _readString(
+                      payout['processing_time'],
+                      fallback: 'Pending',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionPillButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isBusy;
+  final Future<void> Function() onTap;
+
+  const _ActionPillButton({
+    required this.icon,
+    required this.label,
+    required this.isBusy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: isBusy
+          ? null
+          : () {
+              onTap();
+            },
+      icon: isBusy
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+}
+
+class _AnimatedPipelineStage extends StatelessWidget {
+  final bool visible;
+  final Widget child;
+
+  const _AnimatedPipelineStage({
+    required this.visible,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: visible ? 1 : 0,
+      duration: const Duration(milliseconds: 260),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+        height: visible ? null : 0,
+        margin: EdgeInsets.only(bottom: visible ? 12 : 0),
+        child: visible ? child : const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+class _PipelineStageCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String badge;
+  final String explanation;
+  final List<_PipelineDetailRow> detailRows;
+
+  const _PipelineStageCard({
+    required this.icon,
+    required this.title,
+    required this.badge,
+    required this.explanation,
+    required this.detailRows,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: AppTheme.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            explanation,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ...detailRows,
+        ],
+      ),
+    );
+  }
+}
+
+class _PipelineDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _PipelineDetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DashboardView extends StatelessWidget {
   final UserState user;
   final LocationState location;
