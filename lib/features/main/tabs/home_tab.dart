@@ -2,18 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:guidewire_gig_ins/core/providers.dart';
 import 'package:guidewire_gig_ins/core/theme.dart';
+import 'package:guidewire_gig_ins/features/demo/demo_controller.dart';
 import 'package:guidewire_gig_ins/services/api_service.dart';
 import 'package:intl/intl.dart';
+
+final GlobalKey<HomeTabState> homeTabGlobalKey = GlobalKey<HomeTabState>();
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
   @override
-  ConsumerState<HomeTab> createState() => _HomeTabState();
+  ConsumerState<HomeTab> createState() => HomeTabState();
 }
 
-class _HomeTabState extends ConsumerState<HomeTab> {
+class HomeTabState extends ConsumerState<HomeTab> {
   late Future<_WorkerDashboardBundle> _dashboardFuture;
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _environmentKey = GlobalKey();
+  final GlobalKey _riskKey = GlobalKey();
+  final GlobalKey _claimKey = GlobalKey();
+  final GlobalKey _fraudKey = GlobalKey();
+  final GlobalKey _payoutKey = GlobalKey();
   Map<String, dynamic>? _demoPipeline;
   String? _demoScenario;
   String? _demoError;
@@ -25,6 +34,12 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   void initState() {
     super.initState();
     _dashboardFuture = _loadDashboard();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<_WorkerDashboardBundle> _loadDashboard() async {
@@ -160,10 +175,32 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     }
   }
 
+  Future<void> runAutomatedScenario(String scenario) => _runDemoScenario(scenario);
+
+  Future<void> scrollToSection(String section) async {
+    final key = switch (section) {
+      'environment' => _environmentKey,
+      'risk' => _riskKey,
+      'claim' => _claimKey,
+      'fraud' => _fraudKey,
+      'payout' => _payoutKey,
+      _ => _environmentKey,
+    };
+    final targetContext = key.currentContext;
+    if (targetContext == null) return;
+    await Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(seconds: 2),
+      curve: Curves.easeInOut,
+      alignment: 0.08,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
     final location = ref.watch(locationProvider);
+    final demo = ref.watch(demoControllerProvider);
 
     if (user == null) {
       return const Center(child: CircularProgressIndicator());
@@ -171,49 +208,62 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: Colors.black,
-          backgroundColor: AppTheme.primaryColor,
-          onRefresh: _refresh,
-          child: FutureBuilder<_WorkerDashboardBundle>(
-            future: _dashboardFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const _LoadingState();
-              }
-              if (snapshot.hasError) {
-                return _ErrorState(
-                  message: snapshot.error.toString().replaceFirst(
-                    'Exception: ',
-                    '',
-                  ),
-                  onRetry: _refresh,
-                );
-              }
-              final bundle = snapshot.data;
-              if (bundle == null) {
-                return _ErrorState(
-                  message: 'Dashboard data is unavailable right now.',
-                  onRetry: _refresh,
-                );
-              }
-              return _DashboardView(
-                user: user,
-                location: location,
-                bundle: bundle,
-                demoPipeline: _demoPipeline,
-                demoScenario: _demoScenario,
-                demoBusy: _demoBusy,
-                demoError: _demoError,
-                demoVisibleSteps: _demoVisibleSteps,
-                onTriggerRain: () => _runDemoScenario('rain'),
-                onTriggerFraud: () => _runDemoScenario('fraud'),
-                onResetDemo: () => _runDemoScenario('reset'),
-              );
-            },
+      body: Stack(
+        children: [
+          SafeArea(
+            child: RefreshIndicator(
+              color: Colors.black,
+              backgroundColor: AppTheme.primaryColor,
+              onRefresh: _refresh,
+              child: FutureBuilder<_WorkerDashboardBundle>(
+                future: _dashboardFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const _LoadingState();
+                  }
+                  if (snapshot.hasError) {
+                    return _ErrorState(
+                      message: snapshot.error.toString().replaceFirst(
+                        'Exception: ',
+                        '',
+                      ),
+                      onRetry: _refresh,
+                    );
+                  }
+                  final bundle = snapshot.data;
+                  if (bundle == null) {
+                    return _ErrorState(
+                      message: 'Dashboard data is unavailable right now.',
+                      onRetry: _refresh,
+                    );
+                  }
+                  return _DashboardView(
+                    scrollController: _scrollController,
+                    environmentKey: _environmentKey,
+                    riskKey: _riskKey,
+                    claimKey: _claimKey,
+                    fraudKey: _fraudKey,
+                    payoutKey: _payoutKey,
+                    highlightedSection: demo.workerSection,
+                    user: user,
+                    location: location,
+                    bundle: bundle,
+                    demoPipeline: _demoPipeline,
+                    demoScenario: _demoScenario,
+                    demoBusy: _demoBusy,
+                    demoError: _demoError,
+                    demoVisibleSteps: _demoVisibleSteps,
+                    onTriggerRain: () => _runDemoScenario('rain'),
+                    onTriggerFraud: () => _runDemoScenario('fraud'),
+                    onResetDemo: () => _runDemoScenario('reset'),
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+          if (demo.isRunning && (demo.overlayMessage ?? '').isNotEmpty)
+            _DemoOverlay(message: demo.overlayMessage!),
+        ],
       ),
     );
   }
@@ -688,6 +738,13 @@ class _PipelineDetailRow extends StatelessWidget {
 }
 
 class _DashboardView extends StatelessWidget {
+  final ScrollController scrollController;
+  final GlobalKey environmentKey;
+  final GlobalKey riskKey;
+  final GlobalKey claimKey;
+  final GlobalKey fraudKey;
+  final GlobalKey payoutKey;
+  final String? highlightedSection;
   final UserState user;
   final LocationState location;
   final _WorkerDashboardBundle bundle;
@@ -701,6 +758,13 @@ class _DashboardView extends StatelessWidget {
   final Future<void> Function() onResetDemo;
 
   const _DashboardView({
+    required this.scrollController,
+    required this.environmentKey,
+    required this.riskKey,
+    required this.claimKey,
+    required this.fraudKey,
+    required this.payoutKey,
+    required this.highlightedSection,
     required this.user,
     required this.location,
     required this.bundle,
@@ -802,22 +866,27 @@ class _DashboardView extends StatelessWidget {
         : triggers.map(_prettifyTrigger).join(', ');
 
     return ListView(
+      controller: scrollController,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
       children: [
-        _HeroCard(
-          name: _displayName(userPayload, user),
-          earningsToday: earningsToday,
-          coverageActive: coverageActive,
-          city: currentCity,
-          weatherText:
-              '${_readDouble(weather['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm rain',
-          aqiText: '${_readInt(aqi['aqi']) ?? 0}',
-          trafficText: _readString(
-            traffic['traffic_level'],
-            fallback: 'Unknown',
+        _HighlightSection(
+          sectionKey: environmentKey,
+          highlighted: highlightedSection == 'environment',
+          child: _HeroCard(
+            name: _displayName(userPayload, user),
+            earningsToday: earningsToday,
+            coverageActive: coverageActive,
+            city: currentCity,
+            weatherText:
+                '${_readDouble(weather['rainfall'])?.toStringAsFixed(1) ?? '0.0'} mm rain',
+            aqiText: '${_readInt(aqi['aqi']) ?? 0}',
+            trafficText: _readString(
+              traffic['traffic_level'],
+              fallback: 'Unknown',
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -835,58 +904,62 @@ class _DashboardView extends StatelessWidget {
           visibleSteps: demoVisibleSteps,
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          title: 'Trust & Security',
-          subtitle:
-              'A clear view of device protection, location trust, and fraud review.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ExplainBar(
-                icon: Icons.phonelink_lock_rounded,
-                text: deviceLocked
-                    ? 'Your account is secured to this device, which helps the platform trust your session and payouts.'
-                    : 'Device trust is still being established, so security checks are watching this account more closely.',
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _MetricTile(
-                    icon: Icons.gpp_good_rounded,
-                    label: 'Fraud decision',
-                    value: fraudDecision,
-                    tone: _claimTone(fraudDecision),
-                  ),
-                  _MetricTile(
-                    icon: Icons.shield_outlined,
-                    label: 'Fraud score',
-                    value: fraudScore.toStringAsFixed(2),
-                  ),
-                  _MetricTile(
-                    icon: Icons.location_on_outlined,
-                    label: 'Location trust',
-                    value: status['auto_payout_enabled'] == true
-                        ? 'Enabled'
-                        : 'Limited',
-                    tone: status['auto_payout_enabled'] == true
-                        ? AppTheme.successColor
-                        : AppTheme.warningColor,
-                  ),
-                ],
-              ),
-              if (fraudSignals.isNotEmpty) ...[
+        _HighlightSection(
+          sectionKey: fraudKey,
+          highlighted: highlightedSection == 'fraud',
+          child: _SectionCard(
+            title: 'Trust & Security',
+            subtitle:
+                'A clear view of device protection, location trust, and fraud review.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ExplainBar(
+                  icon: Icons.phonelink_lock_rounded,
+                  text: deviceLocked
+                      ? 'Your account is secured to this device, which helps the platform trust your session and payouts.'
+                      : 'Device trust is still being established, so security checks are watching this account more closely.',
+                ),
                 const SizedBox(height: 14),
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: fraudSignals
-                      .map((signal) => _SignalChip(label: signal))
-                      .toList(),
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _MetricTile(
+                      icon: Icons.gpp_good_rounded,
+                      label: 'Fraud decision',
+                      value: fraudDecision,
+                      tone: _claimTone(fraudDecision),
+                    ),
+                    _MetricTile(
+                      icon: Icons.shield_outlined,
+                      label: 'Fraud score',
+                      value: fraudScore.toStringAsFixed(2),
+                    ),
+                    _MetricTile(
+                      icon: Icons.location_on_outlined,
+                      label: 'Location trust',
+                      value: status['auto_payout_enabled'] == true
+                          ? 'Enabled'
+                          : 'Limited',
+                      tone: status['auto_payout_enabled'] == true
+                          ? AppTheme.successColor
+                          : AppTheme.warningColor,
+                    ),
+                  ],
                 ),
+                if (fraudSignals.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: fraudSignals
+                        .map((signal) => _SignalChip(label: signal))
+                        .toList(),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 16),

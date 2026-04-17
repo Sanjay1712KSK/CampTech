@@ -6,16 +6,18 @@ import 'package:guidewire_gig_ins/features/main/tabs/insights_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/profile_tab.dart';
 import 'package:guidewire_gig_ins/features/main/tabs/policy_tab.dart';
 
+final GlobalKey<MainShellState> mainShellGlobalKey = GlobalKey<MainShellState>();
+
 class MainShell extends StatefulWidget {
   final int initialIndex;
 
   const MainShell({super.key, this.initialIndex = 0});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class MainShellState extends State<MainShell> {
   late int _currentIndex;
 
   @override
@@ -27,7 +29,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      const HomeTab(),
+      HomeTab(key: homeTabGlobalKey),
       const InsightsTab(),
       const PolicyTab(),
       const ClaimsTab(),
@@ -72,5 +74,19 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
     );
+  }
+
+  Future<void> setCurrentIndex(int index) async {
+    if (!mounted) return;
+    setState(() => _currentIndex = index);
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+  }
+
+  Future<void> scrollHomeToSection(String section) async {
+    await homeTabGlobalKey.currentState?.scrollToSection(section);
+  }
+
+  Future<void> runHomeRainScenario() async {
+    await homeTabGlobalKey.currentState?.runAutomatedScenario('rain');
   }
 }
