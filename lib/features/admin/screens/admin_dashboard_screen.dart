@@ -255,7 +255,14 @@ class AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               onRetry: _refresh,
             );
           }
-          return _AdminDashboardView(data: data);
+          return _AdminDashboardView(
+            scrollController: _scrollController,
+            overviewKey: _overviewKey,
+            fraudKey: _fraudKey,
+            predictionsKey: _predictionsKey,
+            highlightedSection: demo.adminSection,
+            data: data,
+          );
         },
       ),
     );
@@ -329,10 +336,54 @@ class _AdminDemoOverlay extends StatelessWidget {
   }
 }
 
+class _AdminHighlightSection extends StatelessWidget {
+  final GlobalKey sectionKey;
+  final bool highlighted;
+  final Widget child;
+
+  const _AdminHighlightSection({
+    required this.sectionKey,
+    required this.highlighted,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: sectionKey,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: highlighted
+            ? [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.18),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                ),
+              ]
+            : const [],
+      ),
+      child: child,
+    );
+  }
+}
+
 class _AdminDashboardView extends StatelessWidget {
+  final ScrollController scrollController;
+  final GlobalKey overviewKey;
+  final GlobalKey fraudKey;
+  final GlobalKey predictionsKey;
+  final String? highlightedSection;
   final _AdminDashboardBundle data;
 
-  const _AdminDashboardView({required this.data});
+  const _AdminDashboardView({
+    required this.scrollController,
+    required this.overviewKey,
+    required this.fraudKey,
+    required this.predictionsKey,
+    required this.highlightedSection,
+    required this.data,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +401,7 @@ class _AdminDashboardView extends StatelessWidget {
             ? 2
             : 1;
         return ListView(
-          controller: _scrollController,
+          controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -363,8 +414,9 @@ class _AdminDashboardView extends StatelessWidget {
               insight: data.predictions.insight,
             ),
             const SizedBox(height: 18),
-            KeyedSubtree(
-              key: _overviewKey,
+            _AdminHighlightSection(
+              sectionKey: overviewKey,
+              highlighted: highlightedSection == 'overview',
               child: const _SectionTitle(title: 'System Health'),
             ),
             _MetricGrid(
@@ -406,8 +458,9 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            KeyedSubtree(
-              key: _fraudKey,
+            _AdminHighlightSection(
+              sectionKey: fraudKey,
+              highlighted: highlightedSection == 'fraud',
               child: const _SectionTitle(title: 'Fraud Intelligence'),
             ),
             isWide
@@ -721,8 +774,9 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            KeyedSubtree(
-              key: _predictionsKey,
+            _AdminHighlightSection(
+              sectionKey: predictionsKey,
+              highlighted: highlightedSection == 'predictions',
               child: const _SectionTitle(title: 'Predictions'),
             ),
             _PanelCard(
