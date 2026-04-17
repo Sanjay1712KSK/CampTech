@@ -675,6 +675,37 @@ class _PolicyTabState extends ConsumerState<PolicyTab> {
         .toList();
     return items.isEmpty ? 'None' : items.join(', ');
   }
+
+  String _joinSignals(Map<String, dynamic>? signals, List? signalList) {
+    final items = <String>[];
+    if (signals != null) {
+      signals.forEach((key, value) {
+        if (value is bool) {
+          items.add('${_titleize(key)}: ${value ? 'OK' : 'Review'}');
+        } else if (value is num) {
+          items.add('${_titleize(key)}: ${value.toStringAsFixed(2)}');
+        } else if (value != null) {
+          final text = '$value'.trim();
+          if (text.isNotEmpty) {
+            items.add('${_titleize(key)}: $text');
+          }
+        }
+      });
+    }
+    if (items.isNotEmpty) {
+      return items.join(', ');
+    }
+    return _joinList(signalList);
+  }
+
+  String _titleize(String value) {
+    return value
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
 }
 
 class _HeroBanner extends StatelessWidget {
@@ -785,6 +816,151 @@ class _HeroBanner extends StatelessWidget {
                   ),
                 )
                 .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProtectionSummaryCard extends StatelessWidget {
+  final double weeklyPremium;
+  final double coverage;
+  final bool locationEnabled;
+  final bool bankLinked;
+  final bool isPaying;
+  final VoidCallback onPay;
+
+  const _ProtectionSummaryCard({
+    required this.weeklyPremium,
+    required this.coverage,
+    required this.locationEnabled,
+    required this.bankLinked,
+    required this.isPaying,
+    required this.onPay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.18)),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Protection & Payment',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Review your weekly premium, understand your coverage, and activate protection with one clear action.',
+            style: TextStyle(color: AppTheme.textSecondary, height: 1.45),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _OutputTile(
+                  item: _OutputStat(
+                    label: 'Weekly premium',
+                    value: 'Rs ${weeklyPremium.toStringAsFixed(0)}',
+                  ),
+                  accentColor: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _OutputTile(
+                  item: _OutputStat(
+                    label: 'Coverage',
+                    value: 'Rs ${coverage.toStringAsFixed(0)}',
+                  ),
+                  accentColor: AppTheme.successColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.phonelink_lock_rounded,
+                      color: AppTheme.primaryColor,
+                      size: 18,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Your account is secured to this device',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  locationEnabled
+                      ? 'Location access is enabled, so risk scoring and auto protection can use live work-hour context.'
+                      : 'Location access is off, so coverage stays limited and automatic claim protection remains guarded.',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  bankLinked
+                      ? 'Your bank account is linked and ready for payouts.'
+                      : 'Link your bank account first so approved payouts have a destination.',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: isPaying ? null : onPay,
+              icon: isPaying
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                      ),
+                    )
+                  : const Icon(Icons.lock_open_rounded),
+              label: Text(
+                bankLinked
+                    ? 'Pay & Activate Insurance'
+                    : 'Link Bank & Activate Insurance',
+              ),
+            ),
           ),
         ],
       ),
