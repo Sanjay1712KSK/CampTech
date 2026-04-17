@@ -1453,6 +1453,9 @@ class InsuranceSummaryModel {
   final String claimMessage;
   final bool claimReady;
   final double lastPayout;
+  final String? payoutStatus;
+  final String? payoutTransactionId;
+  final String? payoutTime;
   final String? latestClaimStatus;
   final List<String> recentRemarks;
   final DateTime? policyStart;
@@ -1470,6 +1473,9 @@ class InsuranceSummaryModel {
     required this.claimMessage,
     required this.claimReady,
     required this.lastPayout,
+    required this.payoutStatus,
+    required this.payoutTransactionId,
+    required this.payoutTime,
     required this.latestClaimStatus,
     required this.recentRemarks,
     required this.policyStart,
@@ -1489,6 +1495,9 @@ class InsuranceSummaryModel {
       claimMessage: json['claim_message'] as String? ?? '',
       claimReady: json['claim_ready'] as bool? ?? false,
       lastPayout: (json['last_payout'] as num?)?.toDouble() ?? 0.0,
+      payoutStatus: json['payout_status'] as String?,
+      payoutTransactionId: json['payout_transaction_id'] as String?,
+      payoutTime: json['payout_time'] as String?,
       latestClaimStatus: json['latest_claim_status'] as String?,
       recentRemarks: (json['recent_remarks'] as List? ?? const [])
           .map((e) => '$e')

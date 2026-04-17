@@ -858,7 +858,7 @@ class _EngineCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '• ',
+                              '- ',
                               style: TextStyle(
                                 color: accentColor,
                                 fontWeight: FontWeight.bold,
