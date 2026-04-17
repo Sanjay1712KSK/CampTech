@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from database.db import get_db
+from routes.claim import payout_claim_endpoint
+from schemas.insurance_schema import AutoClaimProcessRequest, ClaimPayoutRequest
 from schemas.user_schema import LocationUpdateRequest
 from services.bank_service import insurance_summary, transaction_history
 from services.claim_engine import process_claim
@@ -211,6 +213,33 @@ async def demo_full_pipeline(
         },
         'payout': payout,
     }
+
+
+@router.post('/fraud/check')
+async def fraud_check(
+    payload: AutoClaimProcessRequest,
+    db: Session = Depends(get_db),
+):
+    result = auto_process_claim(
+        user_id=payload.user_id,
+        db=db,
+        lat=payload.lat,
+        lon=payload.lon,
+    )
+    return {
+        'status': result.get('status'),
+        'claim_id': result.get('claim_id'),
+        'fraud': result.get('fraud'),
+        'explanation': result.get('explanation'),
+    }
+
+
+@router.post('/payout/process')
+async def payout_process(
+    payload: ClaimPayoutRequest,
+    db: Session = Depends(get_db),
+):
+    return payout_claim_endpoint(payload=payload, db=db)
 
 
 @router.get('/transactions/history')

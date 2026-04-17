@@ -49,3 +49,12 @@ def risk(
     except Exception as exc:
         logger.exception('risk endpoint error: %s', exc)
         raise
+
+
+@router.get('/risk/calculate', response_model=RiskEnvelopeResponse)
+def risk_calculate(
+    params: CoordinatesQuery = Depends(),
+    user_id: int | None = Query(default=None, gt=0),
+    db: Session = Depends(get_db),
+):
+    return risk(params=params, user_id=user_id, db=db)
