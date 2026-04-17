@@ -867,6 +867,17 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> createPaymentOrder(
+    int userId,
+    double lat,
+    double lon,
+  ) async {
+    return _postJson(
+      '/payment/create-order',
+      body: {'user_id': userId, 'lat': lat, 'lon': lon},
+    );
+  }
+
   static Future<InsuranceSummaryModel> getInsuranceSummary(int userId) async {
     final body = await _getJson('/payment/summary?user_id=$userId');
     return InsuranceSummaryModel.fromJson(body);

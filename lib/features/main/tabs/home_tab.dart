@@ -20,6 +20,7 @@ class HomeTabState extends ConsumerState<HomeTab> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _environmentKey = GlobalKey();
   final GlobalKey _riskKey = GlobalKey();
+  final GlobalKey _premiumKey = GlobalKey();
   final GlobalKey _claimKey = GlobalKey();
   final GlobalKey _fraudKey = GlobalKey();
   final GlobalKey _payoutKey = GlobalKey();
@@ -181,6 +182,7 @@ class HomeTabState extends ConsumerState<HomeTab> {
     final key = switch (section) {
       'environment' => _environmentKey,
       'risk' => _riskKey,
+      'premium' => _premiumKey,
       'claim' => _claimKey,
       'fraud' => _fraudKey,
       'payout' => _payoutKey,
@@ -241,6 +243,7 @@ class HomeTabState extends ConsumerState<HomeTab> {
                     scrollController: _scrollController,
                     environmentKey: _environmentKey,
                     riskKey: _riskKey,
+                    premiumKey: _premiumKey,
                     claimKey: _claimKey,
                     fraudKey: _fraudKey,
                     payoutKey: _payoutKey,
@@ -820,6 +823,7 @@ class _DashboardView extends StatelessWidget {
   final ScrollController scrollController;
   final GlobalKey environmentKey;
   final GlobalKey riskKey;
+  final GlobalKey premiumKey;
   final GlobalKey claimKey;
   final GlobalKey fraudKey;
   final GlobalKey payoutKey;
@@ -840,6 +844,7 @@ class _DashboardView extends StatelessWidget {
     required this.scrollController,
     required this.environmentKey,
     required this.riskKey,
+    required this.premiumKey,
     required this.claimKey,
     required this.fraudKey,
     required this.payoutKey,
@@ -1310,10 +1315,13 @@ class _DashboardView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          title: 'Premium Details',
-          subtitle: 'Live pricing linked directly to the same risk engine.',
-          child: Column(
+        _HighlightSection(
+          sectionKey: premiumKey,
+          highlighted: highlightedSection == 'premium',
+          child: _SectionCard(
+            title: 'Premium Details',
+            subtitle: 'Live pricing linked directly to the same risk engine.',
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -1361,6 +1369,7 @@ class _DashboardView extends StatelessWidget {
               ),
               _InfoRow(label: 'Policy status', value: policyStatus),
             ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
