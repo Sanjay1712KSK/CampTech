@@ -908,8 +908,8 @@ class ApiService {
     required int userId,
     required double lat,
     required double lon,
-    required DateTime timestamp,
     required bool locationEnabled,
+    DateTime? timestamp,
     String? city,
     String? deviceId,
   }) async {
@@ -919,7 +919,7 @@ class ApiService {
         'user_id': userId,
         'lat': lat,
         'lon': lon,
-        'timestamp': timestamp.toIso8601String(),
+        if (timestamp != null) 'timestamp': timestamp.toUtc().toIso8601String(),
         'city': city,
         'device_id': deviceId,
         'location_enabled': locationEnabled,

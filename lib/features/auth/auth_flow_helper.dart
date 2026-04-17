@@ -33,8 +33,7 @@ class AuthFlowHelper {
 
   static Future<void> _promptForBiometricIfNeeded(BuildContext context) async {
     final biometricEnabled = await AuthStorageService.isBiometricEnabled();
-    final promptSeen = await AuthStorageService.hasSeenBiometricPrompt();
-    if (biometricEnabled || promptSeen || !context.mounted) {
+    if (biometricEnabled || !context.mounted) {
       return;
     }
 
@@ -91,8 +90,13 @@ class AuthFlowHelper {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final promptSeen = await AuthStorageService.hasSeenLocationPrompt();
-    if (promptSeen || !context.mounted) {
+    if (!context.mounted) {
+      return;
+    }
+
+    final alreadyGranted = await LocationService.hasGrantedLocationPermission();
+    final currentLocation = ref.read(locationProvider);
+    if (alreadyGranted && currentLocation.permissionGranted) {
       return;
     }
 
@@ -123,7 +127,6 @@ class AuthFlowHelper {
 
     final user = ref.read(userProvider);
     final deviceId = await DeviceIdentityService.getOrCreateDeviceId();
-    final currentLocation = ref.read(locationProvider);
 
     if (!allow) {
       ref
@@ -138,7 +141,6 @@ class AuthFlowHelper {
             userId: user.userId,
             lat: currentLocation.lat,
             lon: currentLocation.lon,
-            timestamp: DateTime.now(),
             city: currentLocation.city,
             deviceId: deviceId,
             locationEnabled: false,
@@ -167,7 +169,6 @@ class AuthFlowHelper {
             userId: user.userId,
             lat: result.lat!,
             lon: result.lon!,
-            timestamp: DateTime.now(),
             city: city,
             deviceId: deviceId,
             locationEnabled: true,
@@ -188,7 +189,6 @@ class AuthFlowHelper {
           userId: user.userId,
           lat: currentLocation.lat,
           lon: currentLocation.lon,
-          timestamp: DateTime.now(),
           city: currentLocation.city,
           deviceId: deviceId,
           locationEnabled: false,
