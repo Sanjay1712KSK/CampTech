@@ -243,6 +243,7 @@ class _AdminDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recommendations = _buildRecommendations(data);
+    final smartInsights = _buildSmartInsights(data);
     final hotspots = data.fraud.hotspots;
     final profitPositive = data.financials.profit >= 0;
 
@@ -261,13 +262,13 @@ class _AdminDashboardView extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           children: [
             _AdminHero(
-              title: 'Decision Dashboard',
+              title: 'Intelligent Insurer Control Panel',
               subtitle:
-                  'Monitor platform health, detect fraud pressure, and act on predictive insurer insights.',
+                  'Understand platform health instantly, detect fraud patterns, predict risk, and act on live insurer recommendations.',
               insight: data.predictions.insight,
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Overview'),
+            _SectionTitle(title: 'System Health'),
             _MetricGrid(
               cardsPerRow: cardsPerRow,
               children: [
@@ -307,7 +308,7 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Fraud Analytics'),
+            _SectionTitle(title: 'Fraud Intelligence'),
             isWide
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,7 +482,7 @@ class _AdminDashboardView extends StatelessWidget {
                     ],
                   ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Claims and Risk'),
+            _SectionTitle(title: 'Risk + Claim Trends'),
             _MetricGrid(
               cardsPerRow: cardsPerRow,
               children: [
@@ -619,7 +620,7 @@ class _AdminDashboardView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            _SectionTitle(title: 'Predictive Insights'),
+            _SectionTitle(title: 'Predictions'),
             _PanelCard(
               title: 'Next 7-Day Outlook',
               subtitle:
@@ -654,6 +655,23 @@ class _AdminDashboardView extends StatelessWidget {
                   const SizedBox(height: 18),
                   _InsightBanner(text: data.predictions.insight),
                 ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _SectionTitle(title: 'Smart Insights'),
+            _PanelCard(
+              title: 'System-Generated Insights',
+              subtitle:
+                  'Short insurer-facing observations distilled from live fraud, risk, and prediction data.',
+              child: Column(
+                children: smartInsights
+                    .map(
+                      (insight) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _InsightTile(text: insight),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             const SizedBox(height: 18),
@@ -1143,6 +1161,38 @@ class _RecommendationTile extends StatelessWidget {
   }
 }
 
+class _InsightTile extends StatelessWidget {
+  final String text;
+
+  const _InsightTile({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.16)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: AppTheme.primaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppTheme.textPrimary, height: 1.45),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TriggerChip extends StatelessWidget {
   final String label;
 
@@ -1391,6 +1441,47 @@ List<_RecommendationData> _buildRecommendations(_AdminDashboardBundle data) {
     ),
   );
   return recommendations;
+}
+
+List<String> _buildSmartInsights(_AdminDashboardBundle data) {
+  final insights = <String>[];
+
+  if (data.risk.topTriggers.isNotEmpty) {
+    insights.add(
+      '${_titleize(data.risk.topTriggers.first)} activity is currently the strongest live trigger, which may raise short-term claims pressure.',
+    );
+  }
+
+  if (data.predictions.riskTrend.toLowerCase() == 'increasing') {
+    insights.add(
+      'Risk trend is increasing, so payout exposure may rise if current disruption patterns continue.',
+    );
+  } else if (data.predictions.riskTrend.toLowerCase() == 'decreasing') {
+    insights.add(
+      'Risk trend is easing, which may reduce claim pressure if conditions remain stable.',
+    );
+  }
+
+  if (data.fraud.hotspots.isNotEmpty) {
+    insights.add(
+      'Fraud activity is rising most visibly in ${data.fraud.hotspots.first.city}, making it the top candidate for enhanced review.',
+    );
+  }
+
+  if (data.fraud.topFraudTypes.isNotEmpty) {
+    insights.add(
+      '${_fraudLabel(data.fraud.topFraudTypes.first.type)} is the leading fraud signal right now and should remain part of frontline review guidance.',
+    );
+  }
+
+  if (data.overview.lossRatio >= 0.8) {
+    insights.add(
+      'Loss ratio is approaching a stressed zone at ${_percentValue(data.overview.lossRatio)}, which suggests underwriting pressure is building.',
+    );
+  }
+
+  insights.add(data.predictions.insight);
+  return insights.take(5).toList();
 }
 
 double _maxFraudCount(AdminFraudStatsModel fraud) {
