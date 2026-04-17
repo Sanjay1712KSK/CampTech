@@ -34,6 +34,58 @@ class PayPremiumRequest(BaseModel):
     amount: float = Field(..., gt=0)
 
 
+class PaymentOrderCreateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    lat: float = Field(..., ge=-90.0, le=90.0)
+    lon: float = Field(..., ge=-180.0, le=180.0)
+
+
+class PaymentOrderCreateResponse(BaseModel):
+    status: str
+    user_id: int
+    order_id: str
+    amount: float
+    amount_paise: int
+    currency: str
+    key_id: str
+    premium: float
+    coverage: float
+    validity: str
+    provider: str
+
+
+class PaymentVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    user_id: int = Field(..., gt=0)
+    razorpay_order_id: str = Field(..., min_length=6, max_length=255)
+    razorpay_payment_id: str = Field(..., min_length=6, max_length=255)
+    razorpay_signature: str = Field(..., min_length=6, max_length=255)
+
+
+class PolicyActivationResponse(BaseModel):
+    user_id: int
+    premium_paid: float
+    coverage: float
+    validity: str
+    status: str
+    policy_id: int | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class PaymentVerifyResponse(BaseModel):
+    status: str
+    user_id: int
+    amount: float
+    transaction_id: str
+    blockchain_txn_id: str | None = None
+    provider: str
+    policy: PolicyActivationResponse
+
+
 class PaymentResponse(BaseModel):
     status: str
     user_id: int
